@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { ArrowLeft, Star, Truck, CreditCard, HeadphonesIcon, Heart, ShoppingCart } from "lucide-react";
 import { toast } from "sonner";
+import { useCart } from "@/contexts/CartContext";
 
 interface Product {
   id: string;
@@ -20,6 +21,7 @@ interface Product {
 const Home = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const { addToCart } = useCart();
 
   useEffect(() => {
     fetchProducts();
@@ -42,8 +44,13 @@ const Home = () => {
     }
   };
 
-  const addToCart = (product: Product) => {
-    toast.success(`تم إضافة ${product.name} إلى السلة`);
+  const handleAddToCart = (product: Product) => {
+    addToCart({
+      id: product.id,
+      name: product.name,
+      price: product.is_offer && product.offer_price ? product.offer_price : product.price,
+      image_url: product.image_url,
+    });
   };
 
   const addToFavorites = (product: Product) => {
@@ -171,7 +178,7 @@ const Home = () => {
                     <CardFooter className="p-4 pt-0">
                       <Button 
                         className="w-full hover-glow" 
-                        onClick={() => addToCart(product)}
+                        onClick={() => handleAddToCart(product)}
                         disabled={product.stock === 0}
                       >
                         <ShoppingCart className="ml-2 h-4 w-4" />

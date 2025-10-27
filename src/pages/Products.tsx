@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Heart, ShoppingCart, Search, Star } from "lucide-react";
 import { toast } from "sonner";
+import { useCart } from "@/contexts/CartContext";
 
 interface Product {
   id: string;
@@ -24,6 +25,7 @@ const Products = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("default");
   const [loading, setLoading] = useState(true);
+  const { addToCart } = useCart();
 
   useEffect(() => {
     fetchProducts();
@@ -84,8 +86,13 @@ const Products = () => {
     setFilteredProducts(filtered);
   };
 
-  const addToCart = (product: Product) => {
-    toast.success(`تم إضافة ${product.name} إلى السلة`);
+  const handleAddToCart = (product: Product) => {
+    addToCart({
+      id: product.id,
+      name: product.name,
+      price: product.is_offer && product.offer_price ? product.offer_price : product.price,
+      image_url: product.image_url,
+    });
   };
 
   const addToFavorites = (product: Product) => {
@@ -185,7 +192,7 @@ const Products = () => {
               <CardFooter className="p-4 pt-0">
                 <Button 
                   className="w-full hover-glow" 
-                  onClick={() => addToCart(product)}
+                  onClick={() => handleAddToCart(product)}
                   disabled={product.stock === 0}
                 >
                   <ShoppingCart className="ml-2 h-4 w-4" />
