@@ -62,7 +62,17 @@ const Checkout = () => {
 
   const handleSubmit = async (e: React.FormEvent, sendWhatsApp: boolean = false) => {
     e.preventDefault();
+    
+    // Validate governorate selection
+    if (!selectedGovernorate) {
+      toast.error("الرجاء اختيار المحافظة");
+      return;
+    }
+    
     setLoading(true);
+
+    console.log("Selected Governorate:", selectedGovernorate);
+    console.log("Form Data:", formData);
 
     try {
       // 1. Create or get customer
@@ -82,31 +92,43 @@ const Checkout = () => {
             phone: formData.phone,
             phone2: formData.phone2 || null,
             address: formData.address,
-            governorate: selectedGovernorate?.name || null,
+            governorate: selectedGovernorate.name,
           })
           .select()
           .single();
 
-        if (customerError) throw customerError;
+        if (customerError) {
+          console.error("Customer Error:", customerError);
+          throw customerError;
+        }
         customerId = newCustomer.id;
       }
 
       // 2. Create order with governorate_id
-      const shippingCost = selectedGovernorate?.shipping_cost || 0;
+      const shippingCost = selectedGovernorate.shipping_cost;
+      const orderData = {
+        customer_id: customerId,
+        governorate_id: selectedGovernorate.id,
+        total_amount: totalPrice,
+        shipping_cost: shippingCost,
+        status: "pending" as const,
+        notes: formData.notes || null,
+      };
+      
+      console.log("Creating order with data:", orderData);
+      
       const { data: order, error: orderError } = await supabase
         .from("orders")
-        .insert({
-          customer_id: customerId,
-          governorate_id: selectedGovernorate?.id || null,
-          total_amount: totalPrice,
-          shipping_cost: shippingCost,
-          status: "pending",
-          notes: formData.notes || null,
-        })
+        .insert([orderData])
         .select()
         .single();
 
-      if (orderError) throw orderError;
+      if (orderError) {
+        console.error("Order Error:", orderError);
+        throw orderError;
+      }
+
+      console.log("Order created successfully:", order);
 
       // 3. Create order items
       const orderItems = items.map((item) => ({
@@ -121,7 +143,10 @@ const Checkout = () => {
         .from("order_items")
         .insert(orderItems);
 
-      if (itemsError) throw itemsError;
+      if (itemsError) {
+        console.error("Items Error:", itemsError);
+        throw itemsError;
+      }
 
       // 4. Send WhatsApp message (optional)
       if (sendWhatsApp) {
@@ -134,7 +159,7 @@ const Checkout = () => {
 الاسم: ${formData.name}
 الهاتف: ${formData.phone}
 ${formData.phone2 ? `هاتف 2: ${formData.phone2}` : ''}
-المحافظة: ${selectedGovernorate?.name}
+المحافظة: ${selectedGovernorate.name}
 العنوان: ${formData.address}
 
 🛒 *المنتجات:*

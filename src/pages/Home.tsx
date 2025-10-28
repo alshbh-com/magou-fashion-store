@@ -96,7 +96,7 @@ const Home = () => {
         <div className="relative z-10 text-center px-4 max-w-4xl mx-auto animate-slide-up">
           <h1 className="text-5xl md:text-7xl font-display font-bold mb-6 text-foreground">
             مرحباً بكم في
-            <span className="block text-gradient-gold mt-2">Màgou Fashion</span>
+            <span className="block text-gradient-orange mt-2 animate-pulse-glow">Màgou Fashion</span>
           </h1>
           <p className="text-xl md:text-2xl text-foreground/90 mb-8">
             أناقة لا تُضاهى، جودة لا تُقاوم
@@ -108,7 +108,7 @@ const Home = () => {
       <section className="py-20 bg-background">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between mb-12">
-            <h2 className="text-3xl md:text-4xl font-display font-bold text-gradient-gold">
+            <h2 className="text-3xl md:text-4xl font-display font-bold text-gradient-orange">
               منتجاتنا المميزة
             </h2>
             <Link to="/products">
@@ -201,7 +201,7 @@ const Home = () => {
       {/* Features Section */}
       <section className="py-20 bg-card/50">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl md:text-4xl font-display font-bold text-center mb-12 text-gradient-gold">
+          <h2 className="text-3xl md:text-4xl font-display font-bold text-center mb-12 text-gradient-orange">
             لماذا تختارنا؟
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -225,7 +225,7 @@ const Home = () => {
       <section className="py-20">
         <div className="container mx-auto px-4">
           <div className="bg-gradient-to-r from-primary/20 to-accent/20 rounded-2xl p-12 text-center border border-primary/30">
-            <h2 className="text-3xl md:text-5xl font-display font-bold mb-6 text-gradient-gold">
+            <h2 className="text-3xl md:text-5xl font-display font-bold mb-6 text-gradient-orange">
               اكتشف مجموعتنا الكاملة
             </h2>
             <p className="text-xl text-foreground/80 mb-8 max-w-2xl mx-auto">
