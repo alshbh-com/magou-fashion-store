@@ -6,7 +6,6 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { ArrowLeft, Star, Truck, CreditCard, HeadphonesIcon, Heart, ShoppingCart, Package } from "lucide-react";
 import { toast } from "sonner";
 import { useCart } from "@/contexts/CartContext";
-import magouLogoBg from "@/assets/magou-logo-bg.png";
 
 interface Product {
   id: string;
@@ -107,25 +106,14 @@ const Home = () => {
   ];
 
   return (
-    <div 
-      className="animate-fade-in min-h-screen relative"
-      style={{
-        backgroundImage: `url(${magouLogoBg})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundAttachment: 'fixed',
-      }}
-    >
-      {/* Overlay for transparency */}
-      <div className="absolute inset-0 bg-background/90 backdrop-blur-sm"></div>
-      
+    <div className="animate-fade-in min-h-screen bg-white">
       {/* Content Container */}
-      <div className="relative z-10">
+      <div>
         {/* Categories Section */}
         {categories.length > 0 && (
-          <section className="py-20">
+          <section className="py-20 bg-gray-50">
             <div className="container mx-auto px-4">
-              <h2 className="text-3xl md:text-4xl font-display font-bold text-center mb-12 text-gradient-orange">
+              <h2 className="text-3xl md:text-4xl font-display font-bold text-center mb-12 bg-gradient-to-r from-primary to-orange-light bg-clip-text text-transparent">
                 الأقسام
               </h2>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -135,7 +123,7 @@ const Home = () => {
                     to={`/products?category=${category.id}`}
                     className="group"
                   >
-                    <Card className="overflow-hidden hover:shadow-[0_0_30px_hsl(24,100%,50%,0.3)] transition-all duration-300 hover-scale bg-card/80 backdrop-blur-sm border-2 border-border hover:border-primary">
+                    <Card className="overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-2 bg-white border-2 border-gray-200 hover:border-primary">
                       <div className="relative overflow-hidden aspect-square">
                         {category.image_url ? (
                           <img
@@ -144,15 +132,15 @@ const Home = () => {
                             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                           />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center bg-primary/10">
+                          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-orange-50 to-orange-100">
                             <Package className="h-16 w-16 text-primary" />
                           </div>
                         )}
                       </div>
                       <CardContent className="p-4 text-center">
-                        <h3 className="font-bold text-lg mb-1">{category.name}</h3>
+                        <h3 className="font-bold text-lg mb-1 text-black">{category.name}</h3>
                         {category.description && (
-                          <p className="text-muted-foreground text-sm line-clamp-2">
+                          <p className="text-gray-600 text-sm line-clamp-2">
                             {category.description}
                           </p>
                         )}
@@ -166,14 +154,14 @@ const Home = () => {
         )}
 
         {/* Products Section */}
-        <section className="py-20">
+        <section className="py-20 bg-white">
           <div className="container mx-auto px-4">
           <div className="flex items-center justify-between mb-12">
-            <h2 className="text-3xl md:text-4xl font-display font-bold text-gradient-orange">
+            <h2 className="text-3xl md:text-4xl font-display font-bold bg-gradient-to-r from-primary to-orange-light bg-clip-text text-transparent">
               منتجاتنا المميزة
             </h2>
             <Link to="/products">
-              <Button variant="outline" className="hover-glow">
+              <Button variant="outline" className="border-2 border-primary text-primary hover:bg-primary hover:text-white transition-colors">
                 عرض الكل
                 <ArrowLeft className="mr-2 h-4 w-4" />
               </Button>
@@ -190,10 +178,10 @@ const Home = () => {
                 const currentPrice = product.is_offer && product.offer_price ? product.offer_price : product.price;
                 
                 return (
-                  <Card key={product.id} className="group overflow-hidden hover:shadow-[0_0_30px_hsl(24,100%,50%,0.3)] transition-all duration-300 hover-scale bg-card/80 backdrop-blur-sm border-2 border-border hover:border-primary">
+                  <Card key={product.id} className="group overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-2 bg-white border-2 border-gray-200 hover:border-primary">
                     <div className="relative overflow-hidden aspect-square">
                       {product.is_offer && (
-                        <div className="absolute top-4 left-4 bg-primary text-primary-foreground px-3 py-1 rounded-full text-sm font-semibold z-10">
+                        <div className="absolute top-4 left-4 bg-gradient-to-r from-primary to-orange-light text-white px-3 py-1 rounded-full text-sm font-bold z-10 shadow-lg">
                           عرض خاص
                         </div>
                       )}
@@ -205,7 +193,7 @@ const Home = () => {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="absolute top-4 right-4 bg-background/80 hover:bg-background"
+                        className="absolute top-4 right-4 bg-white/90 hover:bg-white text-black shadow-md"
                         onClick={() => addToFavorites(product)}
                       >
                         <Heart className="h-5 w-5" />
@@ -213,8 +201,8 @@ const Home = () => {
                     </div>
                     
                     <CardContent className="p-4">
-                      <h3 className="font-semibold text-lg mb-2 line-clamp-1">{product.name}</h3>
-                      <p className="text-muted-foreground text-sm mb-3 line-clamp-2">
+                      <h3 className="font-bold text-lg mb-2 line-clamp-1 text-black">{product.name}</h3>
+                      <p className="text-gray-600 text-sm mb-3 line-clamp-2">
                         {product.description || "منتج عالي الجودة"}
                       </p>
                       <div className="flex items-center gap-2 mb-2">
@@ -226,7 +214,7 @@ const Home = () => {
                       </div>
                       <div className="flex items-center gap-2">
                         {product.is_offer && product.offer_price && (
-                          <span className="text-muted-foreground line-through text-sm">
+                          <span className="text-gray-400 line-through text-sm">
                             {product.price} جنيه
                           </span>
                         )}
@@ -238,7 +226,7 @@ const Home = () => {
 
                     <CardFooter className="p-4 pt-0">
                       <Button 
-                        className="w-full hover-glow" 
+                        className="w-full bg-gradient-to-r from-primary to-orange-light hover:from-orange-dark hover:to-primary text-white font-bold shadow-lg hover:shadow-xl transition-all" 
                         onClick={() => handleAddToCart(product)}
                         disabled={product.stock === 0}
                       >
@@ -260,22 +248,22 @@ const Home = () => {
         </section>
 
         {/* Features Section */}
-        <section className="py-20">
+        <section className="py-20 bg-gray-50">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl md:text-4xl font-display font-bold text-center mb-12 text-gradient-orange">
+          <h2 className="text-3xl md:text-4xl font-display font-bold text-center mb-12 bg-gradient-to-r from-primary to-orange-light bg-clip-text text-transparent">
             لماذا تختارنا؟
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {features.map((feature, index) => (
               <div
                 key={index}
-                className="text-center p-6 rounded-lg bg-card/80 backdrop-blur-sm hover:bg-secondary/80 transition-all duration-300 hover-scale border-2 border-border hover:border-primary"
+                className="text-center p-6 rounded-lg bg-white hover:shadow-xl transition-all duration-300 hover:-translate-y-2 border-2 border-gray-200 hover:border-primary"
               >
-                <div className="inline-flex p-4 rounded-full bg-primary/10 text-primary mb-4">
+                <div className="inline-flex p-4 rounded-full bg-gradient-to-br from-orange-50 to-orange-100 text-primary mb-4">
                   {feature.icon}
                 </div>
-                <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
-                <p className="text-muted-foreground">{feature.description}</p>
+                <h3 className="text-xl font-bold mb-2 text-black">{feature.title}</h3>
+                <p className="text-gray-600">{feature.description}</p>
               </div>
             ))}
           </div>
@@ -283,17 +271,17 @@ const Home = () => {
         </section>
 
         {/* CTA Section */}
-        <section className="py-20">
+        <section className="py-20 bg-white">
           <div className="container mx-auto px-4">
-            <div className="bg-gradient-to-r from-primary/20 to-accent/20 rounded-2xl p-12 text-center border-2 border-primary/50 backdrop-blur-sm bg-card/50">
-            <h2 className="text-3xl md:text-5xl font-display font-bold mb-6 text-gradient-orange">
+            <div className="bg-gradient-to-r from-primary to-orange-light rounded-2xl p-12 text-center shadow-2xl">
+            <h2 className="text-3xl md:text-5xl font-display font-bold mb-6 text-white">
               اكتشف مجموعتنا الكاملة
             </h2>
-            <p className="text-xl text-foreground/80 mb-8 max-w-2xl mx-auto">
+            <p className="text-xl text-white/90 mb-8 max-w-2xl mx-auto">
               أحدث صيحات الموضة بأفضل الأسعار
             </p>
             <Link to="/products">
-              <Button size="lg" variant="default" className="hover-scale hover-glow">
+              <Button size="lg" variant="secondary" className="bg-white text-primary hover:bg-gray-100 font-bold shadow-lg hover:shadow-xl transition-all hover:-translate-y-1">
                 عرض جميع المنتجات
                 <ArrowLeft className="mr-2 h-5 w-5" />
               </Button>
