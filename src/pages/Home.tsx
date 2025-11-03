@@ -57,15 +57,14 @@ const Home = () => {
   const fetchCategories = async () => {
     try {
       const { data, error } = await supabase
-        .from("categories")
+        .from("categories" as any)
         .select("id, name, description, image_url")
         .eq("is_active", true)
         .order("display_order", { ascending: true });
 
       if (error) throw error;
       
-      const categories = (data || []) as Category[];
-      setCategories(categories);
+      setCategories((data || []) as unknown as Category[]);
     } catch (error) {
       console.error("Error fetching categories:", error);
     }
