@@ -3,7 +3,6 @@ import { Link, useLocation } from "react-router-dom";
 import { ShoppingCart, Heart, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/contexts/CartContext";
-import magouLogo from "@/assets/magou-logo.png";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -21,16 +20,14 @@ const Header = () => {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-xl border-b border-primary/20 shadow-lg shadow-primary/10">
+    <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-md border-b border-border">
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-24">
+        <div className="flex items-center justify-between h-20">
           {/* Logo */}
-          <Link to="/" className="flex items-center group">
-            <img 
-              src={magouLogo} 
-              alt="Màgou Fashion Logo" 
-              className="h-16 w-auto logo-glow animate-slide-in"
-            />
+          <Link to="/" className="flex items-center space-x-2 space-x-reverse">
+            <h1 className="text-2xl md:text-3xl font-display font-bold text-gradient-gold">
+              Màgou Fashion
+            </h1>
           </Link>
 
           {/* Desktop Navigation */}
@@ -39,30 +36,30 @@ const Header = () => {
               <Link
                 key={link.path}
                 to={link.path}
-                className={`relative text-base font-semibold transition-all duration-300 hover:text-primary ${
-                  isActive(link.path) ? "text-primary" : "text-foreground"
+                className={`relative text-sm font-medium transition-colors hover:text-primary ${
+                  isActive(link.path) ? "text-primary" : "text-foreground/80"
                 }`}
               >
                 {link.name}
                 {isActive(link.path) && (
-                  <span className="absolute -bottom-2 left-0 w-full h-1 bg-gradient-to-r from-primary to-accent rounded-full shadow-elegant" />
+                  <span className="absolute -bottom-1 left-0 w-full h-0.5 bg-primary" />
                 )}
               </Link>
             ))}
           </nav>
 
           {/* Icons */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             <Link to="/favorites">
-              <Button variant="ghost" size="icon" className="hover-glow hover:bg-primary/10 transition-all">
-                <Heart className="h-6 w-6" />
+              <Button variant="ghost" size="icon" className="hover-glow">
+                <Heart className="h-5 w-5" />
               </Button>
             </Link>
             <Link to="/cart">
-              <Button variant="ghost" size="icon" className="hover-glow hover:bg-primary/10 relative transition-all">
-                <ShoppingCart className="h-6 w-6" />
+              <Button variant="ghost" size="icon" className="hover-glow relative">
+                <ShoppingCart className="h-5 w-5" />
                 {totalItems > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-gradient-to-r from-primary to-accent text-primary-foreground text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center shadow-orange-glow animate-pulse-glow">
+                  <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center">
                     {totalItems}
                   </span>
                 )}
