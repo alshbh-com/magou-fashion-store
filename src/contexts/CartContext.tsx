@@ -81,20 +81,24 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     setItems((prev) =>
       prev.map((item) => {
         if (item.id === id && item.color === color && item.size === size) {
-          // بناء الملاحظة الجديدة
+          // استخدام القيم الجديدة أو الاحتفاظ بالقيم الحالية
+          const finalColor = newColor !== undefined ? newColor : item.color;
+          const finalSize = newSize !== undefined ? newSize : item.size;
+          
+          // بناء الملاحظة بناءً على القيم النهائية
           let notes = "";
-          if (newColor && newSize) {
-            notes = `اللون ${newColor} والمقاس ${newSize}`;
-          } else if (newColor) {
-            notes = `اللون ${newColor}`;
-          } else if (newSize) {
-            notes = `المقاس ${newSize}`;
+          if (finalColor && finalSize) {
+            notes = `اللون ${finalColor} والمقاس ${finalSize}`;
+          } else if (finalColor) {
+            notes = `اللون ${finalColor}`;
+          } else if (finalSize) {
+            notes = `المقاس ${finalSize}`;
           }
           
           return { 
             ...item, 
-            color: newColor, 
-            size: newSize,
+            color: finalColor, 
+            size: finalSize,
             notes
           };
         }
