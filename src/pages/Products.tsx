@@ -112,6 +112,8 @@ const Products = () => {
       color,
       size,
       notes,
+      color_options: product.color_options || [],
+      size_options: product.size_options || [],
     });
   };
 

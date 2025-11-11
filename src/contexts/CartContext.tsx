@@ -10,6 +10,8 @@ interface CartItem {
   size?: string;
   color?: string;
   notes?: string;
+  color_options?: string[];
+  size_options?: string[];
 }
 
 interface CartContextType {
@@ -17,6 +19,7 @@ interface CartContextType {
   addToCart: (item: Omit<CartItem, "quantity">) => void;
   removeFromCart: (id: string, color?: string, size?: string) => void;
   updateQuantity: (id: string, quantity: number, color?: string, size?: string) => void;
+  updateItemOptions: (id: string, color?: string, size?: string, newColor?: string, newSize?: string) => void;
   clearCart: () => void;
   totalItems: number;
   totalPrice: number;
@@ -74,6 +77,32 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     );
   };
 
+  const updateItemOptions = (id: string, color?: string, size?: string, newColor?: string, newSize?: string) => {
+    setItems((prev) =>
+      prev.map((item) => {
+        if (item.id === id && item.color === color && item.size === size) {
+          // بناء الملاحظة الجديدة
+          let notes = "";
+          if (newColor && newSize) {
+            notes = `اللون ${newColor} والمقاس ${newSize}`;
+          } else if (newColor) {
+            notes = `اللون ${newColor}`;
+          } else if (newSize) {
+            notes = `المقاس ${newSize}`;
+          }
+          
+          return { 
+            ...item, 
+            color: newColor, 
+            size: newSize,
+            notes
+          };
+        }
+        return item;
+      })
+    );
+  };
+
   const clearCart = () => {
     setItems([]);
     localStorage.removeItem("cart");
@@ -89,6 +118,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         addToCart,
         removeFromCart,
         updateQuantity,
+        updateItemOptions,
         clearCart,
         totalItems,
         totalPrice,

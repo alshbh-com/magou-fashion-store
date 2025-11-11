@@ -1,11 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ShoppingBag, Trash2, Plus, Minus } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useCart } from "@/contexts/CartContext";
 
 const Cart = () => {
-  const { items, removeFromCart, updateQuantity, totalPrice } = useCart();
+  const { items, removeFromCart, updateQuantity, updateItemOptions, totalPrice } = useCart();
 
   if (items.length === 0) {
     return (
@@ -57,6 +58,41 @@ const Cart = () => {
                     </p>
                   )}
                   <p className="text-primary font-bold mb-3">{item.price} جنيه</p>
+                  
+                  {/* Color and Size Selection */}
+                  <div className="space-y-2 mb-3">
+                    {item.color_options && item.color_options.length > 0 && (
+                      <Select 
+                        value={item.color} 
+                        onValueChange={(value) => updateItemOptions(item.id, item.color, item.size, value, item.size)}
+                      >
+                        <SelectTrigger className="w-full h-8 text-sm">
+                          <SelectValue placeholder="اختر اللون" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {item.color_options.map((color) => (
+                            <SelectItem key={color} value={color}>{color}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                    
+                    {item.size_options && item.size_options.length > 0 && (
+                      <Select 
+                        value={item.size} 
+                        onValueChange={(value) => updateItemOptions(item.id, item.color, item.size, item.color, value)}
+                      >
+                        <SelectTrigger className="w-full h-8 text-sm">
+                          <SelectValue placeholder="اختر المقاس" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {item.size_options.map((size) => (
+                            <SelectItem key={size} value={size}>{size}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </div>
                   
                   <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2 bg-secondary rounded-lg p-1">
