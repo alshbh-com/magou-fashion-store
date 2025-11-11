@@ -1,12 +1,30 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ShoppingBag, Trash2, Plus, Minus } from "lucide-react";
-import { Link } from "react-router-dom";
+import { ShoppingBag, Trash2, Plus, Minus, AlertCircle } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "@/contexts/CartContext";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { toast } from "sonner";
 
 const Cart = () => {
   const { items, removeFromCart, updateQuantity, updateItemOptions, totalPrice } = useCart();
+  const navigate = useNavigate();
+
+  // Check if all items with options have selections
+  const hasIncompleteSelections = items.some(item => 
+    (item.color_options && item.color_options.length > 0 && !item.color) ||
+    (item.size_options && item.size_options.length > 0 && !item.size)
+  );
+
+  const handleCheckout = (e: React.MouseEvent) => {
+    if (hasIncompleteSelections) {
+      e.preventDefault();
+      toast.error("يرجى اختيار اللون والمقاس لجميع المنتجات");
+      return;
+    }
+    navigate("/checkout");
+  };
 
   if (items.length === 0) {
     return (
@@ -60,37 +78,49 @@ const Cart = () => {
                   <p className="text-primary font-bold mb-3">{item.price} جنيه</p>
                   
                   {/* Color and Size Selection */}
-                  <div className="space-y-2 mb-3">
+                  <div className="space-y-3 mb-4 p-3 bg-secondary/50 rounded-lg border border-border">
                     {item.color_options && item.color_options.length > 0 && (
-                      <Select 
-                        value={item.color} 
-                        onValueChange={(value) => updateItemOptions(item.id, item.color, item.size, value, item.size)}
-                      >
-                        <SelectTrigger className="w-full h-8 text-sm">
-                          <SelectValue placeholder="اختر اللون" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {item.color_options.map((color) => (
-                            <SelectItem key={color} value={color}>{color}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <div className="space-y-1">
+                        <label className="text-sm font-semibold flex items-center gap-1">
+                          اللون
+                          {!item.color && <span className="text-destructive">*</span>}
+                        </label>
+                        <Select 
+                          value={item.color || ""} 
+                          onValueChange={(value) => updateItemOptions(item.id, item.color, item.size, value, item.size)}
+                        >
+                          <SelectTrigger className={`w-full h-10 ${!item.color ? 'border-destructive' : ''}`}>
+                            <SelectValue placeholder="اختر اللون" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {item.color_options.map((color) => (
+                              <SelectItem key={color} value={color}>{color}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                     )}
                     
                     {item.size_options && item.size_options.length > 0 && (
-                      <Select 
-                        value={item.size} 
-                        onValueChange={(value) => updateItemOptions(item.id, item.color, item.size, item.color, value)}
-                      >
-                        <SelectTrigger className="w-full h-8 text-sm">
-                          <SelectValue placeholder="اختر المقاس" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {item.size_options.map((size) => (
-                            <SelectItem key={size} value={size}>{size}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <div className="space-y-1">
+                        <label className="text-sm font-semibold flex items-center gap-1">
+                          المقاس
+                          {!item.size && <span className="text-destructive">*</span>}
+                        </label>
+                        <Select 
+                          value={item.size || ""} 
+                          onValueChange={(value) => updateItemOptions(item.id, item.color, item.size, item.color, value)}
+                        >
+                          <SelectTrigger className={`w-full h-10 ${!item.size ? 'border-destructive' : ''}`}>
+                            <SelectValue placeholder="اختر المقاس" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {item.size_options.map((size) => (
+                              <SelectItem key={size} value={size}>{size}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                     )}
                   </div>
                   
@@ -141,6 +171,15 @@ const Cart = () => {
           <Card className="p-6 sticky top-24">
             <h2 className="text-2xl font-bold mb-6 text-gradient-gold">ملخص الطلب</h2>
             
+            {hasIncompleteSelections && (
+              <Alert className="mb-4 border-destructive/50 bg-destructive/10">
+                <AlertCircle className="h-4 w-4 text-destructive" />
+                <AlertDescription className="text-destructive text-sm">
+                  يرجى اختيار اللون والمقاس لجميع المنتجات قبل إتمام الطلب
+                </AlertDescription>
+              </Alert>
+            )}
+            
             <div className="space-y-4 mb-6">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">المجموع الفرعي</span>
@@ -161,11 +200,14 @@ const Cart = () => {
               </div>
             </div>
 
-            <Link to="/checkout">
-              <Button className="w-full hover-glow" size="lg">
-                إتمام الطلب
-              </Button>
-            </Link>
+            <Button 
+              className="w-full hover-glow" 
+              size="lg"
+              onClick={handleCheckout}
+              disabled={hasIncompleteSelections}
+            >
+              إتمام الطلب
+            </Button>
             
             <Link to="/products">
               <Button variant="outline" className="w-full mt-3">
