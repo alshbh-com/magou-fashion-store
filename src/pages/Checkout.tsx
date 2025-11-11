@@ -37,6 +37,16 @@ const Checkout = () => {
       navigate("/cart");
     }
     fetchGovernorates();
+    
+    // تجميع الملاحظات من المنتجات
+    const combinedNotes = items
+      .filter(item => item.notes)
+      .map(item => `${item.name}: ${item.notes}`)
+      .join('\n');
+    
+    if (combinedNotes) {
+      setFormData(prev => ({ ...prev, notes: combinedNotes }));
+    }
   }, [items, navigate]);
 
   const fetchGovernorates = async () => {
@@ -318,8 +328,8 @@ ${formData.notes ? `📝 ملاحظات: ${formData.notes}` : ''}
             <h2 className="text-2xl font-bold mb-6 text-gradient-gold">ملخص الطلب</h2>
             
             <div className="space-y-3 mb-6 max-h-60 overflow-y-auto">
-              {items.map((item) => (
-                <div key={item.id} className="flex gap-3">
+              {items.map((item, index) => (
+                <div key={`${item.id}-${item.color}-${item.size}-${index}`} className="flex gap-3">
                   <img
                     src={item.image_url || "/placeholder.svg"}
                     alt={item.name}
@@ -327,6 +337,9 @@ ${formData.notes ? `📝 ملاحظات: ${formData.notes}` : ''}
                   />
                   <div className="flex-1">
                     <p className="font-semibold text-sm line-clamp-1">{item.name}</p>
+                    {item.notes && (
+                      <p className="text-xs text-muted-foreground">{item.notes}</p>
+                    )}
                     <p className="text-sm text-muted-foreground">
                       {item.quantity} × {item.price} جنيه
                     </p>

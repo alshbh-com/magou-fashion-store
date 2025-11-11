@@ -17,6 +17,8 @@ interface Product {
   image_url: string | null;
   description: string | null;
   stock: number;
+  color_options: string[] | null;
+  size_options: string[] | null;
 }
 
 const Products = () => {
@@ -25,6 +27,7 @@ const Products = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("default");
   const [loading, setLoading] = useState(true);
+  const [selectedOptions, setSelectedOptions] = useState<{[key: string]: {color?: string, size?: string}}>({});
   const { addToCart } = useCart();
 
   useEffect(() => {
@@ -87,12 +90,43 @@ const Products = () => {
   };
 
   const handleAddToCart = (product: Product) => {
+    const options = selectedOptions[product.id] || {};
+    const color = options.color;
+    const size = options.size;
+    
+    // بناء الملاحظة
+    let notes = "";
+    if (color && size) {
+      notes = `اللون ${color} والمقاس ${size}`;
+    } else if (color) {
+      notes = `اللون ${color}`;
+    } else if (size) {
+      notes = `المقاس ${size}`;
+    }
+    
     addToCart({
       id: product.id,
       name: product.name,
       price: product.is_offer && product.offer_price ? product.offer_price : product.price,
       image_url: product.image_url,
+      color,
+      size,
+      notes,
     });
+  };
+
+  const handleColorChange = (productId: string, color: string) => {
+    setSelectedOptions(prev => ({
+      ...prev,
+      [productId]: { ...prev[productId], color }
+    }));
+  };
+
+  const handleSizeChange = (productId: string, size: string) => {
+    setSelectedOptions(prev => ({
+      ...prev,
+      [productId]: { ...prev[productId], size }
+    }));
   };
 
   const addToFavorites = (product: Product) => {
@@ -177,6 +211,42 @@ const Products = () => {
                     ))}
                   </div>
                 </div>
+                
+                {/* Color and Size Selection */}
+                <div className="space-y-2 mb-3">
+                  {product.color_options && product.color_options.length > 0 && (
+                    <Select 
+                      value={selectedOptions[product.id]?.color} 
+                      onValueChange={(value) => handleColorChange(product.id, value)}
+                    >
+                      <SelectTrigger className="w-full h-8 text-sm">
+                        <SelectValue placeholder="اختر اللون" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {product.color_options.map((color) => (
+                          <SelectItem key={color} value={color}>{color}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                  
+                  {product.size_options && product.size_options.length > 0 && (
+                    <Select 
+                      value={selectedOptions[product.id]?.size} 
+                      onValueChange={(value) => handleSizeChange(product.id, value)}
+                    >
+                      <SelectTrigger className="w-full h-8 text-sm">
+                        <SelectValue placeholder="اختر المقاس" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {product.size_options.map((size) => (
+                          <SelectItem key={size} value={size}>{size}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                </div>
+                
                 <div className="flex items-center gap-2">
                   {product.is_offer && product.offer_price && (
                     <span className="text-muted-foreground line-through text-sm">

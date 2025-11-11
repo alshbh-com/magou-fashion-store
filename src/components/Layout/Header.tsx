@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { ShoppingCart, Heart, Menu, X } from "lucide-react";
+import { ShoppingCart, Heart, Menu, X, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/contexts/CartContext";
 import magouLogo from "@/assets/magou-logo-bg.png";
+import AdminLoginDialog from "@/components/AdminLoginDialog";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isAdminDialogOpen, setIsAdminDialogOpen] = useState(false);
   const location = useLocation();
   const { totalItems } = useCart();
 
@@ -56,6 +58,14 @@ const Header = () => {
 
           {/* Icons */}
           <div className="flex items-center gap-4">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="hover:bg-gray-100 text-black"
+              onClick={() => setIsAdminDialogOpen(true)}
+            >
+              <Lock className="h-5 w-5" />
+            </Button>
             <Link to="/favorites">
               <Button variant="ghost" size="icon" className="hover:bg-gray-100 text-black">
                 <Heart className="h-5 w-5" />
@@ -82,6 +92,8 @@ const Header = () => {
               {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </Button>
           </div>
+          
+          <AdminLoginDialog open={isAdminDialogOpen} onOpenChange={setIsAdminDialogOpen} />
         </div>
 
         {/* Mobile Menu */}

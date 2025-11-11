@@ -41,8 +41,8 @@ const Cart = () => {
       <div className="max-w-6xl mx-auto grid lg:grid-cols-3 gap-8">
         {/* Cart Items */}
         <div className="lg:col-span-2 space-y-4">
-          {items.map((item) => (
-            <Card key={item.id} className="p-4">
+          {items.map((item, index) => (
+            <Card key={`${item.id}-${item.color}-${item.size}-${index}`} className="p-4">
               <div className="flex gap-4">
                 <img
                   src={item.image_url || "/placeholder.svg"}
@@ -50,7 +50,12 @@ const Cart = () => {
                   className="w-24 h-24 object-cover rounded-lg"
                 />
                 <div className="flex-1">
-                  <h3 className="font-semibold text-lg mb-2">{item.name}</h3>
+                  <h3 className="font-semibold text-lg mb-1">{item.name}</h3>
+                  {item.notes && (
+                    <p className="text-sm text-muted-foreground mb-2">
+                      {item.notes}
+                    </p>
+                  )}
                   <p className="text-primary font-bold mb-3">{item.price} جنيه</p>
                   
                   <div className="flex items-center gap-4">
@@ -59,7 +64,7 @@ const Cart = () => {
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8"
-                        onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                        onClick={() => updateQuantity(item.id, item.quantity - 1, item.color, item.size)}
                       >
                         <Minus className="h-4 w-4" />
                       </Button>
@@ -68,7 +73,7 @@ const Cart = () => {
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8"
-                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                        onClick={() => updateQuantity(item.id, item.quantity + 1, item.color, item.size)}
                       >
                         <Plus className="h-4 w-4" />
                       </Button>
@@ -78,7 +83,7 @@ const Cart = () => {
                       variant="ghost"
                       size="icon"
                       className="text-destructive hover:text-destructive"
-                      onClick={() => removeFromCart(item.id)}
+                      onClick={() => removeFromCart(item.id, item.color, item.size)}
                     >
                       <Trash2 className="h-5 w-5" />
                     </Button>

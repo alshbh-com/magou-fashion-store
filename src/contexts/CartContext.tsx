@@ -9,13 +9,14 @@ interface CartItem {
   quantity: number;
   size?: string;
   color?: string;
+  notes?: string;
 }
 
 interface CartContextType {
   items: CartItem[];
   addToCart: (item: Omit<CartItem, "quantity">) => void;
-  removeFromCart: (id: string) => void;
-  updateQuantity: (id: string, quantity: number) => void;
+  removeFromCart: (id: string, color?: string, size?: string) => void;
+  updateQuantity: (id: string, quantity: number, color?: string, size?: string) => void;
   clearCart: () => void;
   totalItems: number;
   totalPrice: number;
@@ -35,10 +36,16 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   const addToCart = (item: Omit<CartItem, "quantity">) => {
     setItems((prev) => {
-      const existing = prev.find((i) => i.id === item.id);
+      const existing = prev.find((i) => 
+        i.id === item.id && 
+        i.color === item.color && 
+        i.size === item.size
+      );
       if (existing) {
         return prev.map((i) =>
-          i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i
+          i.id === item.id && i.color === item.color && i.size === item.size
+            ? { ...i, quantity: i.quantity + 1 }
+            : i
         );
       }
       return [...prev, { ...item, quantity: 1 }];
@@ -46,18 +53,24 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     toast.success(`تم إضافة ${item.name} إلى السلة`);
   };
 
-  const removeFromCart = (id: string) => {
-    setItems((prev) => prev.filter((item) => item.id !== id));
+  const removeFromCart = (id: string, color?: string, size?: string) => {
+    setItems((prev) => prev.filter((item) => 
+      !(item.id === id && item.color === color && item.size === size)
+    ));
     toast.success("تم حذف المنتج من السلة");
   };
 
-  const updateQuantity = (id: string, quantity: number) => {
+  const updateQuantity = (id: string, quantity: number, color?: string, size?: string) => {
     if (quantity <= 0) {
-      removeFromCart(id);
+      removeFromCart(id, color, size);
       return;
     }
     setItems((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, quantity } : item))
+      prev.map((item) => 
+        (item.id === id && item.color === color && item.size === size) 
+          ? { ...item, quantity } 
+          : item
+      )
     );
   };
 
