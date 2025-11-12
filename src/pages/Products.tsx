@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,24 +20,49 @@ interface Product {
   stock: number;
   color_options: string[] | null;
   size_options: string[] | null;
+  category_id: string | null;
+}
+
+interface Category {
+  id: string;
+  name: string;
 }
 
 const Products = () => {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>(searchParams.get("category") || "all");
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("default");
   const [loading, setLoading] = useState(true);
-  const [selectedOptions, setSelectedOptions] = useState<{[key: string]: {color?: string, size?: string}}>({});
   const { addToCart } = useCart();
 
   useEffect(() => {
     fetchProducts();
+    fetchCategories();
   }, []);
 
   useEffect(() => {
     filterAndSortProducts();
-  }, [products, searchQuery, sortBy]);
+  }, [products, searchQuery, sortBy, selectedCategory]);
+
+  const fetchCategories = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("categories")
+        .select("id, name")
+        .eq("is_active", true)
+        .order("display_order");
+
+      if (error) throw error;
+      setCategories(data || []);
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+    }
+  };
 
   const fetchProducts = async () => {
     try {
@@ -57,6 +83,11 @@ const Products = () => {
 
   const filterAndSortProducts = () => {
     let filtered = [...products];
+
+    // Filter by category
+    if (selectedCategory !== "all") {
+      filtered = filtered.filter((product) => product.category_id === selectedCategory);
+    }
 
     // Filter by search
     if (searchQuery) {
@@ -89,51 +120,10 @@ const Products = () => {
     setFilteredProducts(filtered);
   };
 
-  const handleAddToCart = (product: Product) => {
-    const options = selectedOptions[product.id] || {};
-    const color = options.color;
-    const size = options.size;
-    
-    // بناء الملاحظة
-    let notes = "";
-    if (color && size) {
-      notes = `اللون ${color} والمقاس ${size}`;
-    } else if (color) {
-      notes = `اللون ${color}`;
-    } else if (size) {
-      notes = `المقاس ${size}`;
-    }
-    
-    addToCart({
-      id: product.id,
-      name: product.name,
-      price: product.is_offer && product.offer_price ? product.offer_price : product.price,
-      image_url: product.image_url,
-      color,
-      size,
-      notes,
-      color_options: product.color_options || [],
-      size_options: product.size_options || [],
-    });
-  };
-
-  const handleColorChange = (productId: string, color: string) => {
-    setSelectedOptions(prev => ({
-      ...prev,
-      [productId]: { ...prev[productId], color }
-    }));
-  };
-
-  const handleSizeChange = (productId: string, size: string) => {
-    setSelectedOptions(prev => ({
-      ...prev,
-      [productId]: { ...prev[productId], size }
-    }));
-  };
-
   const addToFavorites = (product: Product) => {
     toast.success(`تم إضافة ${product.name} إلى المفضلة`);
   };
+
 
   if (loading) {
     return (
@@ -160,6 +150,19 @@ const Products = () => {
             className="pr-10"
           />
         </div>
+        <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+          <SelectTrigger className="w-full md:w-[200px]">
+            <SelectValue placeholder="القسم" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">جميع الأقسام</SelectItem>
+            {categories.map((category) => (
+              <SelectItem key={category.id} value={category.id}>
+                {category.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <Select value={sortBy} onValueChange={setSortBy}>
           <SelectTrigger className="w-full md:w-[200px]">
             <SelectValue placeholder="ترتيب حسب" />
@@ -179,7 +182,11 @@ const Products = () => {
           const currentPrice = product.is_offer && product.offer_price ? product.offer_price : product.price;
           
           return (
-            <Card key={product.id} className="group overflow-hidden hover:shadow-[0_0_30px_hsl(45,95%,55%,0.2)] transition-all duration-300 hover-scale">
+            <Card 
+              key={product.id} 
+              className="group overflow-hidden hover:shadow-[0_0_30px_hsl(45,95%,55%,0.2)] transition-all duration-300 hover-scale cursor-pointer"
+              onClick={() => navigate(`/products/${product.id}`)}
+            >
               <div className="relative overflow-hidden aspect-square">
                 {product.is_offer && (
                   <div className="absolute top-4 left-4 bg-primary text-primary-foreground px-3 py-1 rounded-full text-sm font-semibold z-10">
@@ -195,7 +202,10 @@ const Products = () => {
                   variant="ghost"
                   size="icon"
                   className="absolute top-4 right-4 bg-background/80 hover:bg-background"
-                  onClick={() => addToFavorites(product)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    addToFavorites(product);
+                  }}
                 >
                   <Heart className="h-5 w-5" />
                 </Button>
@@ -214,41 +224,6 @@ const Products = () => {
                   </div>
                 </div>
                 
-                {/* Color and Size Selection */}
-                <div className="space-y-2 mb-3">
-                  {product.color_options && product.color_options.length > 0 && (
-                    <Select 
-                      value={selectedOptions[product.id]?.color} 
-                      onValueChange={(value) => handleColorChange(product.id, value)}
-                    >
-                      <SelectTrigger className="w-full h-8 text-sm">
-                        <SelectValue placeholder="اختر اللون" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {product.color_options.map((color) => (
-                          <SelectItem key={color} value={color}>{color}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                  
-                  {product.size_options && product.size_options.length > 0 && (
-                    <Select 
-                      value={selectedOptions[product.id]?.size} 
-                      onValueChange={(value) => handleSizeChange(product.id, value)}
-                    >
-                      <SelectTrigger className="w-full h-8 text-sm">
-                        <SelectValue placeholder="اختر المقاس" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {product.size_options.map((size) => (
-                          <SelectItem key={size} value={size}>{size}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                </div>
-                
                 <div className="flex items-center gap-2">
                   {product.is_offer && product.offer_price && (
                     <span className="text-muted-foreground line-through text-sm">
@@ -264,11 +239,12 @@ const Products = () => {
               <CardFooter className="p-4 pt-0">
                 <Button 
                   className="w-full hover-glow" 
-                  onClick={() => handleAddToCart(product)}
-                  disabled={product.stock === 0}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/products/${product.id}`);
+                  }}
                 >
-                  <ShoppingCart className="ml-2 h-4 w-4" />
-                  {product.stock === 0 ? "نفذت الكمية" : "أضف إلى السلة"}
+                  عرض التفاصيل
                 </Button>
               </CardFooter>
             </Card>

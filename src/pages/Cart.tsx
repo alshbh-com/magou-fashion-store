@@ -61,7 +61,7 @@ const Cart = () => {
         {/* Cart Items */}
         <div className="lg:col-span-2 space-y-4">
           {items.map((item, index) => (
-            <Card key={`${item.id}-${item.color}-${item.size}-${index}`} className="p-4">
+            <Card key={`${item.id}-${item.color}-${item.size}-${index}`} className="p-4 bg-cart-rose">
               <div className="flex gap-4">
                 <img
                   src={item.image_url || "/placeholder.svg"}
@@ -71,7 +71,7 @@ const Cart = () => {
                 <div className="flex-1">
                   <h3 className="font-semibold text-lg mb-1">{item.name}</h3>
                   {item.notes && (
-                    <p className="text-sm text-muted-foreground mb-2">
+                    <p className="text-sm text-muted-foreground mb-2 font-semibold">
                       {item.notes}
                     </p>
                   )}

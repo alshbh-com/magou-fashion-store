@@ -6,6 +6,7 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { ArrowLeft, Star, Truck, CreditCard, HeadphonesIcon, Heart, ShoppingCart, Package } from "lucide-react";
 import { toast } from "sonner";
 import { useCart } from "@/contexts/CartContext";
+import BannersSection from "@/components/BannersSection";
 
 interface Product {
   id: string;
@@ -109,6 +110,9 @@ const Home = () => {
     <div className="animate-fade-in min-h-screen bg-white">
       {/* Content Container */}
       <div>
+        {/* Banners Section */}
+        <BannersSection />
+
         {/* Categories Section */}
         {categories.length > 0 && (
           <section className="py-20 bg-gray-50">

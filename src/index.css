@@ -17,16 +17,16 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 0%;
 
-    --primary: 24 100% 50%;
+    --primary: 340 100% 64%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 0 0% 15%;
-    --secondary-foreground: 0 0% 100%;
+    --secondary: 0 0% 0%;
+    --secondary-foreground: 340 100% 64%;
 
     --muted: 0 0% 96%;
     --muted-foreground: 0 0% 45%;
 
-    --accent: 24 100% 50%;
+    --accent: 340 100% 64%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
@@ -34,28 +34,28 @@ All colors MUST be HSL.
 
     --border: 0 0% 90%;
     --input: 0 0% 90%;
-    --ring: 24 100% 50%;
+    --ring: 340 100% 64%;
 
     --radius: 0.75rem;
 
-    /* Custom design tokens - White, Black & Orange Theme */
+    /* Custom design tokens - Rose, Black & White Theme */
     --white: 0 0% 100%;
     --black: 0 0% 0%;
-    --orange: 24 100% 50%;
-    --orange-light: 27 100% 60%;
-    --orange-dark: 20 100% 40%;
+    --rose: 340 100% 64%;
+    --rose-light: 340 82% 75%;
+    --rose-dark: 340 100% 50%;
     --gray-light: 0 0% 96%;
     --gray-dark: 0 0% 15%;
     
     /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(24 100% 50%) 0%, hsl(27 100% 60%) 100%);
+    --gradient-primary: linear-gradient(135deg, hsl(340 100% 64%) 0%, hsl(340 82% 75%) 100%);
     --gradient-hero: linear-gradient(135deg, hsl(0 0% 100%) 0%, hsl(0 0% 96%) 100%);
     --gradient-card: linear-gradient(145deg, hsl(0 0% 100%) 0%, hsl(0 0% 98%) 100%);
     
     /* Shadows */
-    --shadow-orange: 0 10px 40px hsl(24 100% 50% / 0.3);
+    --shadow-rose: 0 10px 40px hsl(340 100% 64% / 0.3);
     --shadow-card: 0 4px 20px hsl(0 0% 0% / 0.08);
-    --shadow-elegant: 0 6px 24px hsl(24 100% 50% / 0.15);
+    --shadow-elegant: 0 6px 24px hsl(340 100% 64% / 0.15);
     
     /* Transitions */
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -72,7 +72,7 @@ All colors MUST be HSL.
     --popover: 0 0% 5%;
     --popover-foreground: 0 0% 100%;
 
-    --primary: 24 100% 50%;
+    --primary: 340 100% 64%;
     --primary-foreground: 0 0% 0%;
 
     --secondary: 0 0% 15%;
@@ -81,7 +81,7 @@ All colors MUST be HSL.
     --muted: 0 0% 15%;
     --muted-foreground: 0 0% 65%;
 
-    --accent: 24 100% 50%;
+    --accent: 340 100% 64%;
     --accent-foreground: 0 0% 0%;
 
     --destructive: 0 62.8% 30.6%;
@@ -89,7 +89,7 @@ All colors MUST be HSL.
 
     --border: 0 0% 20%;
     --input: 0 0% 20%;
-    --ring: 24 100% 50%;
+    --ring: 340 100% 64%;
   }
 }
 
@@ -104,8 +104,15 @@ All colors MUST be HSL.
 }
 
 @layer utilities {
-  .text-gradient-orange {
+  .text-gradient-rose {
     background: linear-gradient(to right, hsl(var(--primary)), hsl(var(--accent)));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  .text-gradient-gold {
+    background: linear-gradient(to right, hsl(var(--rose)), hsl(var(--black)));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -116,7 +123,7 @@ All colors MUST be HSL.
   }
   
   .hover-glow {
-    @apply transition-all duration-500 hover:shadow-[0_10px_40px_hsl(24,100%,50%,0.5)];
+    @apply transition-all duration-500 hover:shadow-[0_10px_40px_hsl(340,100%,64%,0.5)];
   }
 
   .card-gradient {
@@ -137,6 +144,18 @@ All colors MUST be HSL.
 
   .animate-pulse-glow {
     animation: pulseGlow 3s ease-in-out infinite;
+  }
+
+  .bg-cart-rose {
+    background-color: hsl(340 82% 90%);
+  }
+
+  .bg-cart-white {
+    background-color: hsl(0 0% 100%);
+  }
+
+  .bg-cart-black {
+    background-color: hsl(0 0% 15%);
   }
 
   @keyframes fadeIn {
@@ -170,10 +189,10 @@ All colors MUST be HSL.
 
   @keyframes pulseGlow {
     0%, 100% {
-      box-shadow: 0 0 20px hsl(24 100% 50% / 0.3);
+      box-shadow: 0 0 20px hsl(340 100% 64% / 0.3);
     }
     50% {
-      box-shadow: 0 0 40px hsl(24 100% 50% / 0.6);
+      box-shadow: 0 0 40px hsl(340 100% 64% / 0.6);
     }
   }
 }

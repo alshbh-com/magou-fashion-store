@@ -158,38 +158,9 @@ const Checkout = () => {
         throw itemsError;
       }
 
-      // 4. Send WhatsApp message (optional)
-      if (sendWhatsApp) {
-        const whatsappMessage = `
-🛍️ *طلب جديد من Màgou Fashion*
-
-📋 *رقم الطلب للتأكيد:* #${order.order_number || order.id}
-
-👤 *بيانات العميل:*
-الاسم: ${formData.name}
-الهاتف: ${formData.phone}
-${formData.phone2 ? `هاتف 2: ${formData.phone2}` : ''}
-المحافظة: ${selectedGovernorate.name}
-العنوان: ${formData.address}
-
-🛒 *المنتجات:*
-${items.map((item) => `- ${item.name} x ${item.quantity} = ${(item.price * item.quantity).toFixed(2)} جنيه`).join('\n')}
-
-💰 *الملخص المالي:*
-المجموع الفرعي: ${totalPrice.toFixed(2)} جنيه
-الشحن: ${shippingCost.toFixed(2)} جنيه
-الإجمالي: ${(totalPrice + shippingCost).toFixed(2)} جنيه
-
-${formData.notes ? `📝 ملاحظات: ${formData.notes}` : ''}
-        `.trim();
-
-        const whatsappUrl = `https://wa.me/201095317035?text=${encodeURIComponent(whatsappMessage)}`;
-        window.open(whatsappUrl, "_blank");
-      }
-
-      // Clear cart and redirect
+      // 4. Show success message
       clearCart();
-      toast.success(sendWhatsApp ? "تم إرسال طلبك بنجاح!" : "تم حفظ طلبك بنجاح!");
+      toast.success("شكراً لشرائك من magoufashion! لقد اخترت شيئاً جميلاً 🎉");
       navigate("/");
     } catch (error) {
       console.error("Error creating order:", error);
@@ -227,14 +198,20 @@ ${formData.notes ? `📝 ملاحظات: ${formData.notes}` : ''}
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="phone">رقم الهاتف *</Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    required
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    placeholder="01xxxxxxxxx"
-                  />
+                  <div className="relative">
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">
+                      2
+                    </span>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      required
+                      value={formData.phone}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      placeholder="01xxxxxxxxx"
+                      className="pr-8"
+                    />
+                  </div>
                 </div>
                 <div>
                   <Label htmlFor="phone2">رقم هاتف إضافي</Label>
@@ -290,7 +267,7 @@ ${formData.notes ? `📝 ملاحظات: ${formData.notes}` : ''}
               <div className="space-y-3">
                 <Button 
                   type="button"
-                  onClick={(e) => handleSubmit(e, true)}
+                  onClick={(e) => handleSubmit(e, false)}
                   className="w-full hover-glow" 
                   size="lg" 
                   disabled={loading}
@@ -302,20 +279,9 @@ ${formData.notes ? `📝 ملاحظات: ${formData.notes}` : ''}
                     </>
                   ) : (
                     <>
-                      تأكيد الطلب وإرسال عبر واتساب
+                      اشتري الآن
                     </>
                   )}
-                </Button>
-                
-                <Button 
-                  type="button"
-                  onClick={(e) => handleSubmit(e, false)}
-                  variant="outline" 
-                  className="w-full" 
-                  size="lg" 
-                  disabled={loading}
-                >
-                  حفظ الطلب بدون إرسال واتساب
                 </Button>
               </div>
             </form>

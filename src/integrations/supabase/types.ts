@@ -31,7 +31,7 @@ export type Database = {
           id?: string
           notes?: string | null
           order_id?: string | null
-          payment_type: string
+          payment_type?: string
         }
         Update: {
           amount?: number
@@ -58,6 +58,75 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      banners: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          display_order: number | null
+          id: string
+          image_url: string
+          is_active: boolean | null
+          link_url: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          image_url: string
+          is_active?: boolean | null
+          link_url?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          image_url?: string
+          is_active?: boolean | null
+          link_url?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      categories: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          display_order: number | null
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       customers: {
         Row: {
@@ -269,6 +338,7 @@ export type Database = {
       }
       products: {
         Row: {
+          category_id: string | null
           color_options: string[] | null
           created_at: string | null
           description: string | null
@@ -281,10 +351,12 @@ export type Database = {
           price: number
           quantity_pricing: Json | null
           size_options: string[] | null
+          size_pricing: Json | null
           stock: number | null
           updated_at: string | null
         }
         Insert: {
+          category_id?: string | null
           color_options?: string[] | null
           created_at?: string | null
           description?: string | null
@@ -297,10 +369,12 @@ export type Database = {
           price: number
           quantity_pricing?: Json | null
           size_options?: string[] | null
+          size_pricing?: Json | null
           stock?: number | null
           updated_at?: string | null
         }
         Update: {
+          category_id?: string | null
           color_options?: string[] | null
           created_at?: string | null
           description?: string | null
@@ -313,10 +387,19 @@ export type Database = {
           price?: number
           quantity_pricing?: Json | null
           size_options?: string[] | null
+          size_pricing?: Json | null
           stock?: number | null
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "products_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       returns: {
         Row: {
@@ -402,7 +485,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      reset_order_sequence: { Args: never; Returns: undefined }
     }
     Enums: {
       order_status:
