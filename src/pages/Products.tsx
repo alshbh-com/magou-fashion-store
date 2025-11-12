@@ -43,6 +43,26 @@ const Products = () => {
   useEffect(() => {
     fetchProducts();
     fetchCategories();
+
+    // Subscribe to realtime updates
+    const productsChannel = supabase
+      .channel('products-changes-list')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => {
+        fetchProducts();
+      })
+      .subscribe();
+
+    const categoriesChannel = supabase
+      .channel('categories-changes-list')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'categories' }, () => {
+        fetchCategories();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(productsChannel);
+      supabase.removeChannel(categoriesChannel);
+    };
   }, []);
 
   useEffect(() => {

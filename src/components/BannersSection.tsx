@@ -18,6 +18,18 @@ const BannersSection = () => {
 
   useEffect(() => {
     fetchBanners();
+
+    // Subscribe to realtime updates
+    const bannersChannel = supabase
+      .channel('banners-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'banners' }, () => {
+        fetchBanners();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(bannersChannel);
+    };
   }, []);
 
   const fetchBanners = async () => {

@@ -24,7 +24,7 @@ const Checkout = () => {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
-    phone: "",
+    phone: "2",
     phone2: "",
     governorate: "",
     address: "",
@@ -198,20 +198,21 @@ const Checkout = () => {
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="phone">رقم الهاتف *</Label>
-                  <div className="relative">
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">
-                      2
-                    </span>
-                    <Input
-                      id="phone"
-                      type="tel"
-                      required
-                      value={formData.phone}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      placeholder="01xxxxxxxxx"
-                      className="pr-8"
-                    />
-                  </div>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    required
+                    value={formData.phone}
+                    onChange={(e) => {
+                      let value = e.target.value;
+                      // تأكد من أن الرقم يبدأ بـ 2
+                      if (!value.startsWith('2')) {
+                        value = '2' + value.replace(/^2*/, '');
+                      }
+                      setFormData({ ...formData, phone: value });
+                    }}
+                    placeholder="2 01xxxxxxxxx"
+                  />
                 </div>
                 <div>
                   <Label htmlFor="phone2">رقم هاتف إضافي</Label>

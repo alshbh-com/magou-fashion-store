@@ -5,9 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { X, Plus, Loader2 } from "lucide-react";
+import BannerManagement from "@/components/Admin/BannerManagement";
+import SizePricingManagement from "@/components/Admin/SizePricingManagement";
 
 interface Product {
   id: string;
@@ -167,120 +170,138 @@ const Admin = () => {
         </Button>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-6">
-        {/* Products List */}
-        <Card className="p-6">
-          <h2 className="text-2xl font-bold mb-4">المنتجات</h2>
-          <div className="space-y-2 max-h-[600px] overflow-y-auto">
-            {products.map((product) => (
-              <Button
-                key={product.id}
-                variant={selectedProduct?.id === product.id ? "default" : "outline"}
-                className="w-full justify-start text-right"
-                onClick={() => setSelectedProduct(product)}
-              >
-                {product.name}
-              </Button>
-            ))}
+      <Tabs defaultValue="products" className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="products">المنتجات</TabsTrigger>
+          <TabsTrigger value="size-pricing">أسعار المقاسات</TabsTrigger>
+          <TabsTrigger value="banners">الإعلانات</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="products" className="mt-6">
+          <div className="grid lg:grid-cols-3 gap-6">
+            {/* Products List */}
+            <Card className="p-6">
+              <h2 className="text-2xl font-bold mb-4">المنتجات</h2>
+              <div className="space-y-2 max-h-[600px] overflow-y-auto">
+                {products.map((product) => (
+                  <Button
+                    key={product.id}
+                    variant={selectedProduct?.id === product.id ? "default" : "outline"}
+                    className="w-full justify-start text-right"
+                    onClick={() => setSelectedProduct(product)}
+                  >
+                    {product.name}
+                  </Button>
+                ))}
+              </div>
+            </Card>
+
+            {/* Colors Management */}
+            <Card className="p-6">
+              <h2 className="text-2xl font-bold mb-4">الألوان</h2>
+              {!selectedProduct ? (
+                <p className="text-muted-foreground text-center py-8">اختر منتج لإدارة الألوان</p>
+              ) : (
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="color">إضافة لون جديد</Label>
+                    <div className="flex gap-2 mt-2">
+                      <Input
+                        id="color"
+                        value={newColor}
+                        onChange={(e) => setNewColor(e.target.value)}
+                        placeholder="مثال: أسود، أبيض"
+                        onKeyPress={(e) => e.key === 'Enter' && addColor()}
+                      />
+                      <Button onClick={addColor} disabled={saving || !newColor.trim()}>
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label>الألوان المتاحة</Label>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {selectedProduct.color_options && selectedProduct.color_options.length > 0 ? (
+                        selectedProduct.color_options.map((color) => (
+                          <Badge key={color} variant="secondary" className="text-sm">
+                            {color}
+                            <button
+                              onClick={() => removeColor(color)}
+                              disabled={saving}
+                              className="mr-1 hover:text-destructive"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </Badge>
+                        ))
+                      ) : (
+                        <p className="text-sm text-muted-foreground">لا توجد ألوان</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </Card>
+
+            {/* Sizes Management */}
+            <Card className="p-6">
+              <h2 className="text-2xl font-bold mb-4">المقاسات</h2>
+              {!selectedProduct ? (
+                <p className="text-muted-foreground text-center py-8">اختر منتج لإدارة المقاسات</p>
+              ) : (
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="size">إضافة مقاس جديد</Label>
+                    <div className="flex gap-2 mt-2">
+                      <Input
+                        id="size"
+                        value={newSize}
+                        onChange={(e) => setNewSize(e.target.value.toUpperCase())}
+                        placeholder="مثال: S, M, L, XL"
+                        onKeyPress={(e) => e.key === 'Enter' && addSize()}
+                      />
+                      <Button onClick={addSize} disabled={saving || !newSize.trim()}>
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label>المقاسات المتاحة</Label>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {selectedProduct.size_options && selectedProduct.size_options.length > 0 ? (
+                        selectedProduct.size_options.map((size) => (
+                          <Badge key={size} variant="secondary" className="text-sm">
+                            {size}
+                            <button
+                              onClick={() => removeSize(size)}
+                              disabled={saving}
+                              className="mr-1 hover:text-destructive"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </Badge>
+                        ))
+                      ) : (
+                        <p className="text-sm text-muted-foreground">لا توجد مقاسات</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </Card>
           </div>
-        </Card>
+        </TabsContent>
 
-        {/* Colors Management */}
-        <Card className="p-6">
-          <h2 className="text-2xl font-bold mb-4">الألوان</h2>
-          {!selectedProduct ? (
-            <p className="text-muted-foreground text-center py-8">اختر منتج لإدارة الألوان</p>
-          ) : (
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="color">إضافة لون جديد</Label>
-                <div className="flex gap-2 mt-2">
-                  <Input
-                    id="color"
-                    value={newColor}
-                    onChange={(e) => setNewColor(e.target.value)}
-                    placeholder="مثال: أسود، أبيض"
-                    onKeyPress={(e) => e.key === 'Enter' && addColor()}
-                  />
-                  <Button onClick={addColor} disabled={saving || !newColor.trim()}>
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
+        <TabsContent value="size-pricing" className="mt-6">
+          <SizePricingManagement />
+        </TabsContent>
 
-              <div>
-                <Label>الألوان المتاحة</Label>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {selectedProduct.color_options && selectedProduct.color_options.length > 0 ? (
-                    selectedProduct.color_options.map((color) => (
-                      <Badge key={color} variant="secondary" className="text-sm">
-                        {color}
-                        <button
-                          onClick={() => removeColor(color)}
-                          disabled={saving}
-                          className="mr-1 hover:text-destructive"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </Badge>
-                    ))
-                  ) : (
-                    <p className="text-sm text-muted-foreground">لا توجد ألوان</p>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-        </Card>
-
-        {/* Sizes Management */}
-        <Card className="p-6">
-          <h2 className="text-2xl font-bold mb-4">المقاسات</h2>
-          {!selectedProduct ? (
-            <p className="text-muted-foreground text-center py-8">اختر منتج لإدارة المقاسات</p>
-          ) : (
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="size">إضافة مقاس جديد</Label>
-                <div className="flex gap-2 mt-2">
-                  <Input
-                    id="size"
-                    value={newSize}
-                    onChange={(e) => setNewSize(e.target.value.toUpperCase())}
-                    placeholder="مثال: S, M, L, XL"
-                    onKeyPress={(e) => e.key === 'Enter' && addSize()}
-                  />
-                  <Button onClick={addSize} disabled={saving || !newSize.trim()}>
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-
-              <div>
-                <Label>المقاسات المتاحة</Label>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {selectedProduct.size_options && selectedProduct.size_options.length > 0 ? (
-                    selectedProduct.size_options.map((size) => (
-                      <Badge key={size} variant="secondary" className="text-sm">
-                        {size}
-                        <button
-                          onClick={() => removeSize(size)}
-                          disabled={saving}
-                          className="mr-1 hover:text-destructive"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </Badge>
-                    ))
-                  ) : (
-                    <p className="text-sm text-muted-foreground">لا توجد مقاسات</p>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-        </Card>
-      </div>
+        <TabsContent value="banners" className="mt-6">
+          <BannerManagement />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
