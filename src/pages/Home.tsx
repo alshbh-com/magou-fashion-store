@@ -249,14 +249,14 @@ const Home = () => {
                     </CardContent>
 
                     <CardFooter className="p-4 pt-0">
-                      <Button 
-                        className="w-full bg-gradient-to-r from-primary to-orange-light hover:from-orange-dark hover:to-primary text-white font-bold shadow-lg hover:shadow-xl transition-all" 
-                        onClick={() => handleAddToCart(product)}
-                        disabled={product.stock === 0}
-                      >
-                        <ShoppingCart className="ml-2 h-4 w-4" />
-                        {product.stock === 0 ? "نفذت الكمية" : "أضف إلى السلة"}
-                      </Button>
+                      <Link to={`/products/${product.id}`} className="w-full">
+                        <Button 
+                          className="w-full bg-gradient-to-r from-primary to-orange-light hover:from-orange-dark hover:to-primary text-white font-bold shadow-lg hover:shadow-xl transition-all" 
+                          disabled={product.stock === 0}
+                        >
+                          {product.stock === 0 ? "نفذت الكمية" : "عرض التفاصيل"}
+                        </Button>
+                      </Link>
                     </CardFooter>
                   </Card>
                 );
