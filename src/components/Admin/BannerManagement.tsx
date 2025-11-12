@@ -86,6 +86,9 @@ const BannerManagement = () => {
 
     setSaving(true);
     setUploading(true);
+    
+    const loadingToast = toast.loading("جاري رفع الإعلان...");
+    
     try {
       const imageUrl = await uploadImage(selectedFile);
 
@@ -102,12 +105,14 @@ const BannerManagement = () => {
 
       if (error) throw error;
 
+      toast.dismiss(loadingToast);
       toast.success("تم إضافة الإعلان بنجاح");
       setNewBanner({ title: "", description: "", link_url: "", is_active: true });
       setSelectedFile(null);
-      fetchBanners();
+      await fetchBanners();
     } catch (error) {
       console.error("Error adding banner:", error);
+      toast.dismiss(loadingToast);
       toast.error("حدث خطأ في إضافة الإعلان");
     } finally {
       setSaving(false);

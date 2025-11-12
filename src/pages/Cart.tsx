@@ -125,20 +125,20 @@ const Cart = () => {
                   </div>
                   
                   <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2 bg-secondary rounded-lg p-1">
+                    <div className="flex items-center gap-2 bg-background border border-border rounded-lg p-1">
                       <Button
-                        variant="ghost"
+                        variant="outline"
                         size="icon"
-                        className="h-8 w-8"
+                        className="h-8 w-8 border-0 hover:bg-muted"
                         onClick={() => updateQuantity(item.id, item.quantity - 1, item.color, item.size)}
                       >
                         <Minus className="h-4 w-4" />
                       </Button>
-                      <span className="w-8 text-center font-semibold">{item.quantity}</span>
+                      <span className="w-8 text-center font-bold text-foreground">{item.quantity}</span>
                       <Button
-                        variant="ghost"
+                        variant="outline"
                         size="icon"
-                        className="h-8 w-8"
+                        className="h-8 w-8 border-0 hover:bg-muted"
                         onClick={() => updateQuantity(item.id, item.quantity + 1, item.color, item.size)}
                       >
                         <Plus className="h-4 w-4" />

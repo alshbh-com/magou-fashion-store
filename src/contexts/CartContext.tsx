@@ -78,14 +78,12 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const updateItemOptions = (id: string, color?: string, size?: string, newColor?: string, newSize?: string) => {
-    setItems((prev) =>
-      prev.map((item) => {
+    setItems((prev) => {
+      const updated = prev.map((item) => {
         if (item.id === id && item.color === color && item.size === size) {
-          // استخدام القيم الجديدة أو الاحتفاظ بالقيم الحالية
           const finalColor = newColor !== undefined ? newColor : item.color;
           const finalSize = newSize !== undefined ? newSize : item.size;
           
-          // بناء الملاحظة بناءً على القيم النهائية
           let notes = "";
           if (finalColor && finalSize) {
             notes = `اللون ${finalColor} والمقاس ${finalSize}`;
@@ -103,8 +101,14 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
           };
         }
         return item;
-      })
-    );
+      });
+      
+      // Force update localStorage immediately
+      localStorage.setItem("cart", JSON.stringify(updated));
+      return updated;
+    });
+    
+    toast.success("تم تحديث المنتج");
   };
 
   const clearCart = () => {
