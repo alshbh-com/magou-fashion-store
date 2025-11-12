@@ -3,10 +3,11 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { ArrowLeft, Star, Truck, CreditCard, HeadphonesIcon, Heart, ShoppingCart, Package } from "lucide-react";
+import { ArrowLeft, Star, Truck, CreditCard, HeadphonesIcon, Heart, Package, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { useCart } from "@/contexts/CartContext";
 import BannersSection from "@/components/BannersSection";
+import ProductQuickView from "@/components/ProductQuickView";
 
 interface Product {
   id: string;
@@ -16,7 +17,11 @@ interface Product {
   is_offer: boolean;
   image_url: string | null;
   description: string | null;
+  details: string | null;
   stock: number;
+  color_options: string[] | null;
+  size_options: string[] | null;
+  size_pricing: any;
 }
 
 interface Category {
@@ -30,6 +35,8 @@ const Home = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [quickViewOpen, setQuickViewOpen] = useState(false);
   const { addToCart } = useCart();
 
   useEffect(() => {
@@ -214,14 +221,27 @@ const Home = () => {
                         alt={product.name}
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                       />
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="absolute top-4 right-4 bg-white/90 hover:bg-white text-black shadow-md"
-                        onClick={() => addToFavorites(product)}
-                      >
-                        <Heart className="h-5 w-5" />
-                      </Button>
+                      <div className="absolute top-4 right-4 flex gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="bg-white/90 hover:bg-white text-black shadow-md"
+                          onClick={() => addToFavorites(product)}
+                        >
+                          <Heart className="h-5 w-5" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="bg-white/90 hover:bg-white text-black shadow-md"
+                          onClick={() => {
+                            setSelectedProduct(product);
+                            setQuickViewOpen(true);
+                          }}
+                        >
+                          <Eye className="h-5 w-5" />
+                        </Button>
+                      </div>
                     </div>
                     
                     <CardContent className="p-4">
@@ -314,6 +334,13 @@ const Home = () => {
           </div>
         </section>
       </div>
+
+      {/* Quick View Dialog */}
+      <ProductQuickView
+        product={selectedProduct}
+        open={quickViewOpen}
+        onOpenChange={setQuickViewOpen}
+      />
     </div>
   );
 };

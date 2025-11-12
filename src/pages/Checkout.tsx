@@ -158,7 +158,24 @@ const Checkout = () => {
         throw itemsError;
       }
 
-      // 4. Show success message
+      // 4. Update product stock
+      for (const item of items) {
+        const { data: currentProduct } = await supabase
+          .from("products")
+          .select("stock")
+          .eq("id", item.id)
+          .single();
+
+        if (currentProduct) {
+          const newStock = Math.max(0, currentProduct.stock - item.quantity);
+          await supabase
+            .from("products")
+            .update({ stock: newStock })
+            .eq("id", item.id);
+        }
+      }
+
+      // 5. Show success message
       clearCart();
       toast.success("شكراً لشرائك من magoufashion! لقد اخترت شيئاً جميلاً 🎉");
       navigate("/");

@@ -5,9 +5,10 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Heart, ShoppingCart, Search, Star } from "lucide-react";
+import { Heart, ShoppingCart, Search, Star, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { useCart } from "@/contexts/CartContext";
+import ProductQuickView from "@/components/ProductQuickView";
 
 interface Product {
   id: string;
@@ -17,9 +18,11 @@ interface Product {
   is_offer: boolean;
   image_url: string | null;
   description: string | null;
+  details: string | null;
   stock: number;
   color_options: string[] | null;
   size_options: string[] | null;
+  size_pricing: any;
   category_id: string | null;
 }
 
@@ -38,6 +41,8 @@ const Products = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("default");
   const [loading, setLoading] = useState(true);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [quickViewOpen, setQuickViewOpen] = useState(false);
   const { addToCart } = useCart();
 
   useEffect(() => {
@@ -218,17 +223,31 @@ const Products = () => {
                   alt={product.name}
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                 />
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="absolute top-4 right-4 bg-background/80 hover:bg-background"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    addToFavorites(product);
-                  }}
-                >
-                  <Heart className="h-5 w-5" />
-                </Button>
+                <div className="absolute top-4 right-4 flex gap-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="bg-background/80 hover:bg-background"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      addToFavorites(product);
+                    }}
+                  >
+                    <Heart className="h-5 w-5" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="bg-background/80 hover:bg-background"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedProduct(product);
+                      setQuickViewOpen(true);
+                    }}
+                  >
+                    <Eye className="h-5 w-5" />
+                  </Button>
+                </div>
               </div>
               
               <CardContent className="p-4">
@@ -277,6 +296,13 @@ const Products = () => {
           <p className="text-xl text-muted-foreground">لا توجد منتجات متاحة</p>
         </div>
       )}
+
+      {/* Quick View Dialog */}
+      <ProductQuickView
+        product={selectedProduct}
+        open={quickViewOpen}
+        onOpenChange={setQuickViewOpen}
+      />
     </div>
   );
 };
