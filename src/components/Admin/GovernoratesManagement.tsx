@@ -24,7 +24,6 @@ import {
 
 interface Governorate {
   id: string;
-  name: string;
   name_ar: string;
   shipping_cost: number;
 }
@@ -35,7 +34,6 @@ const GovernoratesManagement = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingGovernorate, setEditingGovernorate] = useState<Governorate | null>(null);
   const [formData, setFormData] = useState({
-    name: "",
     name_ar: "",
     shipping_cost: 0,
   });
@@ -66,35 +64,36 @@ const GovernoratesManagement = () => {
 
     try {
       if (editingGovernorate) {
-        // تحديث
         const { error } = await supabase
           .from("governorates")
           .update({
-            name: formData.name,
             name_ar: formData.name_ar,
             shipping_cost: formData.shipping_cost,
           })
           .eq("id", editingGovernorate.id);
 
         if (error) throw error;
-        toast.success("تم تحديث المحافظة");
+        toast.success("تم تحديث المحافظة بنجاح");
       } else {
-        // إضافة جديد
-        const { error } = await supabase
-          .from("governorates")
-          .insert([formData]);
+        const { error } = await supabase.from("governorates").insert([
+          {
+            name: formData.name_ar,
+            name_ar: formData.name_ar,
+            shipping_cost: formData.shipping_cost,
+          },
+        ]);
 
         if (error) throw error;
-        toast.success("تم إضافة المحافظة");
+        toast.success("تمت إضافة المحافظة بنجاح");
       }
 
       setDialogOpen(false);
       setEditingGovernorate(null);
-      setFormData({ name: "", name_ar: "", shipping_cost: 0 });
+      setFormData({ name_ar: "", shipping_cost: 0 });
       fetchGovernorates();
     } catch (error) {
       console.error("Error saving governorate:", error);
-      toast.error("فشل في حفظ المحافظة");
+      toast.error("حدث خطأ في حفظ المحافظة");
     }
   };
 
@@ -120,7 +119,6 @@ const GovernoratesManagement = () => {
   const openEditDialog = (governorate: Governorate) => {
     setEditingGovernorate(governorate);
     setFormData({
-      name: governorate.name,
       name_ar: governorate.name_ar,
       shipping_cost: governorate.shipping_cost,
     });
@@ -129,7 +127,7 @@ const GovernoratesManagement = () => {
 
   const openAddDialog = () => {
     setEditingGovernorate(null);
-    setFormData({ name: "", name_ar: "", shipping_cost: 0 });
+    setFormData({ name_ar: "", shipping_cost: 0 });
     setDialogOpen(true);
   };
 
@@ -160,20 +158,11 @@ const GovernoratesManagement = () => {
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <Label htmlFor="name_ar">الاسم بالعربي</Label>
+                <Label htmlFor="name_ar">اسم المحافظة</Label>
                 <Input
                   id="name_ar"
                   value={formData.name_ar}
                   onChange={(e) => setFormData({ ...formData, name_ar: e.target.value })}
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="name">الاسم بالإنجليزي</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   required
                 />
               </div>
@@ -202,7 +191,6 @@ const GovernoratesManagement = () => {
           <TableHeader>
             <TableRow>
               <TableHead className="text-right">المحافظة</TableHead>
-              <TableHead className="text-right">الاسم بالإنجليزي</TableHead>
               <TableHead className="text-right">تكلفة الشحن</TableHead>
               <TableHead className="text-right">الإجراءات</TableHead>
             </TableRow>
@@ -211,7 +199,6 @@ const GovernoratesManagement = () => {
             {governorates.map((governorate) => (
               <TableRow key={governorate.id}>
                 <TableCell className="font-medium">{governorate.name_ar}</TableCell>
-                <TableCell>{governorate.name}</TableCell>
                 <TableCell>{governorate.shipping_cost} جنيه</TableCell>
                 <TableCell>
                   <div className="flex gap-2">
