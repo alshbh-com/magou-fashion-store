@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ShoppingCart, Star } from "lucide-react";
+import { ShoppingCart, Minus, Plus } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Product {
   id: string;
@@ -15,10 +15,22 @@ interface Product {
   image_url: string | null;
   description: string | null;
   details: string | null;
-  stock: number;
-  color_options: string[] | null;
-  size_options: string[] | null;
+  stock_quantity: number;
   size_pricing: any;
+}
+
+interface ProductColor {
+  id: string;
+  color_name: string;
+  color_name_ar: string;
+  color_code: string | null;
+}
+
+interface ProductSize {
+  id: string;
+  size_name: string;
+  price: number;
+  stock_quantity: number;
 }
 
 interface ProductQuickViewProps {
@@ -29,38 +41,76 @@ interface ProductQuickViewProps {
 
 const ProductQuickView = ({ product, open, onOpenChange }: ProductQuickViewProps) => {
   const { addToCart } = useCart();
+  const [colors, setColors] = useState<ProductColor[]>([]);
+  const [sizes, setSizes] = useState<ProductSize[]>([]);
   const [selectedColor, setSelectedColor] = useState<string>("");
   const [selectedSize, setSelectedSize] = useState<string>("");
   const [quantity, setQuantity] = useState(1);
 
-  if (!product) return null;
+  useEffect(() => {
+    if (product && open) {
+      fetchColors();
+      fetchSizes();
+      setQuantity(1);
+    }
+  }, [product, open]);
+
+  const fetchColors = async () => {
+    if (!product) return;
+    try {
+      const { data, error } = await supabase
+        .from("product_colors")
+        .select("*")
+        .eq("product_id", product.id);
+
+      if (error) throw error;
+      setColors(data || []);
+      if (data && data.length > 0) {
+        setSelectedColor(data[0].color_name_ar);
+      }
+    } catch (error) {
+      console.error("Error fetching colors:", error);
+    }
+  };
+
+  const fetchSizes = async () => {
+    if (!product) return;
+    try {
+      const { data, error } = await supabase
+        .from("product_sizes")
+        .select("*")
+        .eq("product_id", product.id);
+
+      if (error) throw error;
+      setSizes(data || []);
+      if (data && data.length > 0) {
+        setSelectedSize(data[0].size_name);
+      }
+    } catch (error) {
+      console.error("Error fetching sizes:", error);
+    }
+  };
 
   const getCurrentPrice = () => {
-    // Check if there's a size-specific price
-    if (selectedSize && product.size_pricing) {
-      try {
-        const pricingArray = Array.isArray(product.size_pricing) 
-          ? product.size_pricing 
-          : [];
-        const sizePrice = pricingArray.find((sp: any) => sp.size === selectedSize);
-        if (sizePrice && sizePrice.price) return sizePrice.price;
-      } catch (e) {
-        console.error("Error parsing size pricing", e);
-      }
+    if (!product) return 0;
+    
+    if (selectedSize) {
+      const sizeData = sizes.find(s => s.size_name === selectedSize);
+      if (sizeData && sizeData.price) return sizeData.price;
     }
     
     return product.is_offer && product.offer_price ? product.offer_price : product.price;
   };
 
   const handleAddToCart = () => {
-    // Check if color is required but not selected
-    if (product.color_options && product.color_options.length > 0 && !selectedColor) {
+    if (!product) return;
+
+    if (colors.length > 0 && !selectedColor) {
       toast.error("يرجى اختيار اللون");
       return;
     }
 
-    // Check if size is required but not selected
-    if (product.size_options && product.size_options.length > 0 && !selectedSize) {
+    if (sizes.length > 0 && !selectedSize) {
       toast.error("يرجى اختيار المقاس");
       return;
     }
@@ -75,20 +125,15 @@ const ProductQuickView = ({ product, open, onOpenChange }: ProductQuickViewProps
         image_url: product.image_url,
         color: selectedColor || undefined,
         size: selectedSize || undefined,
-        color_options: product.color_options || undefined,
-        size_options: product.size_options || undefined,
-        notes: `${selectedColor ? `اللون ${selectedColor}` : ""}${selectedColor && selectedSize ? " و" : ""}${selectedSize ? `المقاس ${selectedSize}` : ""}`
       });
     }
 
     toast.success(`تم إضافة ${quantity} من ${product.name} إلى السلة`);
     onOpenChange(false);
-    
-    // Reset selections
-    setSelectedColor("");
-    setSelectedSize("");
     setQuantity(1);
   };
+
+  if (!product) return null;
 
   const currentPrice = getCurrentPrice();
 
@@ -96,144 +141,107 @@ const ProductQuickView = ({ product, open, onOpenChange }: ProductQuickViewProps
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold">{product.name}</DialogTitle>
+          <DialogTitle className="text-2xl">{product.name}</DialogTitle>
         </DialogHeader>
         
-        <div className="grid md:grid-cols-2 gap-6 mt-4">
-          {/* Product Image */}
-          <div className="relative">
-            <img
-              src={product.image_url || "/placeholder.svg"}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <img 
+              src={product.image_url || "/placeholder.svg"} 
               alt={product.name}
-              className="w-full h-auto rounded-lg object-cover"
+              className="w-full h-full object-cover rounded-lg aspect-square"
             />
-            {product.is_offer && product.offer_price && (
-              <div className="absolute top-4 right-4 bg-red-500 text-white px-4 py-2 rounded-full font-bold">
-                عرض خاص
-              </div>
-            )}
           </div>
 
-          {/* Product Info */}
           <div className="space-y-4">
             <p className="text-muted-foreground">{product.description}</p>
-
-            {/* Stars */}
-            <div className="flex items-center gap-1">
-              {[...Array(5)].map((_, i) => (
-                <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-              ))}
-            </div>
-
-            {/* Price */}
-            <div className="flex items-center gap-4">
-              <span className="text-2xl font-bold text-primary">
-                {currentPrice} جنيه
-              </span>
+            
+            <div className="flex items-center gap-3">
               {product.is_offer && product.offer_price && (
-                <span className="text-lg text-muted-foreground line-through">
+                <span className="text-xl text-muted-foreground line-through">
                   {product.price} جنيه
                 </span>
               )}
+              <span className="text-2xl font-bold text-primary">
+                {currentPrice} جنيه
+              </span>
             </div>
 
-            {/* Details */}
-            {product.details && (
-              <div className="p-3 bg-muted rounded-lg">
-                <p className="text-sm whitespace-pre-wrap">{product.details}</p>
-              </div>
-            )}
-
-            {/* Color Selection */}
-            {product.color_options && product.color_options.length > 0 && (
+            {colors.length > 0 && (
               <div>
-                <label className="block text-sm font-medium mb-2">
-                  اختر اللون <span className="text-red-500">*</span>
-                </label>
-                <Select value={selectedColor} onValueChange={setSelectedColor}>
-                  <SelectTrigger className={!selectedColor ? "border-red-500" : ""}>
-                    <SelectValue placeholder="اختر اللون" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {product.color_options.map((color) => (
-                      <SelectItem key={color} value={color}>
-                        {color}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <label className="block text-sm font-medium mb-2">اللون</label>
+                <div className="flex flex-wrap gap-2">
+                  {colors.map((color) => (
+                    <button
+                      key={color.id}
+                      onClick={() => setSelectedColor(color.color_name_ar)}
+                      className={`px-3 py-2 border-2 rounded-lg transition-all ${
+                        selectedColor === color.color_name_ar
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-border hover:border-primary"
+                      }`}
+                    >
+                      {color.color_name_ar}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
 
-            {/* Size Selection */}
-            {product.size_options && product.size_options.length > 0 && (
+            {sizes.length > 0 && (
               <div>
-                <label className="block text-sm font-medium mb-2">
-                  اختر المقاس <span className="text-red-500">*</span>
-                </label>
-                <Select value={selectedSize} onValueChange={setSelectedSize}>
-                  <SelectTrigger className={!selectedSize ? "border-red-500" : ""}>
-                    <SelectValue placeholder="اختر المقاس" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {product.size_options.map((size) => {
-                      let sizePrice = null;
-                      try {
-                        const pricingArray = Array.isArray(product.size_pricing) ? product.size_pricing : [];
-                        sizePrice = pricingArray.find((sp: any) => sp.size === size);
-                      } catch (e) {}
-                      
-                      return (
-                        <SelectItem key={size} value={size}>
-                          {size}
-                          {sizePrice && sizePrice.price && ` - ${sizePrice.price} جنيه`}
-                        </SelectItem>
-                      );
-                    })}
-                  </SelectContent>
-                </Select>
+                <label className="block text-sm font-medium mb-2">المقاس</label>
+                <div className="flex flex-wrap gap-2">
+                  {sizes.map((size) => (
+                    <button
+                      key={size.id}
+                      onClick={() => setSelectedSize(size.size_name)}
+                      className={`px-3 py-2 border-2 rounded-lg transition-all ${
+                        selectedSize === size.size_name
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-border hover:border-primary"
+                      }`}
+                    >
+                      {size.size_name}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
 
-            {/* Quantity */}
             <div>
               <label className="block text-sm font-medium mb-2">الكمية</label>
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3">
                 <Button
                   variant="outline"
                   size="icon"
                   onClick={() => setQuantity(Math.max(1, quantity - 1))}
                 >
-                  -
+                  <Minus className="h-4 w-4" />
                 </Button>
-                <span className="text-xl font-bold w-12 text-center">{quantity}</span>
+                <span className="text-lg font-semibold w-10 text-center">{quantity}</span>
                 <Button
                   variant="outline"
                   size="icon"
                   onClick={() => setQuantity(quantity + 1)}
-                  disabled={quantity >= product.stock}
+                  disabled={quantity >= product.stock_quantity}
                 >
-                  +
+                  <Plus className="h-4 w-4" />
                 </Button>
               </div>
-              <p className="text-sm text-muted-foreground mt-2">
-                المتوفر: {product.stock} قطعة
+              <p className="text-sm text-muted-foreground mt-1">
+                {product.stock_quantity > 0 ? `متوفر: ${product.stock_quantity} قطعة` : "غير متوفر"}
               </p>
             </div>
 
-            {/* Add to Cart Button */}
             <Button
+              className="w-full bg-gradient-to-r from-primary to-orange-light hover:from-orange-dark hover:to-primary"
               onClick={handleAddToCart}
-              className="w-full"
-              disabled={product.stock === 0}
+              disabled={product.stock_quantity === 0}
             >
-              <ShoppingCart className="ml-2 h-5 w-5" />
-              إضافة إلى السلة
+              <ShoppingCart className="mr-2 h-4 w-4" />
+              {product.stock_quantity === 0 ? "نفذت الكمية" : "إضافة إلى السلة"}
             </Button>
-
-            {product.stock === 0 && (
-              <p className="text-red-500 text-center">المنتج غير متوفر حالياً</p>
-            )}
           </div>
         </div>
       </DialogContent>

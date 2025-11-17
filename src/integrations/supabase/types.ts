@@ -77,6 +77,68 @@ export type Database = {
         }
         Relationships: []
       }
+      customers: {
+        Row: {
+          address: string | null
+          city: string | null
+          created_at: string | null
+          governorate_id: string | null
+          id: string
+          name: string
+          phone: string
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          created_at?: string | null
+          governorate_id?: string | null
+          id?: string
+          name: string
+          phone: string
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          created_at?: string | null
+          governorate_id?: string | null
+          id?: string
+          name?: string
+          phone?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customers_governorate_id_fkey"
+            columns: ["governorate_id"]
+            isOneToOne: false
+            referencedRelation: "governorates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      governorates: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          name_ar: string
+          shipping_cost: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          name_ar: string
+          shipping_cost?: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          name_ar?: string
+          shipping_cost?: number
+        }
+        Relationships: []
+      }
       order_items: {
         Row: {
           color_name: string | null
@@ -133,12 +195,15 @@ export type Database = {
           created_at: string | null
           customer_address: string
           customer_city: string
+          customer_id: string | null
           customer_name: string
           customer_notes: string | null
           customer_phone: string
           discount: number | null
+          governorate_id: string | null
           id: string
           order_number: number
+          shipping_cost: number | null
           status: string | null
           subtotal: number
           total: number
@@ -147,12 +212,15 @@ export type Database = {
           created_at?: string | null
           customer_address: string
           customer_city: string
+          customer_id?: string | null
           customer_name: string
           customer_notes?: string | null
           customer_phone: string
           discount?: number | null
+          governorate_id?: string | null
           id?: string
           order_number?: never
+          shipping_cost?: number | null
           status?: string | null
           subtotal: number
           total: number
@@ -161,17 +229,35 @@ export type Database = {
           created_at?: string | null
           customer_address?: string
           customer_city?: string
+          customer_id?: string | null
           customer_name?: string
           customer_notes?: string | null
           customer_phone?: string
           discount?: number | null
+          governorate_id?: string | null
           id?: string
           order_number?: never
+          shipping_cost?: number | null
           status?: string | null
           subtotal?: number
           total?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "orders_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_governorate_id_fkey"
+            columns: ["governorate_id"]
+            isOneToOne: false
+            referencedRelation: "governorates"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       packages: {
         Row: {
@@ -273,6 +359,41 @@ export type Database = {
           },
         ]
       }
+      product_offers: {
+        Row: {
+          created_at: string | null
+          id: string
+          max_quantity: number | null
+          min_quantity: number
+          offer_price: number
+          product_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          max_quantity?: number | null
+          min_quantity: number
+          offer_price: number
+          product_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          max_quantity?: number | null
+          min_quantity?: number
+          offer_price?: number
+          product_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_offers_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_sizes: {
         Row: {
           created_at: string | null
@@ -314,12 +435,18 @@ export type Database = {
           created_at: string | null
           description: string | null
           description_ar: string | null
+          details: string | null
           id: string
+          image_url: string | null
           is_featured: boolean | null
+          is_offer: boolean | null
           low_stock_alert: number | null
           name: string
           name_ar: string
+          offer_price: number | null
+          price: number
           rating: number | null
+          size_pricing: Json | null
           stock_quantity: number | null
           updated_at: string | null
         }
@@ -328,12 +455,18 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           description_ar?: string | null
+          details?: string | null
           id?: string
+          image_url?: string | null
           is_featured?: boolean | null
+          is_offer?: boolean | null
           low_stock_alert?: number | null
           name: string
           name_ar: string
+          offer_price?: number | null
+          price?: number
           rating?: number | null
+          size_pricing?: Json | null
           stock_quantity?: number | null
           updated_at?: string | null
         }
@@ -342,12 +475,18 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           description_ar?: string | null
+          details?: string | null
           id?: string
+          image_url?: string | null
           is_featured?: boolean | null
+          is_offer?: boolean | null
           low_stock_alert?: number | null
           name?: string
           name_ar?: string
+          offer_price?: number | null
+          price?: number
           rating?: number | null
+          size_pricing?: Json | null
           stock_quantity?: number | null
           updated_at?: string | null
         }
@@ -361,15 +500,39 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -496,6 +659,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+    },
   },
 } as const

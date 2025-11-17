@@ -18,9 +18,7 @@ interface Product {
   image_url: string | null;
   description: string | null;
   details: string | null;
-  stock: number;
-  color_options: string[] | null;
-  size_options: string[] | null;
+  stock_quantity: number;
   size_pricing: any;
 }
 
@@ -272,9 +270,9 @@ const Home = () => {
                       <Link to={`/products/${product.id}`} className="w-full">
                         <Button 
                           className="w-full bg-gradient-to-r from-primary to-orange-light hover:from-orange-dark hover:to-primary text-white font-bold shadow-lg hover:shadow-xl transition-all" 
-                          disabled={product.stock === 0}
+disabled={product.stock_quantity === 0}
                         >
-                          {product.stock === 0 ? "نفذت الكمية" : "عرض التفاصيل"}
+                          {product.stock_quantity === 0 ? "نفذت الكمية" : "عرض التفاصيل"}
                         </Button>
                       </Link>
                     </CardFooter>

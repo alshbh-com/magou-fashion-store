@@ -19,9 +19,7 @@ interface Product {
   image_url: string | null;
   description: string | null;
   details: string | null;
-  stock: number;
-  color_options: string[] | null;
-  size_options: string[] | null;
+  stock_quantity: number;
   size_pricing: any;
   category_id: string | null;
 }
@@ -76,10 +74,9 @@ const Products = () => {
 
   const fetchCategories = async () => {
     try {
-      const { data, error } = await supabase
+const { data, error } = await supabase
         .from("categories")
         .select("id, name")
-        .eq("is_active", true)
         .order("display_order");
 
       if (error) throw error;

@@ -4,9 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCart } from "@/contexts/CartContext";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { ArrowRight, ShoppingCart, Star } from "lucide-react";
+import { ArrowRight, ShoppingCart, Minus, Plus } from "lucide-react";
 
 interface Product {
   id: string;
@@ -17,10 +16,22 @@ interface Product {
   is_offer: boolean;
   offer_price: number | null;
   image_url: string | null;
-  color_options: string[];
-  size_options: string[];
   size_pricing: any;
-  stock: number;
+  stock_quantity: number;
+}
+
+interface ProductColor {
+  id: string;
+  color_name: string;
+  color_name_ar: string;
+  color_code: string | null;
+}
+
+interface ProductSize {
+  id: string;
+  size_name: string;
+  price: number;
+  stock_quantity: number;
 }
 
 const ProductDetails = () => {
@@ -28,13 +39,19 @@ const ProductDetails = () => {
   const navigate = useNavigate();
   const { addToCart } = useCart();
   const [product, setProduct] = useState<Product | null>(null);
+  const [colors, setColors] = useState<ProductColor[]>([]);
+  const [sizes, setSizes] = useState<ProductSize[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedColor, setSelectedColor] = useState<string>("");
   const [selectedSize, setSelectedSize] = useState<string>("");
   const [quantity, setQuantity] = useState(1);
 
   useEffect(() => {
-    fetchProduct();
+    if (id) {
+      fetchProduct();
+      fetchColors();
+      fetchSizes();
+    }
   }, [id]);
 
   const fetchProduct = async () => {
@@ -55,37 +72,60 @@ const ProductDetails = () => {
     }
   };
 
+  const fetchColors = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("product_colors")
+        .select("*")
+        .eq("product_id", id);
+
+      if (error) throw error;
+      setColors(data || []);
+      if (data && data.length > 0) {
+        setSelectedColor(data[0].color_name_ar);
+      }
+    } catch (error) {
+      console.error("Error fetching colors:", error);
+    }
+  };
+
+  const fetchSizes = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("product_sizes")
+        .select("*")
+        .eq("product_id", id);
+
+      if (error) throw error;
+      setSizes(data || []);
+      if (data && data.length > 0) {
+        setSelectedSize(data[0].size_name);
+      }
+    } catch (error) {
+      console.error("Error fetching sizes:", error);
+    }
+  };
+
   const getCurrentPrice = () => {
     if (!product) return 0;
     
-    // Check if there's a size-specific price
-    if (selectedSize && product.size_pricing) {
-      try {
-        const pricingArray = Array.isArray(product.size_pricing) 
-          ? product.size_pricing 
-          : [];
-        const sizePrice = pricingArray.find((sp: any) => sp.size === selectedSize);
-        if (sizePrice && sizePrice.price) return sizePrice.price;
-      } catch (e) {
-        console.error("Error parsing size pricing", e);
-      }
+    if (selectedSize) {
+      const sizeData = sizes.find(s => s.size_name === selectedSize);
+      if (sizeData && sizeData.price) return sizeData.price;
     }
     
-    // Return offer price or regular price
     return product.is_offer && product.offer_price ? product.offer_price : product.price;
   };
 
   const handleAddToCart = () => {
     if (!product) return;
 
-    // Check if color is required but not selected
-    if (product.color_options?.length > 0 && !selectedColor) {
+    if (colors.length > 0 && !selectedColor) {
       toast.error("يرجى اختيار اللون");
       return;
     }
 
-    // Check if size is required but not selected
-    if (product.size_options?.length > 0 && !selectedSize) {
+    if (sizes.length > 0 && !selectedSize) {
       toast.error("يرجى اختيار المقاس");
       return;
     }
@@ -100,9 +140,6 @@ const ProductDetails = () => {
         image_url: product.image_url,
         color: selectedColor || undefined,
         size: selectedSize || undefined,
-        color_options: product.color_options,
-        size_options: product.size_options,
-        notes: `${selectedColor ? `اللون ${selectedColor}` : ""}${selectedColor && selectedSize ? " و" : ""}${selectedSize ? `المقاس ${selectedSize}` : ""}`
       });
     }
 
@@ -121,7 +158,7 @@ const ProductDetails = () => {
     return (
       <div className="text-center py-12">
         <p className="text-lg mb-4">المنتج غير موجود</p>
-        <Button onClick={() => navigate("/products")}>العودة للمنتجات</Button>
+        <Button onClick={() => navigate("/products")}>العودة إلى المنتجات</Button>
       </div>
     );
   }
@@ -132,112 +169,83 @@ const ProductDetails = () => {
     <div className="container mx-auto px-4 py-8">
       <Button
         variant="ghost"
+        className="mb-6"
         onClick={() => navigate("/products")}
-        className="mb-6 gap-2"
       >
-        <ArrowRight className="h-4 w-4" />
-        العودة للمنتجات
+        <ArrowRight className="ml-2 h-4 w-4" />
+        العودة إلى المنتجات
       </Button>
 
       <div className="grid md:grid-cols-2 gap-8">
-        {/* Product Image */}
-        <div className="relative">
-          <img
-            src={product.image_url || "/placeholder.svg"}
-            alt={product.name}
-            className="w-full h-auto rounded-lg shadow-lg object-cover"
-          />
-          {product.is_offer && product.offer_price && (
-            <div className="absolute top-4 right-4 bg-red-500 text-white px-4 py-2 rounded-full font-bold">
-              عرض خاص
-            </div>
-          )}
+        <div>
+          <Card className="overflow-hidden border-2 border-primary/20">
+            <img
+              src={product.image_url || "/placeholder.svg"}
+              alt={product.name}
+              className="w-full h-full object-cover aspect-square"
+            />
+          </Card>
         </div>
 
-        {/* Product Info */}
         <div className="space-y-6">
           <div>
             <h1 className="text-3xl font-bold mb-2">{product.name}</h1>
-            <div className="flex items-center gap-1 mb-4">
-              {[...Array(5)].map((_, i) => (
-                <Star key={i} className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-              ))}
-            </div>
-            <p className="text-muted-foreground text-lg">{product.description}</p>
+            <p className="text-muted-foreground">{product.description}</p>
           </div>
 
-          {/* Price */}
           <div className="flex items-center gap-4">
-            <span className="text-3xl font-bold text-primary">
-              {currentPrice} جنيه
-            </span>
             {product.is_offer && product.offer_price && (
-              <span className="text-xl text-muted-foreground line-through">
+              <span className="text-2xl text-muted-foreground line-through">
                 {product.price} جنيه
               </span>
             )}
+            <span className="text-3xl font-bold text-primary">
+              {currentPrice} جنيه
+            </span>
           </div>
 
-          {/* Details */}
-          {product.details && (
-            <Card className="p-4 bg-muted">
-              <h3 className="font-bold mb-2">تفاصيل المنتج:</h3>
-              <p className="text-sm whitespace-pre-wrap">{product.details}</p>
-            </Card>
-          )}
-
-          {/* Color Selection */}
-          {product.color_options?.length > 0 && (
+          {colors.length > 0 && (
             <div>
-              <label className="block text-sm font-medium mb-2">
-                اختر اللون <span className="text-red-500">*</span>
-              </label>
-              <Select value={selectedColor} onValueChange={setSelectedColor}>
-                <SelectTrigger className={!selectedColor ? "border-red-500" : ""}>
-                  <SelectValue placeholder="اختر اللون" />
-                </SelectTrigger>
-                <SelectContent>
-                  {product.color_options.map((color) => (
-                    <SelectItem key={color} value={color}>
-                      {color}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <label className="block text-sm font-medium mb-2">اللون</label>
+              <div className="flex flex-wrap gap-2">
+                {colors.map((color) => (
+                  <button
+                    key={color.id}
+                    onClick={() => setSelectedColor(color.color_name_ar)}
+                    className={`px-4 py-2 border-2 rounded-lg transition-all ${
+                      selectedColor === color.color_name_ar
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border hover:border-primary"
+                    }`}
+                  >
+                    {color.color_name_ar}
+                  </button>
+                ))}
+              </div>
             </div>
           )}
 
-          {/* Size Selection */}
-          {product.size_options?.length > 0 && (
+          {sizes.length > 0 && (
             <div>
-              <label className="block text-sm font-medium mb-2">
-                اختر المقاس <span className="text-red-500">*</span>
-              </label>
-              <Select value={selectedSize} onValueChange={setSelectedSize}>
-                <SelectTrigger className={!selectedSize ? "border-red-500" : ""}>
-                  <SelectValue placeholder="اختر المقاس" />
-                </SelectTrigger>
-                <SelectContent>
-                  {product.size_options.map((size) => {
-                    let sizePrice = null;
-                    try {
-                      const pricingArray = Array.isArray(product.size_pricing) ? product.size_pricing : [];
-                      sizePrice = pricingArray.find((sp: any) => sp.size === size);
-                    } catch (e) {}
-                    
-                    return (
-                      <SelectItem key={size} value={size}>
-                        {size}
-                        {sizePrice && sizePrice.price && ` - ${sizePrice.price} جنيه`}
-                      </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
+              <label className="block text-sm font-medium mb-2">المقاس</label>
+              <div className="flex flex-wrap gap-2">
+                {sizes.map((size) => (
+                  <button
+                    key={size.id}
+                    onClick={() => setSelectedSize(size.size_name)}
+                    className={`px-4 py-2 border-2 rounded-lg transition-all ${
+                      selectedSize === size.size_name
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border hover:border-primary"
+                    }`}
+                  >
+                    {size.size_name}
+                  </button>
+                ))}
+              </div>
             </div>
           )}
 
-          {/* Quantity */}
           <div>
             <label className="block text-sm font-medium mb-2">الكمية</label>
             <div className="flex items-center gap-4">
@@ -246,36 +254,37 @@ const ProductDetails = () => {
                 size="icon"
                 onClick={() => setQuantity(Math.max(1, quantity - 1))}
               >
-                -
+                <Minus className="h-4 w-4" />
               </Button>
-              <span className="text-xl font-bold w-12 text-center">{quantity}</span>
+              <span className="text-xl font-semibold w-12 text-center">{quantity}</span>
               <Button
                 variant="outline"
                 size="icon"
                 onClick={() => setQuantity(quantity + 1)}
-                disabled={quantity >= product.stock}
+                disabled={quantity >= product.stock_quantity}
               >
-                +
+                <Plus className="h-4 w-4" />
               </Button>
             </div>
             <p className="text-sm text-muted-foreground mt-2">
-              المتوفر: {product.stock} قطعة
+              {product.stock_quantity > 0 ? `متوفر: ${product.stock_quantity} قطعة` : "غير متوفر"}
             </p>
           </div>
 
-          {/* Add to Cart Button */}
           <Button
+            className="w-full bg-gradient-to-r from-primary to-orange-light hover:from-orange-dark hover:to-primary text-white font-bold text-lg py-6"
             onClick={handleAddToCart}
-            size="lg"
-            className="w-full gap-2"
-            disabled={product.stock === 0}
+            disabled={product.stock_quantity === 0}
           >
-            <ShoppingCart className="h-5 w-5" />
-            إضافة إلى السلة
+            <ShoppingCart className="mr-2 h-5 w-5" />
+            {product.stock_quantity === 0 ? "نفذت الكمية" : "إضافة إلى السلة"}
           </Button>
 
-          {product.stock === 0 && (
-            <p className="text-red-500 text-center">المنتج غير متوفر حالياً</p>
+          {product.details && (
+            <div className="border-t pt-6">
+              <h3 className="text-xl font-bold mb-3">تفاصيل المنتج</h3>
+              <p className="text-muted-foreground whitespace-pre-line">{product.details}</p>
+            </div>
           )}
         </div>
       </div>

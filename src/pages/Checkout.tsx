@@ -82,7 +82,7 @@ const Checkout = () => {
 
     try {
       // 1. Create or get customer
-      const { data: existingCustomer } = await supabase
+const { data: existingCustomer } = await supabase
         .from("customers")
         .select("*")
         .eq("phone", formData.phone)
@@ -96,9 +96,9 @@ const Checkout = () => {
           .insert({
             name: formData.name,
             phone: formData.phone,
-            phone2: formData.phone2 || null,
             address: formData.address,
-            governorate: selectedGovernorate.name,
+            city: selectedGovernorate.name,
+            governorate_id: selectedGovernorate.id,
           })
           .select()
           .single();
@@ -110,15 +110,20 @@ const Checkout = () => {
         customerId = newCustomer.id;
       }
 
-      // 2. Create order with governorate_id
+// 2. Create order
       const shippingCost = selectedGovernorate.shipping_cost;
       const orderData = {
+        customer_name: formData.name,
+        customer_phone: formData.phone,
+        customer_address: formData.address,
+        customer_city: selectedGovernorate.name,
+        customer_notes: formData.notes || null,
         customer_id: customerId,
         governorate_id: selectedGovernorate.id,
-        total_amount: totalPrice,
+        subtotal: totalPrice,
         shipping_cost: shippingCost,
+        total: totalPrice + shippingCost,
         status: "pending" as const,
-        notes: formData.notes || null,
       };
       
       console.log("Creating order with data:", orderData);
@@ -136,13 +141,15 @@ const Checkout = () => {
 
       console.log("Order created successfully:", order);
 
-      // 3. Create order items
+// 3. Create order items
       const orderItems = items.map((item) => ({
         order_id: order.id,
         product_id: item.id,
+        product_name: item.name,
         quantity: item.quantity,
         price: item.price,
-        product_details: item.name,
+        color_name: item.color || null,
+        size_name: item.size || null,
       }));
 
       const { error: itemsError } = await supabase
@@ -154,19 +161,19 @@ const Checkout = () => {
         throw itemsError;
       }
 
-      // 4. Update product stock
+// 4. Update product stock
       for (const item of items) {
         const { data: currentProduct } = await supabase
           .from("products")
-          .select("stock")
+          .select("stock_quantity")
           .eq("id", item.id)
           .single();
 
         if (currentProduct) {
-          const newStock = Math.max(0, currentProduct.stock - item.quantity);
+          const newStock = Math.max(0, currentProduct.stock_quantity - item.quantity);
           await supabase
             .from("products")
-            .update({ stock: newStock })
+            .update({ stock_quantity: newStock })
             .eq("id", item.id);
         }
       }
