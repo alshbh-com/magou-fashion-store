@@ -50,18 +50,14 @@ const Checkout = () => {
   }, [items, navigate]);
 
   const fetchGovernorates = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("governorates")
-        .select("*")
-        .order("name");
-
-      if (error) throw error;
-      setGovernorates(data || []);
-    } catch (error) {
-      console.error("Error fetching governorates:", error);
-      toast.error("حدث خطأ في تحميل المحافظات");
-    }
+    // Hardcoded governorates since there's no governorates table in DB
+    const mockGovernorates = [
+      { id: "1", name: "القاهرة", shipping_cost: 50 },
+      { id: "2", name: "الجيزة", shipping_cost: 50 },
+      { id: "3", name: "الإسكندرية", shipping_cost: 60 },
+      { id: "4", name: "المنصورة", shipping_cost: 70 },
+    ];
+    setGovernorates(mockGovernorates);
   };
 
   const handleGovernorateChange = (value: string) => {
