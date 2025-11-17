@@ -35,6 +35,13 @@ interface ProductSize {
   stock_quantity: number;
 }
 
+interface ProductOffer {
+  id: string;
+  min_quantity: number;
+  max_quantity: number | null;
+  offer_price: number;
+}
+
 const ProductDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -42,8 +49,9 @@ const ProductDetails = () => {
   const [product, setProduct] = useState<Product | null>(null);
   const [colors, setColors] = useState<ProductColor[]>([]);
   const [sizes, setSizes] = useState<ProductSize[]>([]);
+  const [offers, setOffers] = useState<ProductOffer[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedItems, setSelectedItems] = useState<Array<{ color: string; size: string }>>([]);
+  const [selectedItems, setSelectedItems] = useState<Array<{ color: string; size: string }>>([{ color: "", size: "" }]);
   const [quantity, setQuantity] = useState(1);
 
   useEffect(() => {
@@ -51,6 +59,7 @@ const ProductDetails = () => {
       fetchProduct();
       fetchColors();
       fetchSizes();
+      fetchOffers();
     }
   }, [id]);
 
@@ -100,8 +109,41 @@ const ProductDetails = () => {
     }
   };
 
+  const fetchOffers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("product_offers")
+        .select("*")
+        .eq("product_id", id)
+        .order("min_quantity");
+
+      if (error) throw error;
+      setOffers(data || []);
+    } catch (error) {
+      console.error("Error fetching offers:", error);
+    }
+  };
+
+  const getOfferPrice = (qty: number) => {
+    if (!offers || offers.length === 0) return null;
+    
+    const matchingOffer = offers.find(offer => {
+      const meetsMin = qty >= offer.min_quantity;
+      const meetsMax = !offer.max_quantity || qty <= offer.max_quantity;
+      return meetsMin && meetsMax;
+    });
+    
+    return matchingOffer ? matchingOffer.offer_price : null;
+  };
+
   const getCurrentPrice = () => {
     if (!product) return 0;
+    
+    // Check if there's a quantity-based offer
+    const offerPrice = getOfferPrice(quantity);
+    if (offerPrice) return offerPrice;
+    
+    // Otherwise use regular product price or offer price
     return product.is_offer && product.offer_price ? product.offer_price : product.price;
   };
 
@@ -228,6 +270,26 @@ const ProductDetails = () => {
               {currentPrice} جنيه
             </span>
           </div>
+
+          {/* Quantity-based offers display */}
+          {offers && offers.length > 0 && (
+            <Card className="p-4 bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
+              <h3 className="font-semibold mb-3 text-primary">عروض الكمية</h3>
+              <div className="space-y-2">
+                {offers.map((offer, index) => (
+                  <div key={offer.id} className="flex justify-between items-center text-sm">
+                    <span className="font-medium">
+                      {offer.max_quantity 
+                        ? `${offer.min_quantity} - ${offer.max_quantity} قطعة`
+                        : `${offer.min_quantity}+ قطعة`
+                      }
+                    </span>
+                    <span className="font-bold text-primary">{offer.offer_price} جنيه/قطعة</span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
 
           <div>
             <label className="block text-sm font-medium mb-2">الكمية</label>

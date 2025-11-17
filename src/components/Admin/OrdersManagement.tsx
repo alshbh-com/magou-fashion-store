@@ -239,32 +239,52 @@ const OrdersManagement = () => {
       </Card>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>تفاصيل الطلب #{selectedOrder?.order_number}</DialogTitle>
+            <DialogTitle className="text-xl">تفاصيل الطلب #{selectedOrder?.order_number}</DialogTitle>
           </DialogHeader>
           {selectedOrder && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <h3 className="font-semibold mb-2">معلومات العميل</h3>
-                  <p><strong>الاسم:</strong> {selectedOrder.customer_name}</p>
-                  <p><strong>الهاتف:</strong> {selectedOrder.customer_phone}</p>
-                  <p><strong>المدينة:</strong> {selectedOrder.customer_city}</p>
-                  <p><strong>العنوان:</strong> {selectedOrder.customer_address}</p>
-                </div>
-                <div>
-                  <h3 className="font-semibold mb-2">تفاصيل الطلب</h3>
-                  <p><strong>المجموع الفرعي:</strong> {selectedOrder.subtotal} جنيه</p>
-                  <p><strong>الشحن:</strong> {selectedOrder.shipping_cost} جنيه</p>
-                  <p><strong>الإجمالي:</strong> {selectedOrder.total} جنيه</p>
-                  <div className="mt-2">
-                    <strong>الحالة:</strong>
+            <div className="grid lg:grid-cols-3 gap-4">
+              {/* Sidebar with Customer Info */}
+              <div className="space-y-4">
+                <Card className="p-4 sticky top-4">
+                  <h3 className="font-semibold mb-3 text-lg">معلومات العميل</h3>
+                  <div className="space-y-3 text-sm">
+                    <div>
+                      <span className="font-medium text-muted-foreground">الاسم:</span>
+                      <p className="font-semibold mt-1">{selectedOrder.customer_name}</p>
+                    </div>
+                    <div>
+                      <span className="font-medium text-muted-foreground">الهاتف:</span>
+                      <p className="font-semibold mt-1" dir="ltr">{selectedOrder.customer_phone}</p>
+                    </div>
+                    <div>
+                      <span className="font-medium text-muted-foreground">العنوان:</span>
+                      <p className="font-semibold mt-1">{selectedOrder.customer_address}, {selectedOrder.customer_city}</p>
+                    </div>
+                  </div>
+
+                  <div className="mt-6 pt-4 border-t space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span>المجموع الفرعي:</span>
+                      <span className="font-semibold">{selectedOrder.subtotal} جنيه</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span>الشحن:</span>
+                      <span className="font-semibold">{selectedOrder.shipping_cost} جنيه</span>
+                    </div>
+                    <div className="flex justify-between text-lg font-bold pt-2 border-t">
+                      <span>الإجمالي:</span>
+                      <span className="text-primary">{selectedOrder.total} جنيه</span>
+                    </div>
+                  </div>
+
+                  <div className="mt-4">
                     <Select
                       value={selectedOrder.status}
                       onValueChange={(value) => updateOrderStatus(selectedOrder.id, value)}
                     >
-                      <SelectTrigger className="w-full mt-1">
+                      <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -276,36 +296,35 @@ const OrdersManagement = () => {
                       </SelectContent>
                     </Select>
                   </div>
-                </div>
+                </Card>
               </div>
 
-              <div>
-                <h3 className="font-semibold mb-3">المنتجات</h3>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="text-right">المنتج</TableHead>
-                      <TableHead className="text-right">اللون</TableHead>
-                      <TableHead className="text-right">المقاس</TableHead>
-                      <TableHead className="text-right">الكمية</TableHead>
-                      <TableHead className="text-right">السعر</TableHead>
-                      <TableHead className="text-right">المجموع</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {orderItems.map((item) => (
-                      <TableRow key={item.id}>
-                        <TableCell>{item.product_name}</TableCell>
-                        <TableCell>{item.color_name || "-"}</TableCell>
-                        <TableCell>{item.size_name || "-"}</TableCell>
-                        <TableCell>{item.quantity}</TableCell>
-                        <TableCell>{item.price} جنيه</TableCell>
-                        <TableCell>{item.price * item.quantity} جنيه</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+              {/* Products List */}
+              <Card className="p-4 lg:col-span-2">
+                <h3 className="font-semibold mb-4 text-lg">المنتجات ({orderItems.length})</h3>
+                <div className="space-y-3 max-h-[500px] overflow-y-auto">
+                  {orderItems.map((item) => (
+                    <div key={item.id} className="flex gap-3 p-3 bg-muted/30 rounded-lg border">
+                      <div className="flex-1">
+                        <p className="font-medium text-sm mb-1">{item.product_name}</p>
+                        <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                          <span className="bg-background px-2 py-0.5 rounded">الكمية: {item.quantity}</span>
+                          {item.color_name && (
+                            <span className="bg-background px-2 py-0.5 rounded">اللون: {item.color_name}</span>
+                          )}
+                          {item.size_name && (
+                            <span className="bg-background px-2 py-0.5 rounded">المقاس: {item.size_name}</span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="text-left">
+                        <p className="font-semibold text-sm">{item.price * item.quantity} جنيه</p>
+                        <p className="text-xs text-muted-foreground">{item.price} × {item.quantity}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </Card>
             </div>
           )}
         </DialogContent>

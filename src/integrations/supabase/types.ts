@@ -56,21 +56,30 @@ export type Database = {
       categories: {
         Row: {
           created_at: string | null
+          display_order: number | null
           id: string
+          image_url: string | null
+          is_active: boolean | null
           name: string
           name_ar: string
           slug: string
         }
         Insert: {
           created_at?: string | null
+          display_order?: number | null
           id?: string
+          image_url?: string | null
+          is_active?: boolean | null
           name: string
           name_ar: string
           slug: string
         }
         Update: {
           created_at?: string | null
+          display_order?: number | null
           id?: string
+          image_url?: string | null
+          is_active?: boolean | null
           name?: string
           name_ar?: string
           slug?: string
