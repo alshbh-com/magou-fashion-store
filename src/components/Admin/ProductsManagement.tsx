@@ -49,6 +49,12 @@ interface Category {
   name_ar: string;
 }
 
+interface ProductOffer {
+  min_quantity: number;
+  max_quantity: number | null;
+  offer_price: number;
+}
+
 const ProductsManagement = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -67,11 +73,27 @@ const ProductsManagement = () => {
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [quantityOffers, setQuantityOffers] = useState<ProductOffer[]>([]);
 
   useEffect(() => {
     fetchProducts();
     fetchCategories();
   }, []);
+
+  const fetchProductOffers = async (productId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("product_offers")
+        .select("*")
+        .eq("product_id", productId)
+        .order("min_quantity");
+
+      if (error) throw error;
+      setQuantityOffers(data || []);
+    } catch (error) {
+      console.error("Error fetching offers:", error);
+    }
+  };
 
   const fetchProducts = async () => {
     try {
@@ -144,6 +166,8 @@ const ProductsManagement = () => {
         category_id: formData.category_id || null,
       };
 
+      let productId: string;
+
       if (editingProduct) {
         const { error } = await supabase
           .from("products")
@@ -151,14 +175,44 @@ const ProductsManagement = () => {
           .eq("id", editingProduct.id);
 
         if (error) throw error;
+        productId = editingProduct.id;
+        
+        // Delete existing offers
+        await supabase
+          .from("product_offers")
+          .delete()
+          .eq("product_id", productId);
+        
         toast.success("تم تحديث المنتج");
       } else {
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from("products")
-          .insert([productData]);
+          .insert([productData])
+          .select()
+          .single();
 
         if (error) throw error;
+        productId = data.id;
         toast.success("تم إضافة المنتج");
+      }
+
+      // Save quantity offers
+      if (quantityOffers.length > 0) {
+        const offersToInsert = quantityOffers.map(offer => ({
+          product_id: productId,
+          min_quantity: offer.min_quantity,
+          max_quantity: offer.max_quantity,
+          offer_price: offer.offer_price,
+        }));
+
+        const { error: offersError } = await supabase
+          .from("product_offers")
+          .insert(offersToInsert);
+
+        if (offersError) {
+          console.error("Error saving offers:", offersError);
+          toast.error("فشل في حفظ عروض الكمية");
+        }
       }
 
       setDialogOpen(false);
@@ -192,7 +246,7 @@ const ProductsManagement = () => {
     }
   };
 
-  const openEditDialog = (product: Product) => {
+  const openEditDialog = async (product: Product) => {
     setEditingProduct(product);
     setFormData({
       name_ar: product.name_ar,
@@ -205,6 +259,7 @@ const ProductsManagement = () => {
       category_id: product.category_id || "",
     });
     setImageFile(null);
+    await fetchProductOffers(product.id);
     setDialogOpen(true);
   };
 
@@ -220,6 +275,36 @@ const ProductsManagement = () => {
       category_id: "",
     });
     setImageFile(null);
+    setQuantityOffers([]);
+  };
+
+  const addQuantityOffer = () => {
+    const lastOffer = quantityOffers[quantityOffers.length - 1];
+    const nextMin = lastOffer ? (lastOffer.max_quantity || lastOffer.min_quantity) + 1 : 1;
+    
+    if (nextMin > 12) {
+      toast.error("الحد الأقصى 12 قطعة");
+      return;
+    }
+
+    setQuantityOffers([
+      ...quantityOffers,
+      {
+        min_quantity: nextMin,
+        max_quantity: nextMin === 12 ? null : nextMin,
+        offer_price: formData.price,
+      },
+    ]);
+  };
+
+  const updateQuantityOffer = (index: number, field: keyof ProductOffer, value: number | null) => {
+    const newOffers = [...quantityOffers];
+    newOffers[index] = { ...newOffers[index], [field]: value };
+    setQuantityOffers(newOffers);
+  };
+
+  const removeQuantityOffer = (index: number) => {
+    setQuantityOffers(quantityOffers.filter((_, i) => i !== index));
   };
 
   const openAddDialog = () => {
@@ -362,6 +447,79 @@ const ProductsManagement = () => {
                   />
                 </div>
               )}
+
+              <div className="border-t pt-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label className="text-lg font-semibold">عروض الكمية (اختياري)</Label>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={addQuantityOffer}
+                    disabled={quantityOffers.length >= 12}
+                  >
+                    <Plus className="h-4 w-4 ml-2" />
+                    إضافة عرض
+                  </Button>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  أضف أسعار خاصة حسب الكمية (مثال: قطعة واحدة 200 جنيه، 2-3 قطع 150 جنيه للقطعة)
+                </p>
+                
+                {quantityOffers.map((offer, index) => (
+                  <Card key={index} className="p-4">
+                    <div className="flex items-end gap-2">
+                      <div className="flex-1 grid grid-cols-3 gap-2">
+                        <div>
+                          <Label className="text-xs">من كمية</Label>
+                          <Input
+                            type="number"
+                            min="1"
+                            max="12"
+                            value={offer.min_quantity}
+                            onChange={(e) => updateQuantityOffer(index, "min_quantity", parseInt(e.target.value))}
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs">إلى كمية</Label>
+                          <Input
+                            type="number"
+                            min={offer.min_quantity}
+                            max="12"
+                            value={offer.max_quantity || ""}
+                            placeholder="غير محدود"
+                            onChange={(e) => updateQuantityOffer(index, "max_quantity", e.target.value ? parseInt(e.target.value) : null)}
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs">السعر (جنيه)</Label>
+                          <Input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={offer.offer_price}
+                            onChange={(e) => updateQuantityOffer(index, "offer_price", parseFloat(e.target.value))}
+                          />
+                        </div>
+                      </div>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => removeQuantityOffer(index)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      {offer.max_quantity 
+                        ? `من ${offer.min_quantity} إلى ${offer.max_quantity} قطعة: ${offer.offer_price} جنيه للقطعة`
+                        : `${offer.min_quantity}+ قطعة: ${offer.offer_price} جنيه للقطعة`
+                      }
+                    </p>
+                  </Card>
+                ))}
+              </div>
 
               <Button type="submit" className="w-full" disabled={uploading}>
                 {uploading ? (
