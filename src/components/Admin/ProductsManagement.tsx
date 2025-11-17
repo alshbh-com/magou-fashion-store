@@ -33,9 +33,7 @@ import {
 
 interface Product {
   id: string;
-  name: string;
   name_ar: string;
-  description: string | null;
   description_ar: string | null;
   price: number;
   stock_quantity: number;
@@ -58,18 +56,17 @@ const ProductsManagement = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [formData, setFormData] = useState({
-    name: "",
     name_ar: "",
-    description: "",
     description_ar: "",
     price: 0,
     stock_quantity: 0,
     is_featured: false,
     is_offer: false,
     offer_price: 0,
-    image_url: "",
     category_id: "",
   });
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     fetchProducts();
@@ -111,17 +108,39 @@ const ProductsManagement = () => {
     e.preventDefault();
 
     try {
+      setUploading(true);
+      let imageUrl = editingProduct?.image_url || null;
+
+      // Upload image if a new file is selected
+      if (imageFile) {
+        const fileExt = imageFile.name.split('.').pop();
+        const fileName = `${Math.random()}.${fileExt}`;
+        const filePath = `${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('products')
+          .upload(filePath, imageFile);
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('products')
+          .getPublicUrl(filePath);
+
+        imageUrl = publicUrl;
+      }
+
       const productData = {
-        name: formData.name,
+        name: formData.name_ar, // Use Arabic name for English field too
         name_ar: formData.name_ar,
-        description: formData.description,
+        description: formData.description_ar, // Use Arabic description for English field too
         description_ar: formData.description_ar,
         price: formData.price,
         stock_quantity: formData.stock_quantity,
         is_featured: formData.is_featured,
         is_offer: formData.is_offer,
         offer_price: formData.is_offer ? formData.offer_price : null,
-        image_url: formData.image_url,
+        image_url: imageUrl,
         category_id: formData.category_id || null,
       };
 
@@ -149,6 +168,8 @@ const ProductsManagement = () => {
     } catch (error) {
       console.error("Error saving product:", error);
       toast.error("فشل في حفظ المنتج");
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -174,35 +195,31 @@ const ProductsManagement = () => {
   const openEditDialog = (product: Product) => {
     setEditingProduct(product);
     setFormData({
-      name: product.name,
       name_ar: product.name_ar,
-      description: product.description || "",
       description_ar: product.description_ar || "",
       price: product.price,
       stock_quantity: product.stock_quantity,
       is_featured: product.is_featured,
       is_offer: product.is_offer,
       offer_price: product.offer_price || 0,
-      image_url: product.image_url || "",
       category_id: product.category_id || "",
     });
+    setImageFile(null);
     setDialogOpen(true);
   };
 
   const resetForm = () => {
     setFormData({
-      name: "",
       name_ar: "",
-      description: "",
       description_ar: "",
       price: 0,
       stock_quantity: 0,
       is_featured: false,
       is_offer: false,
       offer_price: 0,
-      image_url: "",
       category_id: "",
     });
+    setImageFile(null);
   };
 
   const openAddDialog = () => {
@@ -237,25 +254,14 @@ const ProductsManagement = () => {
               </DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="name_ar">الاسم بالعربي</Label>
-                  <Input
-                    id="name_ar"
-                    value={formData.name_ar}
-                    onChange={(e) => setFormData({ ...formData, name_ar: e.target.value })}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="name">الاسم بالإنجليزي</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    required
-                  />
-                </div>
+              <div>
+                <Label htmlFor="name_ar">اسم المنتج</Label>
+                <Input
+                  id="name_ar"
+                  value={formData.name_ar}
+                  onChange={(e) => setFormData({ ...formData, name_ar: e.target.value })}
+                  required
+                />
               </div>
 
               <div>
@@ -274,25 +280,14 @@ const ProductsManagement = () => {
                 </Select>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="description_ar">الوصف بالعربي</Label>
-                  <Textarea
-                    id="description_ar"
-                    value={formData.description_ar}
-                    onChange={(e) => setFormData({ ...formData, description_ar: e.target.value })}
-                    rows={3}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="description">الوصف بالإنجليزي</Label>
-                  <Textarea
-                    id="description"
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    rows={3}
-                  />
-                </div>
+              <div>
+                <Label htmlFor="description_ar">وصف المنتج</Label>
+                <Textarea
+                  id="description_ar"
+                  value={formData.description_ar}
+                  onChange={(e) => setFormData({ ...formData, description_ar: e.target.value })}
+                  rows={3}
+                />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -322,13 +317,16 @@ const ProductsManagement = () => {
               </div>
 
               <div>
-                <Label htmlFor="image_url">رابط الصورة</Label>
+                <Label htmlFor="image">صورة المنتج</Label>
                 <Input
-                  id="image_url"
-                  value={formData.image_url}
-                  onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                  placeholder="https://..."
+                  id="image"
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setImageFile(e.target.files?.[0] || null)}
                 />
+                {editingProduct?.image_url && !imageFile && (
+                  <img src={editingProduct.image_url} alt="preview" className="mt-2 h-20 w-20 object-cover rounded" />
+                )}
               </div>
 
               <div className="flex items-center gap-6">
@@ -365,8 +363,15 @@ const ProductsManagement = () => {
                 </div>
               )}
 
-              <Button type="submit" className="w-full">
-                {editingProduct ? "تحديث" : "إضافة"}
+              <Button type="submit" className="w-full" disabled={uploading}>
+                {uploading ? (
+                  <>
+                    <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+                    جاري الرفع...
+                  </>
+                ) : (
+                  editingProduct ? "تحديث" : "إضافة"
+                )}
               </Button>
             </form>
           </DialogContent>
