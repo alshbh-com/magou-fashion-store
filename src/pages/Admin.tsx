@@ -1,5 +1,5 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Package, ShoppingBag, MapPin, Tag, LayoutGrid, Image, Palette } from "lucide-react";
+import { Package, ShoppingBag, MapPin, Tag, LayoutGrid, Image, Palette, FolderTree } from "lucide-react";
 import OrdersManagement from "@/components/Admin/OrdersManagement";
 import GovernoratesManagement from "@/components/Admin/GovernoratesManagement";
 import ProductsManagement from "@/components/Admin/ProductsManagement";
@@ -7,6 +7,7 @@ import PackagesManagement from "@/components/Admin/PackagesManagement";
 import OffersManagement from "@/components/Admin/OffersManagement";
 import BannerManagement from "@/components/Admin/BannerManagement";
 import ColorSizeManagement from "@/components/Admin/ColorSizeManagement";
+import CategoriesManagement from "@/components/Admin/CategoriesManagement";
 
 const Admin = () => {
   return (
@@ -14,7 +15,7 @@ const Admin = () => {
       <h1 className="text-4xl font-bold mb-8 text-center">لوحة التحكم</h1>
       
       <Tabs defaultValue="products" className="w-full" dir="rtl">
-        <TabsList className="grid w-full grid-cols-7 mb-8">
+        <TabsList className="grid w-full grid-cols-8 mb-8">
           <TabsTrigger value="products" className="flex items-center gap-2">
             <ShoppingBag className="h-4 w-4" />
             المنتجات
@@ -42,6 +43,10 @@ const Admin = () => {
           <TabsTrigger value="colors-sizes" className="flex items-center gap-2">
             <Palette className="h-4 w-4" />
             الألوان والمقاسات
+          </TabsTrigger>
+          <TabsTrigger value="categories" className="flex items-center gap-2">
+            <FolderTree className="h-4 w-4" />
+            الأقسام
           </TabsTrigger>
         </TabsList>
 
@@ -71,6 +76,10 @@ const Admin = () => {
 
         <TabsContent value="colors-sizes">
           <ColorSizeManagement />
+        </TabsContent>
+
+        <TabsContent value="categories">
+          <CategoriesManagement />
         </TabsContent>
       </Tabs>
     </div>
