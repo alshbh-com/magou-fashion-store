@@ -27,6 +27,7 @@ interface Category {
   name: string;
   name_ar: string;
   slug: string;
+  image_url: string | null;
   created_at: string | null;
 }
 
@@ -38,7 +39,9 @@ const CategoriesManagement = () => {
   const [formData, setFormData] = useState({
     name_ar: "",
     slug: "",
+    image_url: "",
   });
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     fetchCategories();
@@ -61,14 +64,45 @@ const CategoriesManagement = () => {
     }
   };
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random()}.${fileExt}`;
+      const filePath = `categories/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('products')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('products')
+        .getPublicUrl(filePath);
+
+      setFormData({ ...formData, image_url: publicUrl });
+      toast.success("تم رفع الصورة");
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      toast.error("فشل في رفع الصورة");
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     try {
       const categoryData = {
-        name: formData.name_ar, // Use Arabic for English too
+        name: formData.name_ar,
         name_ar: formData.name_ar,
         slug: formData.slug,
+        image_url: formData.image_url || null,
       };
 
       if (editingCategory) {
@@ -122,6 +156,7 @@ const CategoriesManagement = () => {
     setFormData({
       name_ar: category.name_ar,
       slug: category.slug,
+      image_url: category.image_url || "",
     });
     setDialogOpen(true);
   };
@@ -130,6 +165,7 @@ const CategoriesManagement = () => {
     setFormData({
       name_ar: "",
       slug: "",
+      image_url: "",
     });
   };
 
@@ -186,8 +222,24 @@ const CategoriesManagement = () => {
                 />
               </div>
 
-              <Button type="submit" className="w-full">
-                {editingCategory ? "تحديث" : "إضافة"}
+              <div>
+                <Label htmlFor="image">صورة القسم</Label>
+                <Input
+                  id="image"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  disabled={uploading}
+                />
+                {formData.image_url && (
+                  <div className="mt-2">
+                    <img src={formData.image_url} alt="Preview" className="w-32 h-32 object-cover rounded" />
+                  </div>
+                )}
+              </div>
+
+              <Button type="submit" className="w-full" disabled={uploading}>
+                {uploading ? "جاري الرفع..." : editingCategory ? "تحديث" : "إضافة"}
               </Button>
             </form>
           </DialogContent>
@@ -198,6 +250,7 @@ const CategoriesManagement = () => {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="text-right">الصورة</TableHead>
               <TableHead className="text-right">اسم القسم</TableHead>
               <TableHead className="text-right">الرابط</TableHead>
               <TableHead className="text-right">الإجراءات</TableHead>
@@ -206,6 +259,15 @@ const CategoriesManagement = () => {
           <TableBody>
             {categories.map((category) => (
               <TableRow key={category.id}>
+                <TableCell>
+                  {category.image_url ? (
+                    <img src={category.image_url} alt={category.name_ar} className="w-16 h-16 object-cover rounded" />
+                  ) : (
+                    <div className="w-16 h-16 bg-muted rounded flex items-center justify-center text-xs text-muted-foreground">
+                      لا توجد صورة
+                    </div>
+                  )}
+                </TableCell>
                 <TableCell className="font-medium">{category.name_ar}</TableCell>
                 <TableCell>{category.slug}</TableCell>
                 <TableCell>

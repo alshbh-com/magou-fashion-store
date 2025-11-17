@@ -25,7 +25,7 @@ interface Product {
 interface Category {
   id: string;
   name: string;
-  description: string | null;
+  name_ar: string;
   image_url: string | null;
 }
 
@@ -82,14 +82,13 @@ const Home = () => {
   const fetchCategories = async () => {
     try {
       const { data, error } = await supabase
-        .from("categories" as any)
-        .select("id, name, description, image_url")
-        .eq("is_active", true)
+        .from("categories")
+        .select("id, name, name_ar, image_url")
         .order("display_order", { ascending: true });
 
       if (error) throw error;
       
-      setCategories((data || []) as unknown as Category[]);
+      setCategories(data || []);
     } catch (error) {
       console.error("Error fetching categories:", error);
     }
@@ -167,12 +166,7 @@ const Home = () => {
                         )}
                       </div>
                       <CardContent className="p-4 text-center">
-                        <h3 className="font-bold text-lg mb-1 text-black">{category.name}</h3>
-                        {category.description && (
-                          <p className="text-gray-600 text-sm line-clamp-2">
-                            {category.description}
-                          </p>
-                        )}
+                        <h3 className="font-bold text-lg mb-1 text-black">{category.name_ar}</h3>
                       </CardContent>
                     </Card>
                   </Link>
