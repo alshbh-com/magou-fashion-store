@@ -14,234 +14,102 @@ export type Database = {
   }
   public: {
     Tables: {
-      agent_payments: {
-        Row: {
-          amount: number
-          created_at: string | null
-          delivery_agent_id: string | null
-          id: string
-          notes: string | null
-          order_id: string | null
-          payment_type: string
-        }
-        Insert: {
-          amount: number
-          created_at?: string | null
-          delivery_agent_id?: string | null
-          id?: string
-          notes?: string | null
-          order_id?: string | null
-          payment_type?: string
-        }
-        Update: {
-          amount?: number
-          created_at?: string | null
-          delivery_agent_id?: string | null
-          id?: string
-          notes?: string | null
-          order_id?: string | null
-          payment_type?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "agent_payments_delivery_agent_id_fkey"
-            columns: ["delivery_agent_id"]
-            isOneToOne: false
-            referencedRelation: "delivery_agents"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "agent_payments_order_id_fkey"
-            columns: ["order_id"]
-            isOneToOne: false
-            referencedRelation: "orders"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       banners: {
         Row: {
           created_at: string | null
           description: string | null
+          description_ar: string | null
           display_order: number | null
           id: string
           image_url: string
           is_active: boolean | null
           link_url: string | null
           title: string
-          updated_at: string | null
+          title_ar: string
         }
         Insert: {
           created_at?: string | null
           description?: string | null
+          description_ar?: string | null
           display_order?: number | null
           id?: string
           image_url: string
           is_active?: boolean | null
           link_url?: string | null
           title: string
-          updated_at?: string | null
+          title_ar: string
         }
         Update: {
           created_at?: string | null
           description?: string | null
+          description_ar?: string | null
           display_order?: number | null
           id?: string
           image_url?: string
           is_active?: boolean | null
           link_url?: string | null
           title?: string
-          updated_at?: string | null
+          title_ar?: string
         }
         Relationships: []
       }
       categories: {
         Row: {
           created_at: string | null
-          description: string | null
-          display_order: number | null
-          id: string
-          image_url: string | null
-          is_active: boolean | null
-          name: string
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          description?: string | null
-          display_order?: number | null
-          id?: string
-          image_url?: string | null
-          is_active?: boolean | null
-          name: string
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          description?: string | null
-          display_order?: number | null
-          id?: string
-          image_url?: string | null
-          is_active?: boolean | null
-          name?: string
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      customers: {
-        Row: {
-          address: string
-          created_at: string | null
-          governorate: string | null
           id: string
           name: string
-          phone: string
-          phone2: string | null
-        }
-        Insert: {
-          address: string
-          created_at?: string | null
-          governorate?: string | null
-          id?: string
-          name: string
-          phone: string
-          phone2?: string | null
-        }
-        Update: {
-          address?: string
-          created_at?: string | null
-          governorate?: string | null
-          id?: string
-          name?: string
-          phone?: string
-          phone2?: string | null
-        }
-        Relationships: []
-      }
-      delivery_agents: {
-        Row: {
-          created_at: string | null
-          id: string
-          name: string
-          phone: string
-          serial_number: string
-          total_owed: number | null
-          total_paid: number | null
+          name_ar: string
+          slug: string
         }
         Insert: {
           created_at?: string | null
           id?: string
           name: string
-          phone: string
-          serial_number: string
-          total_owed?: number | null
-          total_paid?: number | null
+          name_ar: string
+          slug: string
         }
         Update: {
           created_at?: string | null
           id?: string
           name?: string
-          phone?: string
-          serial_number?: string
-          total_owed?: number | null
-          total_paid?: number | null
-        }
-        Relationships: []
-      }
-      governorates: {
-        Row: {
-          created_at: string | null
-          id: string
-          name: string
-          shipping_cost: number
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          name: string
-          shipping_cost?: number
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          name?: string
-          shipping_cost?: number
+          name_ar?: string
+          slug?: string
         }
         Relationships: []
       }
       order_items: {
         Row: {
-          color: string | null
+          color_name: string | null
           created_at: string | null
           id: string
           order_id: string | null
           price: number
-          product_details: string | null
           product_id: string | null
+          product_name: string
           quantity: number
-          size: string | null
+          size_name: string | null
         }
         Insert: {
-          color?: string | null
+          color_name?: string | null
           created_at?: string | null
           id?: string
           order_id?: string | null
           price: number
-          product_details?: string | null
           product_id?: string | null
+          product_name: string
           quantity: number
-          size?: string | null
+          size_name?: string | null
         }
         Update: {
-          color?: string | null
+          color_name?: string | null
           created_at?: string | null
           id?: string
           order_id?: string | null
           price?: number
-          product_details?: string | null
           product_id?: string | null
+          product_name?: string
           quantity?: number
-          size?: string | null
+          size_name?: string | null
         }
         Relationships: [
           {
@@ -262,76 +130,180 @@ export type Database = {
       }
       orders: {
         Row: {
-          agent_shipping_cost: number | null
           created_at: string | null
-          customer_id: string | null
-          delivery_agent_id: string | null
+          customer_address: string
+          customer_city: string
+          customer_name: string
+          customer_notes: string | null
+          customer_phone: string
           discount: number | null
-          governorate_id: string | null
           id: string
-          modified_amount: number | null
-          notes: string | null
-          order_details: string | null
-          order_number: number | null
-          shipping_cost: number | null
-          status: Database["public"]["Enums"]["order_status"] | null
-          total_amount: number
-          updated_at: string | null
+          order_number: number
+          status: string | null
+          subtotal: number
+          total: number
         }
         Insert: {
-          agent_shipping_cost?: number | null
           created_at?: string | null
-          customer_id?: string | null
-          delivery_agent_id?: string | null
+          customer_address: string
+          customer_city: string
+          customer_name: string
+          customer_notes?: string | null
+          customer_phone: string
           discount?: number | null
-          governorate_id?: string | null
           id?: string
-          modified_amount?: number | null
-          notes?: string | null
-          order_details?: string | null
-          order_number?: number | null
-          shipping_cost?: number | null
-          status?: Database["public"]["Enums"]["order_status"] | null
-          total_amount: number
-          updated_at?: string | null
+          order_number?: never
+          status?: string | null
+          subtotal: number
+          total: number
         }
         Update: {
-          agent_shipping_cost?: number | null
           created_at?: string | null
-          customer_id?: string | null
-          delivery_agent_id?: string | null
+          customer_address?: string
+          customer_city?: string
+          customer_name?: string
+          customer_notes?: string | null
+          customer_phone?: string
           discount?: number | null
-          governorate_id?: string | null
           id?: string
-          modified_amount?: number | null
-          notes?: string | null
-          order_details?: string | null
-          order_number?: number | null
-          shipping_cost?: number | null
-          status?: Database["public"]["Enums"]["order_status"] | null
-          total_amount?: number
-          updated_at?: string | null
+          order_number?: never
+          status?: string | null
+          subtotal?: number
+          total?: number
+        }
+        Relationships: []
+      }
+      packages: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          description_ar: string | null
+          id: string
+          image_url: string | null
+          name: string
+          name_ar: string
+          price: number
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          description_ar?: string | null
+          id?: string
+          image_url?: string | null
+          name: string
+          name_ar: string
+          price: number
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          description_ar?: string | null
+          id?: string
+          image_url?: string | null
+          name?: string
+          name_ar?: string
+          price?: number
+        }
+        Relationships: []
+      }
+      product_colors: {
+        Row: {
+          color_code: string | null
+          color_name: string
+          color_name_ar: string
+          created_at: string | null
+          id: string
+          product_id: string | null
+        }
+        Insert: {
+          color_code?: string | null
+          color_name: string
+          color_name_ar: string
+          created_at?: string | null
+          id?: string
+          product_id?: string | null
+        }
+        Update: {
+          color_code?: string | null
+          color_name?: string
+          color_name_ar?: string
+          created_at?: string | null
+          id?: string
+          product_id?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "orders_customer_id_fkey"
-            columns: ["customer_id"]
+            foreignKeyName: "product_colors_product_id_fkey"
+            columns: ["product_id"]
             isOneToOne: false
-            referencedRelation: "customers"
+            referencedRelation: "products"
             referencedColumns: ["id"]
           },
+        ]
+      }
+      product_images: {
+        Row: {
+          created_at: string | null
+          display_order: number | null
+          id: string
+          image_url: string
+          product_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          image_url: string
+          product_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          image_url?: string
+          product_id?: string | null
+        }
+        Relationships: [
           {
-            foreignKeyName: "orders_delivery_agent_id_fkey"
-            columns: ["delivery_agent_id"]
+            foreignKeyName: "product_images_product_id_fkey"
+            columns: ["product_id"]
             isOneToOne: false
-            referencedRelation: "delivery_agents"
+            referencedRelation: "products"
             referencedColumns: ["id"]
           },
+        ]
+      }
+      product_sizes: {
+        Row: {
+          created_at: string | null
+          id: string
+          price: number
+          product_id: string | null
+          size_name: string
+          stock_quantity: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          price: number
+          product_id?: string | null
+          size_name: string
+          stock_quantity?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          price?: number
+          product_id?: string | null
+          size_name?: string
+          stock_quantity?: number | null
+        }
+        Relationships: [
           {
-            foreignKeyName: "orders_governorate_id_fkey"
-            columns: ["governorate_id"]
+            foreignKeyName: "product_sizes_product_id_fkey"
+            columns: ["product_id"]
             isOneToOne: false
-            referencedRelation: "governorates"
+            referencedRelation: "products"
             referencedColumns: ["id"]
           },
         ]
@@ -339,56 +311,44 @@ export type Database = {
       products: {
         Row: {
           category_id: string | null
-          color_options: string[] | null
           created_at: string | null
           description: string | null
-          details: string | null
+          description_ar: string | null
           id: string
-          image_url: string | null
-          is_offer: boolean | null
+          is_featured: boolean | null
+          low_stock_alert: number | null
           name: string
-          offer_price: number | null
-          price: number
-          quantity_pricing: Json | null
-          size_options: string[] | null
-          size_pricing: Json | null
-          stock: number | null
+          name_ar: string
+          rating: number | null
+          stock_quantity: number | null
           updated_at: string | null
         }
         Insert: {
           category_id?: string | null
-          color_options?: string[] | null
           created_at?: string | null
           description?: string | null
-          details?: string | null
+          description_ar?: string | null
           id?: string
-          image_url?: string | null
-          is_offer?: boolean | null
+          is_featured?: boolean | null
+          low_stock_alert?: number | null
           name: string
-          offer_price?: number | null
-          price: number
-          quantity_pricing?: Json | null
-          size_options?: string[] | null
-          size_pricing?: Json | null
-          stock?: number | null
+          name_ar: string
+          rating?: number | null
+          stock_quantity?: number | null
           updated_at?: string | null
         }
         Update: {
           category_id?: string | null
-          color_options?: string[] | null
           created_at?: string | null
           description?: string | null
-          details?: string | null
+          description_ar?: string | null
           id?: string
-          image_url?: string | null
-          is_offer?: boolean | null
+          is_featured?: boolean | null
+          low_stock_alert?: number | null
           name?: string
-          offer_price?: number | null
-          price?: number
-          quantity_pricing?: Json | null
-          size_options?: string[] | null
-          size_pricing?: Json | null
-          stock?: number | null
+          name_ar?: string
+          rating?: number | null
+          stock_quantity?: number | null
           updated_at?: string | null
         }
         Relationships: [
@@ -401,104 +361,15 @@ export type Database = {
           },
         ]
       }
-      returns: {
-        Row: {
-          created_at: string | null
-          customer_id: string | null
-          delivery_agent_id: string | null
-          id: string
-          notes: string | null
-          order_id: string | null
-          return_amount: number
-          returned_items: Json
-        }
-        Insert: {
-          created_at?: string | null
-          customer_id?: string | null
-          delivery_agent_id?: string | null
-          id?: string
-          notes?: string | null
-          order_id?: string | null
-          return_amount?: number
-          returned_items?: Json
-        }
-        Update: {
-          created_at?: string | null
-          customer_id?: string | null
-          delivery_agent_id?: string | null
-          id?: string
-          notes?: string | null
-          order_id?: string | null
-          return_amount?: number
-          returned_items?: Json
-        }
-        Relationships: [
-          {
-            foreignKeyName: "returns_customer_id_fkey"
-            columns: ["customer_id"]
-            isOneToOne: false
-            referencedRelation: "customers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "returns_delivery_agent_id_fkey"
-            columns: ["delivery_agent_id"]
-            isOneToOne: false
-            referencedRelation: "delivery_agents"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "returns_order_id_fkey"
-            columns: ["order_id"]
-            isOneToOne: false
-            referencedRelation: "orders"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      statistics: {
-        Row: {
-          id: string
-          last_reset: string | null
-          total_orders: number | null
-          total_sales: number | null
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          last_reset?: string | null
-          total_orders?: number | null
-          total_sales?: number | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          last_reset?: string | null
-          total_orders?: number | null
-          total_sales?: number | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      reset_order_sequence: { Args: never; Returns: undefined }
+      [_ in never]: never
     }
     Enums: {
-      order_status:
-        | "pending"
-        | "processing"
-        | "shipped"
-        | "delivered"
-        | "cancelled"
-        | "returned"
-        | "partially_returned"
-        | "delivered_with_modification"
-        | "return_no_shipping"
-      payment_status: "pending" | "partial" | "paid"
+      [_ in never]: never
     }
     CompositeTypes: {
       [_ in never]: never
@@ -625,19 +496,6 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {
-      order_status: [
-        "pending",
-        "processing",
-        "shipped",
-        "delivered",
-        "cancelled",
-        "returned",
-        "partially_returned",
-        "delivered_with_modification",
-        "return_no_shipping",
-      ],
-      payment_status: ["pending", "partial", "paid"],
-    },
+    Enums: {},
   },
 } as const
