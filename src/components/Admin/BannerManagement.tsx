@@ -96,7 +96,9 @@ const BannerManagement = () => {
         .from("banners")
         .insert([{
           title: newBanner.title,
+          title_ar: newBanner.title,
           description: newBanner.description || null,
+          description_ar: newBanner.description || null,
           image_url: imageUrl,
           link_url: newBanner.link_url || null,
           is_active: newBanner.is_active,
