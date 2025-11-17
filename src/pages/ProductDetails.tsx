@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCart } from "@/contexts/CartContext";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { ArrowRight, ShoppingCart, Minus, Plus } from "lucide-react";
 
@@ -254,50 +255,83 @@ const ProductDetails = () => {
           </div>
 
           {selectedItems.map((item, index) => (
-            <Card key={index} className="p-4 space-y-4 border-2 border-primary/20">
-              <h3 className="font-semibold">القطعة {index + 1}</h3>
-              
-              {colors.length > 0 && (
-                <div>
-                  <label className="block text-sm font-medium mb-2">اللون</label>
-                  <div className="flex flex-wrap gap-2">
-                    {colors.map((color) => (
-                      <button
-                        key={color.id}
-                        onClick={() => updateSelectedItem(index, 'color', color.color_name_ar)}
-                        className={`px-4 py-2 border-2 rounded transition-all ${
-                          item.color === color.color_name_ar
-                            ? "border-primary bg-primary text-primary-foreground"
-                            : "border-border hover:border-primary"
-                        }`}
-                      >
-                        {color.color_name_ar}
-                      </button>
-                    ))}
+            <Card key={index} className="p-6 border-2 shadow-sm">
+              <div className="space-y-6">
+                <h3 className="font-semibold text-xl text-primary">القطعة {index + 1}</h3>
+                
+                {colors.length > 0 && (
+                  <div>
+                    <Label className="mb-3 block text-base font-semibold">اختر اللون</Label>
+                    <div className="grid grid-cols-3 md:grid-cols-4 gap-3">
+                      {colors.map((color) => (
+                        <button
+                          key={color.id}
+                          type="button"
+                          onClick={() => updateSelectedItem(index, 'color', color.color_name_ar)}
+                          className={`group relative p-4 border-2 rounded-xl transition-all hover:shadow-lg ${
+                            item.color === color.color_name_ar
+                              ? "border-primary bg-primary/10 ring-2 ring-primary/20"
+                              : "border-border hover:border-primary/50"
+                          }`}
+                        >
+                          <div className="flex flex-col items-center gap-2">
+                            {color.color_code && (
+                              <div
+                                className="w-12 h-12 rounded-full border-4 border-background shadow-md group-hover:scale-110 transition-transform"
+                                style={{ 
+                                  backgroundColor: color.color_code,
+                                  boxShadow: `0 4px 12px ${color.color_code}40`
+                                }}
+                              />
+                            )}
+                            <span className="text-sm font-medium text-center">{color.color_name_ar}</span>
+                          </div>
+                          {item.color === color.color_name_ar && (
+                            <div className="absolute -top-2 -right-2 w-6 h-6 bg-primary rounded-full flex items-center justify-center">
+                              <span className="text-primary-foreground text-xs">✓</span>
+                            </div>
+                          )}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {sizes.length > 0 && (
-                <div>
-                  <label className="block text-sm font-medium mb-2">المقاس</label>
-                  <div className="flex flex-wrap gap-2">
-                    {sizes.map((size) => (
-                      <button
-                        key={size.id}
-                        onClick={() => updateSelectedItem(index, 'size', size.size_name)}
-                        className={`px-4 py-2 border-2 rounded transition-all ${
-                          item.size === size.size_name
-                            ? "border-primary bg-primary text-primary-foreground"
-                            : "border-border hover:border-primary"
-                        }`}
-                      >
-                        {size.size_name}
-                      </button>
-                    ))}
+                {sizes.length > 0 && (
+                  <div>
+                    <Label className="mb-3 block text-base font-semibold">اختر المقاس</Label>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                      {sizes.map((size) => (
+                        <button
+                          key={size.id}
+                          type="button"
+                          onClick={() => updateSelectedItem(index, 'size', size.size_name)}
+                          className={`group relative p-4 border-2 rounded-xl transition-all hover:shadow-lg ${
+                            item.size === size.size_name
+                              ? "border-primary bg-primary/10 ring-2 ring-primary/20"
+                              : "border-border hover:border-primary/50"
+                          }`}
+                        >
+                          <div className="text-center space-y-1">
+                            <div className="font-bold text-lg">{size.size_name}</div>
+                            <div className="text-primary font-semibold">{size.price} جنيه</div>
+                            {size.stock_quantity !== null && (
+                              <div className="text-xs text-muted-foreground">
+                                متوفر: {size.stock_quantity}
+                              </div>
+                            )}
+                          </div>
+                          {item.size === size.size_name && (
+                            <div className="absolute -top-2 -right-2 w-6 h-6 bg-primary rounded-full flex items-center justify-center">
+                              <span className="text-primary-foreground text-xs">✓</span>
+                            </div>
+                          )}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </Card>
           ))}
 
