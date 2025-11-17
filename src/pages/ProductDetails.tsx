@@ -42,8 +42,7 @@ const ProductDetails = () => {
   const [colors, setColors] = useState<ProductColor[]>([]);
   const [sizes, setSizes] = useState<ProductSize[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedColor, setSelectedColor] = useState<string>("");
-  const [selectedSize, setSelectedSize] = useState<string>("");
+  const [selectedItems, setSelectedItems] = useState<Array<{ color: string; size: string }>>([]);
   const [quantity, setQuantity] = useState(1);
 
   useEffect(() => {
@@ -81,9 +80,6 @@ const ProductDetails = () => {
 
       if (error) throw error;
       setColors(data || []);
-      if (data && data.length > 0) {
-        setSelectedColor(data[0].color_name_ar);
-      }
     } catch (error) {
       console.error("Error fetching colors:", error);
     }
@@ -98,9 +94,6 @@ const ProductDetails = () => {
 
       if (error) throw error;
       setSizes(data || []);
-      if (data && data.length > 0) {
-        setSelectedSize(data[0].size_name);
-      }
     } catch (error) {
       console.error("Error fetching sizes:", error);
     }
@@ -108,42 +101,73 @@ const ProductDetails = () => {
 
   const getCurrentPrice = () => {
     if (!product) return 0;
-    
-    if (selectedSize) {
-      const sizeData = sizes.find(s => s.size_name === selectedSize);
-      if (sizeData && sizeData.price) return sizeData.price;
-    }
-    
     return product.is_offer && product.offer_price ? product.offer_price : product.price;
   };
 
   const handleAddToCart = () => {
     if (!product) return;
 
-    if (colors.length > 0 && !selectedColor) {
-      toast.error("يرجى اختيار اللون");
+    // التحقق من أن عدد الاختيارات يطابق الكمية
+    if (selectedItems.length !== quantity) {
+      toast.error(`يرجى اختيار ${quantity} من الألوان والمقاسات`);
       return;
     }
 
-    if (sizes.length > 0 && !selectedSize) {
-      toast.error("يرجى اختيار المقاس");
-      return;
+    // التحقق من اكتمال جميع الاختيارات
+    for (let i = 0; i < selectedItems.length; i++) {
+      if (colors.length > 0 && !selectedItems[i].color) {
+        toast.error(`يرجى اختيار اللون للقطعة ${i + 1}`);
+        return;
+      }
+      if (sizes.length > 0 && !selectedItems[i].size) {
+        toast.error(`يرجى اختيار المقاس للقطعة ${i + 1}`);
+        return;
+      }
     }
 
     const currentPrice = getCurrentPrice();
 
-    for (let i = 0; i < quantity; i++) {
+    // إضافة كل قطعة بالألوان والمقاسات المختارة
+    selectedItems.forEach((item) => {
       addToCart({
         id: product.id,
         name: product.name,
         price: currentPrice,
         image_url: product.image_url,
-        color: selectedColor || undefined,
-        size: selectedSize || undefined,
+        color: item.color || undefined,
+        size: item.size || undefined,
       });
-    }
+    });
 
     toast.success(`تم إضافة ${quantity} من ${product.name} إلى السلة`);
+    setSelectedItems([]);
+    setQuantity(1);
+  };
+
+  const updateQuantity = (newQuantity: number) => {
+    setQuantity(newQuantity);
+    const currentItems = [...selectedItems];
+    
+    if (newQuantity > selectedItems.length) {
+      // إضافة عناصر فارغة
+      for (let i = selectedItems.length; i < newQuantity; i++) {
+        currentItems.push({ color: "", size: "" });
+      }
+    } else {
+      // حذف العناصر الزائدة
+      currentItems.splice(newQuantity);
+    }
+    
+    setSelectedItems(currentItems);
+  };
+
+  const updateSelectedItem = (index: number, field: 'color' | 'size', value: string) => {
+    const newItems = [...selectedItems];
+    if (!newItems[index]) {
+      newItems[index] = { color: "", size: "" };
+    }
+    newItems[index][field] = value;
+    setSelectedItems(newItems);
   };
 
   if (loading) {
@@ -182,7 +206,7 @@ const ProductDetails = () => {
             <img
               src={product.image_url || "/placeholder.svg"}
               alt={product.name}
-              className="w-full h-full object-cover aspect-square"
+              className="w-full object-contain aspect-square"
             />
           </Card>
         </div>
@@ -204,55 +228,13 @@ const ProductDetails = () => {
             </span>
           </div>
 
-          {colors.length > 0 && (
-            <div>
-              <label className="block text-sm font-medium mb-2">اللون</label>
-              <div className="flex flex-wrap gap-2">
-                {colors.map((color) => (
-                  <button
-                    key={color.id}
-                    onClick={() => setSelectedColor(color.color_name_ar)}
-                    className={`px-4 py-2 border-2 rounded-lg transition-all ${
-                      selectedColor === color.color_name_ar
-                        ? "border-primary bg-primary text-primary-foreground"
-                        : "border-border hover:border-primary"
-                    }`}
-                  >
-                    {color.color_name_ar}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {sizes.length > 0 && (
-            <div>
-              <label className="block text-sm font-medium mb-2">المقاس</label>
-              <div className="flex flex-wrap gap-2">
-                {sizes.map((size) => (
-                  <button
-                    key={size.id}
-                    onClick={() => setSelectedSize(size.size_name)}
-                    className={`px-4 py-2 border-2 rounded-lg transition-all ${
-                      selectedSize === size.size_name
-                        ? "border-primary bg-primary text-primary-foreground"
-                        : "border-border hover:border-primary"
-                    }`}
-                  >
-                    {size.size_name}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
           <div>
             <label className="block text-sm font-medium mb-2">الكمية</label>
             <div className="flex items-center gap-4">
               <Button
                 variant="outline"
                 size="icon"
-                onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                onClick={() => updateQuantity(Math.max(1, quantity - 1))}
               >
                 <Minus className="h-4 w-4" />
               </Button>
@@ -260,7 +242,7 @@ const ProductDetails = () => {
               <Button
                 variant="outline"
                 size="icon"
-                onClick={() => setQuantity(quantity + 1)}
+                onClick={() => updateQuantity(quantity + 1)}
                 disabled={quantity >= product.stock_quantity}
               >
                 <Plus className="h-4 w-4" />
@@ -270,6 +252,54 @@ const ProductDetails = () => {
               {product.stock_quantity > 0 ? `متوفر: ${product.stock_quantity} قطعة` : "غير متوفر"}
             </p>
           </div>
+
+          {selectedItems.map((item, index) => (
+            <Card key={index} className="p-4 space-y-4 border-2 border-primary/20">
+              <h3 className="font-semibold">القطعة {index + 1}</h3>
+              
+              {colors.length > 0 && (
+                <div>
+                  <label className="block text-sm font-medium mb-2">اللون</label>
+                  <div className="flex flex-wrap gap-2">
+                    {colors.map((color) => (
+                      <button
+                        key={color.id}
+                        onClick={() => updateSelectedItem(index, 'color', color.color_name_ar)}
+                        className={`px-4 py-2 border-2 rounded transition-all ${
+                          item.color === color.color_name_ar
+                            ? "border-primary bg-primary text-primary-foreground"
+                            : "border-border hover:border-primary"
+                        }`}
+                      >
+                        {color.color_name_ar}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {sizes.length > 0 && (
+                <div>
+                  <label className="block text-sm font-medium mb-2">المقاس</label>
+                  <div className="flex flex-wrap gap-2">
+                    {sizes.map((size) => (
+                      <button
+                        key={size.id}
+                        onClick={() => updateSelectedItem(index, 'size', size.size_name)}
+                        className={`px-4 py-2 border-2 rounded transition-all ${
+                          item.size === size.size_name
+                            ? "border-primary bg-primary text-primary-foreground"
+                            : "border-border hover:border-primary"
+                        }`}
+                      >
+                        {size.size_name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </Card>
+          ))}
 
           <Button
             className="w-full bg-gradient-to-r from-primary to-orange-light hover:from-orange-dark hover:to-primary text-white font-bold text-lg py-6"
