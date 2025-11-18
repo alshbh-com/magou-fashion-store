@@ -39,9 +39,7 @@ const PackagesManagement = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingPackage, setEditingPackage] = useState<Package | null>(null);
   const [formData, setFormData] = useState({
-    name: "",
     name_ar: "",
-    description: "",
     description_ar: "",
     price: 0,
     image_url: "",
@@ -72,10 +70,19 @@ const PackagesManagement = () => {
     e.preventDefault();
 
     try {
+      const dataToSave = {
+        name: formData.name_ar,
+        name_ar: formData.name_ar,
+        description: formData.description_ar,
+        description_ar: formData.description_ar,
+        price: formData.price,
+        image_url: formData.image_url,
+      };
+
       if (editingPackage) {
         const { error } = await supabase
           .from("packages")
-          .update(formData)
+          .update(dataToSave)
           .eq("id", editingPackage.id);
 
         if (error) throw error;
@@ -83,7 +90,7 @@ const PackagesManagement = () => {
       } else {
         const { error } = await supabase
           .from("packages")
-          .insert([formData]);
+          .insert([dataToSave]);
 
         if (error) throw error;
         toast.success("تم إضافة الباكدج");
@@ -121,9 +128,7 @@ const PackagesManagement = () => {
   const openEditDialog = (pkg: Package) => {
     setEditingPackage(pkg);
     setFormData({
-      name: pkg.name,
       name_ar: pkg.name_ar,
-      description: pkg.description || "",
       description_ar: pkg.description_ar || "",
       price: pkg.price,
       image_url: pkg.image_url || "",
@@ -133,9 +138,7 @@ const PackagesManagement = () => {
 
   const resetForm = () => {
     setFormData({
-      name: "",
       name_ar: "",
-      description: "",
       description_ar: "",
       price: 0,
       image_url: "",
@@ -174,50 +177,26 @@ const PackagesManagement = () => {
               </DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="name_ar">الاسم بالعربي</Label>
-                  <Input
-                    id="name_ar"
-                    value={formData.name_ar}
-                    onChange={(e) => setFormData({ ...formData, name_ar: e.target.value })}
-                    placeholder="مثال: باكدج 6 قطع"
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="name">الاسم بالإنجليزي</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="Example: 6 Pieces Package"
-                    required
-                  />
-                </div>
+              <div>
+                <Label htmlFor="name_ar">الاسم</Label>
+                <Input
+                  id="name_ar"
+                  value={formData.name_ar}
+                  onChange={(e) => setFormData({ ...formData, name_ar: e.target.value })}
+                  placeholder="مثال: باكدج 6 قطع"
+                  required
+                />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="description_ar">الوصف بالعربي</Label>
-                  <Textarea
-                    id="description_ar"
-                    value={formData.description_ar}
-                    onChange={(e) => setFormData({ ...formData, description_ar: e.target.value })}
-                    placeholder="6 قطع من أي منتج بسعر 350 جنيه"
-                    rows={3}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="description">الوصف بالإنجليزي</Label>
-                  <Textarea
-                    id="description"
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    placeholder="6 pieces of any product for 350 EGP"
-                    rows={3}
-                  />
-                </div>
+              <div>
+                <Label htmlFor="description_ar">الوصف</Label>
+                <Textarea
+                  id="description_ar"
+                  value={formData.description_ar}
+                  onChange={(e) => setFormData({ ...formData, description_ar: e.target.value })}
+                  placeholder="6 قطع من أي منتج بسعر 350 جنيه"
+                  rows={3}
+                />
               </div>
 
               <div>
@@ -239,7 +218,7 @@ const PackagesManagement = () => {
                   id="image_url"
                   value={formData.image_url}
                   onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                  placeholder="https://..."
+                  placeholder="https://example.com/image.jpg"
                 />
               </div>
 

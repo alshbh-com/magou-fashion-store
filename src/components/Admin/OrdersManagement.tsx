@@ -154,6 +154,7 @@ const OrdersManagement = () => {
       shipped: "bg-purple-100 text-purple-800",
       delivered: "bg-green-100 text-green-800",
       cancelled: "bg-red-100 text-red-800",
+      transferred: "bg-cyan-100 text-cyan-800",
     };
 
     const statusLabels: Record<string, string> = {
@@ -162,6 +163,7 @@ const OrdersManagement = () => {
       shipped: "تم الشحن",
       delivered: "تم التوصيل",
       cancelled: "ملغي",
+      transferred: "تم النقل للسيستم",
     };
 
     return (
@@ -293,6 +295,7 @@ const OrdersManagement = () => {
                         <SelectItem value="shipped">تم الشحن</SelectItem>
                         <SelectItem value="delivered">تم التوصيل</SelectItem>
                         <SelectItem value="cancelled">ملغي</SelectItem>
+                        <SelectItem value="transferred">تم النقل للسيستم</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

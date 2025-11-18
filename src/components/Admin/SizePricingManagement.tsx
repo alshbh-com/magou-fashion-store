@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 interface Product {
   id: string;
   name: string;
+  price: number;
   size_options: string[] | null;
   size_pricing: Array<{ size: string; price: number }>;
 }
@@ -30,7 +31,7 @@ const SizePricingManagement = () => {
     try {
       const { data, error } = await supabase
         .from("products")
-        .select("id, name, size_options, size_pricing")
+        .select("id, name, price, size_options, size_pricing")
         .order("name");
 
       if (error) throw error;
@@ -50,16 +51,21 @@ const SizePricingManagement = () => {
   };
 
   const addSizePrice = async () => {
-    if (!newSizePrice.size || !newSizePrice.price || !selectedProduct) {
-      toast.error("يرجى إدخال المقاس والسعر");
+    if (!newSizePrice.size || !selectedProduct) {
+      toast.error("يرجى إدخال المقاس");
       return;
     }
+    
+    // If price is 0 or empty, use product's price
+    const priceToUse = (!newSizePrice.price || parseFloat(newSizePrice.price) === 0) 
+      ? selectedProduct.price 
+      : parseFloat(newSizePrice.price);
 
     setSaving(true);
     try {
       const updatedPricing = [
         ...(selectedProduct.size_pricing || []),
-        { size: newSizePrice.size, price: parseFloat(newSizePrice.price) }
+        { size: newSizePrice.size, price: priceToUse }
       ];
 
       const { error } = await supabase

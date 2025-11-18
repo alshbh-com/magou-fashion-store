@@ -191,8 +191,27 @@ const { data: existingCustomer } = await supabase
 
       // 5. Show success message
       clearCart();
-      toast.success("شكراً لشرائك من magoufashion! لقد اخترت شيئاً جميلاً 🎉");
-      navigate("/");
+      
+      // Show full-screen success message
+      const successDiv = document.createElement('div');
+      successDiv.className = 'fixed inset-0 z-50 flex items-center justify-center bg-background/95 backdrop-blur-sm animate-in fade-in duration-300';
+      successDiv.innerHTML = `
+        <div class="text-center space-y-6 p-8">
+          <div class="text-6xl mb-4">🎉</div>
+          <h2 class="text-3xl font-bold text-primary">شكراً لك!</h2>
+          <p class="text-xl text-muted-foreground">تم إرسال طلبك بنجاح</p>
+          <p class="text-lg">سنتواصل معك قريباً</p>
+        </div>
+      `;
+      document.body.appendChild(successDiv);
+      
+      setTimeout(() => {
+        successDiv.classList.add('animate-out', 'fade-out', 'duration-300');
+        setTimeout(() => {
+          document.body.removeChild(successDiv);
+          navigate("/");
+        }, 300);
+      }, 5000);
     } catch (error) {
       console.error("Error creating order:", error);
       toast.error("حدث خطأ أثناء إرسال الطلب");
