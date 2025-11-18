@@ -75,53 +75,12 @@ const Cart = () => {
                       {item.notes}
                     </p>
                   )}
-                  <p className="text-primary font-bold mb-3">{item.price} جنيه</p>
                   
-                  {/* Color and Size Selection */}
-                  <div className="space-y-3 mb-4 p-3 bg-secondary/50 rounded-lg border border-border">
-                    {item.color_options && item.color_options.length > 0 && (
-                      <div className="space-y-1">
-                        <label className="text-sm font-semibold flex items-center gap-1">
-                          اللون
-                          {!item.color && <span className="text-destructive">*</span>}
-                        </label>
-                        <Select 
-                          value={item.color || ""} 
-                          onValueChange={(value) => updateItemOptions(item.id, item.color, item.size, value, item.size)}
-                        >
-                          <SelectTrigger className={`w-full h-10 ${!item.color ? 'border-destructive' : ''}`}>
-                            <SelectValue placeholder="اختر اللون" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {item.color_options.map((color) => (
-                              <SelectItem key={color} value={color}>{color}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
-                    
-                    {item.size_options && item.size_options.length > 0 && (
-                      <div className="space-y-1">
-                        <label className="text-sm font-semibold flex items-center gap-1">
-                          المقاس
-                          {!item.size && <span className="text-destructive">*</span>}
-                        </label>
-                        <Select 
-                          value={item.size || ""} 
-                          onValueChange={(value) => updateItemOptions(item.id, item.color, item.size, item.color, value)}
-                        >
-                          <SelectTrigger className={`w-full h-10 ${!item.size ? 'border-destructive' : ''}`}>
-                            <SelectValue placeholder="اختر المقاس" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {item.size_options.map((size) => (
-                              <SelectItem key={size} value={size}>{size}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
+                  {/* Product Details */}
+                  <div className="text-sm space-y-1 mb-2 text-muted-foreground">
+                    {item.color && <p>اللون: <span className="font-semibold text-foreground">{item.color}</span></p>}
+                    {item.size && <p>المقاس: <span className="font-semibold text-foreground">{item.size}</span></p>}
+                    <p>السعر: <span className="font-semibold text-primary">{item.price} جنيه</span></p>
                   </div>
                   
                   <div className="flex items-center gap-4">

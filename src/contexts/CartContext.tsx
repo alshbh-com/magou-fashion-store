@@ -16,7 +16,7 @@ interface CartItem {
 
 interface CartContextType {
   items: CartItem[];
-  addToCart: (item: Omit<CartItem, "quantity">) => void;
+  addToCart: (item: Omit<CartItem, "quantity"> & { quantity?: number }) => void;
   removeFromCart: (id: string, color?: string, size?: string) => void;
   updateQuantity: (id: string, quantity: number, color?: string, size?: string) => void;
   updateItemOptions: (id: string, color?: string, size?: string, newColor?: string, newSize?: string) => void;
@@ -37,7 +37,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem("cart", JSON.stringify(items));
   }, [items]);
 
-  const addToCart = (item: Omit<CartItem, "quantity">) => {
+  const addToCart = (item: Omit<CartItem, "quantity"> & { quantity?: number }) => {
     setItems((prev) => {
       const existing = prev.find((i) => 
         i.id === item.id && 
@@ -47,11 +47,11 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       if (existing) {
         return prev.map((i) =>
           i.id === item.id && i.color === item.color && i.size === item.size
-            ? { ...i, quantity: i.quantity + 1 }
+            ? { ...i, quantity: i.quantity + (item.quantity || 1) }
             : i
         );
       }
-      return [...prev, { ...item, quantity: 1 }];
+      return [...prev, { ...item, quantity: item.quantity || 1 }];
     });
     toast.success(`تم إضافة ${item.name} إلى السلة`);
   };

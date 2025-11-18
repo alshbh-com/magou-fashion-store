@@ -51,8 +51,9 @@ const ProductDetails = () => {
   const [sizes, setSizes] = useState<ProductSize[]>([]);
   const [offers, setOffers] = useState<ProductOffer[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedItems, setSelectedItems] = useState<Array<{ color: string; size: string }>>([{ color: "", size: "" }]);
   const [quantity, setQuantity] = useState(1);
+  const [selectedColors, setSelectedColors] = useState<string[]>([]);
+  const [selectedSize, setSelectedSize] = useState("");
 
   useEffect(() => {
     if (id) {
@@ -75,7 +76,6 @@ const ProductDetails = () => {
       setProduct(data);
     } catch (error) {
       console.error("Error fetching product:", error);
-      toast.error("فشل في تحميل المنتج");
     } finally {
       setLoading(false);
     }
@@ -127,91 +127,113 @@ const ProductDetails = () => {
   const getOfferPrice = (qty: number) => {
     if (!offers || offers.length === 0) return null;
     
-    const matchingOffer = offers.find(offer => {
-      const meetsMin = qty >= offer.min_quantity;
-      const meetsMax = !offer.max_quantity || qty <= offer.max_quantity;
-      return meetsMin && meetsMax;
-    });
-    
-    return matchingOffer ? matchingOffer.offer_price : null;
+    for (const offer of offers) {
+      if (qty >= offer.min_quantity && (!offer.max_quantity || qty <= offer.max_quantity)) {
+        return offer.offer_price;
+      }
+    }
+    return null;
   };
 
   const getCurrentPrice = () => {
-    if (!product) return 0;
-    
-    // Check if there's a quantity-based offer
+    // Check for size-specific pricing first
+    if (selectedSize && sizes.length > 0) {
+      const sizeData = sizes.find(s => s.size_name === selectedSize);
+      if (sizeData && sizeData.price > 0) {
+        return sizeData.price;
+      }
+    }
+
+    // Check for quantity-based offers
     const offerPrice = getOfferPrice(quantity);
     if (offerPrice) return offerPrice;
+
+    // Check for regular offer
+    if (product?.is_offer && product.offer_price) {
+      return product.offer_price;
+    }
+
+    return product?.price || 0;
+  };
+
+  const handleColorClick = (colorName: string) => {
+    setSelectedColors(prev => {
+      // If already selected, remove it
+      if (prev.includes(colorName)) {
+        return prev.filter(c => c !== colorName);
+      }
+      // If less than quantity, add it
+      if (prev.length < quantity) {
+        return [...prev, colorName];
+      }
+      // If equals quantity, replace the last one
+      return [...prev.slice(0, -1), colorName];
+    });
+  };
+
+  const updateQuantity = (newQuantity: number) => {
+    if (newQuantity < 1 || newQuantity > 12) return;
     
-    // Otherwise use regular product price or offer price
-    return product.is_offer && product.offer_price ? product.offer_price : product.price;
+    setQuantity(newQuantity);
+    // Adjust selected colors to match new quantity
+    if (selectedColors.length > newQuantity) {
+      setSelectedColors(selectedColors.slice(0, newQuantity));
+    } else if (selectedColors.length === 1 && newQuantity > 1) {
+      // If one color selected and quantity increased, fill all with same color
+      setSelectedColors(Array(newQuantity).fill(selectedColors[0]));
+    }
   };
 
   const handleAddToCart = () => {
     if (!product) return;
 
-    // التحقق من أن عدد الاختيارات يطابق الكمية
-    if (selectedItems.length !== quantity) {
-      toast.error(`يرجى اختيار ${quantity} من الألوان والمقاسات`);
-      return;
-    }
-
-    // التحقق من اكتمال جميع الاختيارات
-    for (let i = 0; i < selectedItems.length; i++) {
-      if (colors.length > 0 && !selectedItems[i].color) {
-        toast.error(`يرجى اختيار اللون للقطعة ${i + 1}`);
+    // Validate color selection
+    if (colors.length > 0) {
+      if (selectedColors.length === 0) {
+        toast.error("الرجاء اختيار اللون");
         return;
       }
-      if (sizes.length > 0 && !selectedItems[i].size) {
-        toast.error(`يرجى اختيار المقاس للقطعة ${i + 1}`);
+      if (selectedColors.length !== quantity) {
+        toast.error(`الرجاء اختيار ${quantity} لون`);
         return;
       }
     }
 
     const currentPrice = getCurrentPrice();
+    const basePrice = product.is_offer && product.offer_price ? product.offer_price : product.price;
+    const savings = ((basePrice - currentPrice) * quantity).toFixed(2);
 
-    // إضافة كل قطعة بالألوان والمقاسات المختارة
-    selectedItems.forEach((item) => {
+    // Group selected colors by their count
+    const colorCounts = selectedColors.reduce((acc, color) => {
+      acc[color] = (acc[color] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    // Add items to cart
+    Object.entries(colorCounts).forEach(([color, count]) => {
       addToCart({
         id: product.id,
         name: product.name,
         price: currentPrice,
+        quantity: count,
         image_url: product.image_url,
-        color: item.color || undefined,
-        size: item.size || undefined,
+        color,
+        size: selectedSize || undefined,
       });
     });
 
-    toast.success(`تم إضافة ${quantity} من ${product.name} إلى السلة`);
-    setSelectedItems([]);
+    if (parseFloat(savings) > 0) {
+      toast.success(`تم الإضافة للسلة! وفرت ${savings} جنيه 💰`);
+    } else {
+      toast.success("تم الإضافة للسلة");
+    }
+
+    // Reset selections
+    setSelectedColors([]);
+    setSelectedSize("");
     setQuantity(1);
   };
 
-  const updateQuantity = (newQuantity: number) => {
-    setQuantity(newQuantity);
-    const currentItems = [...selectedItems];
-    
-    if (newQuantity > selectedItems.length) {
-      // إضافة عناصر فارغة
-      for (let i = selectedItems.length; i < newQuantity; i++) {
-        currentItems.push({ color: "", size: "" });
-      }
-    } else {
-      // حذف العناصر الزائدة
-      currentItems.splice(newQuantity);
-    }
-    
-    setSelectedItems(currentItems);
-  };
-
-  const updateSelectedItem = (index: number, field: 'color' | 'size', value: string) => {
-    const newItems = [...selectedItems];
-    if (!newItems[index]) {
-      newItems[index] = { color: "", size: "" };
-    }
-    newItems[index][field] = value;
-    setSelectedItems(newItems);
-  };
 
   if (loading) {
     return (
@@ -231,6 +253,8 @@ const ProductDetails = () => {
   }
 
   const currentPrice = getCurrentPrice();
+  const basePrice = product.is_offer && product.offer_price ? product.offer_price : product.price;
+  const totalSavings = ((basePrice - currentPrice) * quantity).toFixed(2);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -249,42 +273,49 @@ const ProductDetails = () => {
             <img
               src={product.image_url || "/placeholder.svg"}
               alt={product.name}
-              className="w-full object-contain aspect-square"
+              className="w-full object-contain aspect-square bg-muted"
             />
           </Card>
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-4">
           <div>
-            <h1 className="text-3xl font-bold mb-2">{product.name}</h1>
-            <p className="text-muted-foreground">{product.description}</p>
+            <h1 className="text-2xl font-bold mb-2">{product.name}</h1>
+            <p className="text-sm text-muted-foreground">{product.description}</p>
           </div>
 
           <div className="flex items-center gap-4">
-            {product.is_offer && product.offer_price && (
-              <span className="text-2xl text-muted-foreground line-through">
-                {product.price} جنيه
+            {product.is_offer && product.offer_price && currentPrice !== product.price && (
+              <span className="text-xl text-muted-foreground line-through">
+                {product.price} ج.م
               </span>
             )}
-            <span className="text-3xl font-bold text-primary">
-              {currentPrice} جنيه
+            <span className="text-2xl font-bold text-primary">
+              {currentPrice} ج.م
             </span>
+            {parseFloat(totalSavings) > 0 && (
+              <span className="text-sm font-semibold text-green-600 bg-green-50 px-3 py-1 rounded-full">
+                توفير {totalSavings} ج.م 💰
+              </span>
+            )}
           </div>
 
-          {/* Quantity-based offers display */}
+          {/* Quantity-based offers */}
           {offers && offers.length > 0 && (
-            <Card className="p-4 bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
-              <h3 className="font-semibold mb-3 text-primary">عروض الكمية</h3>
-              <div className="space-y-2">
-                {offers.map((offer, index) => (
-                  <div key={offer.id} className="flex justify-between items-center text-sm">
+            <Card className="p-3 bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
+              <h3 className="font-semibold text-sm mb-2 text-primary">🎁 عروض الكمية</h3>
+              <div className="space-y-1">
+                {offers.map((offer) => (
+                  <div key={offer.id} className="flex justify-between items-center text-xs">
                     <span className="font-medium">
-                      {offer.max_quantity 
-                        ? `${offer.min_quantity} - ${offer.max_quantity} قطعة`
-                        : `${offer.min_quantity}+ قطعة`
+                      {offer.min_quantity === offer.max_quantity 
+                        ? `${offer.min_quantity} قطعة`
+                        : offer.max_quantity 
+                          ? `${offer.min_quantity} - ${offer.max_quantity} قطعة`
+                          : `${offer.min_quantity}+ قطعة`
                       }
                     </span>
-                    <span className="font-bold text-primary">{offer.offer_price} جنيه/قطعة</span>
+                    <span className="font-bold text-primary">{offer.offer_price} ج.م/قطعة</span>
                   </div>
                 ))}
               </div>
@@ -297,7 +328,7 @@ const ProductDetails = () => {
               <Button
                 variant="outline"
                 size="icon"
-                onClick={() => updateQuantity(Math.max(1, quantity - 1))}
+                onClick={() => updateQuantity(quantity - 1)}
               >
                 <Minus className="h-4 w-4" />
               </Button>
@@ -306,111 +337,87 @@ const ProductDetails = () => {
                 variant="outline"
                 size="icon"
                 onClick={() => updateQuantity(quantity + 1)}
-                disabled={quantity >= product.stock_quantity}
               >
                 <Plus className="h-4 w-4" />
               </Button>
             </div>
-            <p className="text-sm text-muted-foreground mt-2">
-              {product.stock_quantity > 0 ? `متوفر: ${product.stock_quantity} قطعة` : "غير متوفر"}
-            </p>
           </div>
 
-          {selectedItems.map((item, index) => (
-            <Card key={index} className="p-6 border-2 shadow-sm">
-              <div className="space-y-6">
-                <h3 className="font-semibold text-xl text-primary">القطعة {index + 1}</h3>
-                
-                {colors.length > 0 && (
-                  <div>
-                    <Label className="mb-3 block text-base font-semibold">اختر اللون</Label>
-                    <div className="grid grid-cols-3 md:grid-cols-4 gap-3">
-                      {colors.map((color) => (
-                        <button
-                          key={color.id}
-                          type="button"
-                          onClick={() => updateSelectedItem(index, 'color', color.color_name_ar)}
-                          className={`group relative p-4 border-2 rounded-xl transition-all hover:shadow-lg ${
-                            item.color === color.color_name_ar
-                              ? "border-primary bg-primary/10 ring-2 ring-primary/20"
-                              : "border-border hover:border-primary/50"
-                          }`}
-                        >
-                          <div className="flex flex-col items-center gap-2">
-                            {color.color_code && (
-                              <div
-                                className="w-12 h-12 rounded-full border-4 border-background shadow-md group-hover:scale-110 transition-transform"
-                                style={{ 
-                                  backgroundColor: color.color_code,
-                                  boxShadow: `0 4px 12px ${color.color_code}40`
-                                }}
-                              />
-                            )}
-                            <span className="text-sm font-medium text-center">{color.color_name_ar}</span>
-                          </div>
-                          {item.color === color.color_name_ar && (
-                            <div className="absolute -top-2 -right-2 w-6 h-6 bg-primary rounded-full flex items-center justify-center">
-                              <span className="text-primary-foreground text-xs">✓</span>
-                            </div>
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {sizes.length > 0 && (
-                  <div>
-                    <Label className="mb-3 block text-base font-semibold">اختر المقاس</Label>
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                      {sizes.map((size) => (
-                        <button
-                          key={size.id}
-                          type="button"
-                          onClick={() => updateSelectedItem(index, 'size', size.size_name)}
-                          className={`group relative p-4 border-2 rounded-xl transition-all hover:shadow-lg ${
-                            item.size === size.size_name
-                              ? "border-primary bg-primary/10 ring-2 ring-primary/20"
-                              : "border-border hover:border-primary/50"
-                          }`}
-                        >
-                          <div className="text-center space-y-1">
-                            <div className="font-bold text-lg">{size.size_name}</div>
-                            <div className="text-primary font-semibold">{size.price} جنيه</div>
-                            {size.stock_quantity !== null && (
-                              <div className="text-xs text-muted-foreground">
-                                متوفر: {size.stock_quantity}
-                              </div>
-                            )}
-                          </div>
-                          {item.size === size.size_name && (
-                            <div className="absolute -top-2 -right-2 w-6 h-6 bg-primary rounded-full flex items-center justify-center">
-                              <span className="text-primary-foreground text-xs">✓</span>
-                            </div>
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
+          {/* Colors Selection */}
+          {colors && colors.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                اللون ({selectedColors.length}/{quantity})
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {colors.map((color) => {
+                  const count = selectedColors.filter(c => c === color.color_name_ar).length;
+                  return (
+                    <button
+                      key={color.id}
+                      onClick={() => handleColorClick(color.color_name_ar)}
+                      className={`relative px-4 py-2 border-2 rounded-lg transition-all ${
+                        selectedColors.includes(color.color_name_ar)
+                          ? "border-primary bg-primary/10 font-semibold"
+                          : "border-border hover:border-primary/50"
+                      }`}
+                    >
+                      {color.color_name_ar}
+                      {count > 0 && (
+                        <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
+                          {count}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
-            </Card>
-          ))}
+            </div>
+          )}
+
+          {/* Sizes Selection */}
+          {sizes && sizes.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                المقاس (اختياري)
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {sizes.map((size) => (
+                  <button
+                    key={size.id}
+                    onClick={() => setSelectedSize(size.size_name)}
+                    className={`px-4 py-2 border-2 rounded-lg transition-all ${
+                      selectedSize === size.size_name
+                        ? "border-primary bg-primary/10 font-semibold"
+                        : "border-border hover:border-primary/50"
+                    }`}
+                  >
+                    <div>{size.size_name}</div>
+                    {size.price > 0 && (
+                      <div className="text-xs text-muted-foreground">{size.price} ج.م</div>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           <Button
-            className="w-full bg-gradient-to-r from-primary to-orange-light hover:from-orange-dark hover:to-primary text-white font-bold text-lg py-6"
             onClick={handleAddToCart}
-            disabled={product.stock_quantity === 0}
+            className="w-full hover-glow"
+            size="lg"
           >
-            <ShoppingCart className="mr-2 h-5 w-5" />
-            {product.stock_quantity === 0 ? "نفذت الكمية" : "إضافة إلى السلة"}
+            <ShoppingCart className="ml-2 h-5 w-5" />
+            إضافة إلى السلة
           </Button>
 
           {product.details && (
-            <div className="border-t pt-6">
-              <h3 className="text-xl font-bold mb-3">تفاصيل المنتج</h3>
-              <p className="text-muted-foreground whitespace-pre-line">{product.details}</p>
-            </div>
+            <Card className="p-4 mt-4">
+              <h3 className="font-semibold mb-2">تفاصيل المنتج</h3>
+              <p className="text-sm text-muted-foreground whitespace-pre-line">
+                {product.details}
+              </p>
+            </Card>
           )}
         </div>
       </div>
