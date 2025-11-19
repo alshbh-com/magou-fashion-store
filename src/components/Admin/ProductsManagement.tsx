@@ -71,9 +71,10 @@ const ProductsManagement = () => {
     offer_price: 0,
     category_id: "",
   });
-  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
   const [quantityOffers, setQuantityOffers] = useState<ProductOffer[]>([]);
+  const [existingImages, setExistingImages] = useState<string[]>([]);
 
   useEffect(() => {
     fetchProducts();
@@ -131,17 +132,17 @@ const ProductsManagement = () => {
 
     try {
       setUploading(true);
-      let imageUrl = editingProduct?.image_url || null;
+      let mainImageUrl = editingProduct?.image_url || null;
 
-      // Upload image if a new file is selected
-      if (imageFile) {
-        const fileExt = imageFile.name.split('.').pop();
+      // Upload first image as main image
+      if (imageFiles.length > 0 && imageFiles[0]) {
+        const fileExt = imageFiles[0].name.split('.').pop();
         const fileName = `${Math.random()}.${fileExt}`;
         const filePath = `${fileName}`;
 
         const { error: uploadError } = await supabase.storage
           .from('products')
-          .upload(filePath, imageFile);
+          .upload(filePath, imageFiles[0]);
 
         if (uploadError) throw uploadError;
 
@@ -149,7 +150,7 @@ const ProductsManagement = () => {
           .from('products')
           .getPublicUrl(filePath);
 
-        imageUrl = publicUrl;
+        mainImageUrl = publicUrl;
       }
 
       const productData = {
@@ -162,7 +163,7 @@ const ProductsManagement = () => {
         is_featured: formData.is_featured,
         is_offer: formData.is_offer,
         offer_price: formData.is_offer ? formData.offer_price : null,
-        image_url: imageUrl,
+        image_url: mainImageUrl,
         category_id: formData.category_id || null,
       };
 
@@ -258,7 +259,16 @@ const ProductsManagement = () => {
       offer_price: product.offer_price || 0,
       category_id: product.category_id || "",
     });
-    setImageFile(null);
+    setImageFiles([]);
+    
+    // Fetch existing additional images
+    const { data: images } = await supabase
+      .from("product_images")
+      .select("image_url")
+      .eq("product_id", product.id)
+      .order("display_order");
+    
+    setExistingImages(images?.map(img => img.image_url) || []);
     await fetchProductOffers(product.id);
     setDialogOpen(true);
   };
@@ -274,8 +284,10 @@ const ProductsManagement = () => {
       offer_price: 0,
       category_id: "",
     });
-    setImageFile(null);
+    setImageFiles([]);
+    setExistingImages([]);
     setQuantityOffers([]);
+    setEditingProduct(null);
   };
 
   const addQuantityOffer = () => {
@@ -402,16 +414,25 @@ const ProductsManagement = () => {
               </div>
 
               <div>
-                <Label htmlFor="image">صورة المنتج</Label>
+                <Label htmlFor="images">صور المنتج (حتى 3 صور)</Label>
                 <Input
-                  id="image"
+                  id="images"
                   type="file"
                   accept="image/*"
-                  onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+                  multiple
+                  onChange={(e) => {
+                    const files = Array.from(e.target.files || []).slice(0, 3);
+                    setImageFiles(files);
+                  }}
                 />
-                {editingProduct?.image_url && !imageFile && (
-                  <img src={editingProduct.image_url} alt="preview" className="mt-2 h-20 w-20 object-cover rounded" />
-                )}
+                <div className="flex gap-2 mt-2 flex-wrap">
+                  {editingProduct?.image_url && (
+                    <img src={editingProduct.image_url} alt="Main" className="h-20 w-20 object-cover rounded border-2 border-primary" />
+                  )}
+                  {existingImages.map((img, idx) => (
+                    <img key={idx} src={img} alt={`Additional ${idx + 1}`} className="h-20 w-20 object-cover rounded" />
+                  ))}
+                </div>
               </div>
 
               <div className="flex items-center gap-6">

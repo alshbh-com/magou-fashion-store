@@ -50,6 +50,7 @@ const ProductDetails = () => {
   const [colors, setColors] = useState<ProductColor[]>([]);
   const [sizes, setSizes] = useState<ProductSize[]>([]);
   const [offers, setOffers] = useState<ProductOffer[]>([]);
+  const [productImages, setProductImages] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
   const [selectedColors, setSelectedColors] = useState<string[]>([]);
@@ -61,8 +62,24 @@ const ProductDetails = () => {
       fetchColors();
       fetchSizes();
       fetchOffers();
+      fetchProductImages();
     }
   }, [id]);
+
+  const fetchProductImages = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("product_images")
+        .select("image_url")
+        .eq("product_id", id)
+        .order("display_order");
+
+      if (error) throw error;
+      setProductImages(data?.map(img => img.image_url) || []);
+    } catch (error) {
+      console.error("Error fetching product images:", error);
+    }
+  };
 
   const fetchProduct = async () => {
     try {
@@ -175,12 +192,11 @@ const ProductDetails = () => {
     if (newQuantity < 1 || newQuantity > 12) return;
     
     setQuantity(newQuantity);
-    // Adjust selected colors to match new quantity
-    if (selectedColors.length > newQuantity) {
-      setSelectedColors(selectedColors.slice(0, newQuantity));
-    } else if (selectedColors.length === 1 && newQuantity > 1) {
-      // If one color selected and quantity increased, fill all with same color
+    // If one color selected, fill all quantities with same color
+    if (selectedColors.length === 1) {
       setSelectedColors(Array(newQuantity).fill(selectedColors[0]));
+    } else if (selectedColors.length > newQuantity) {
+      setSelectedColors(selectedColors.slice(0, newQuantity));
     }
   };
 
@@ -203,23 +219,15 @@ const ProductDetails = () => {
     const basePrice = product.is_offer && product.offer_price ? product.offer_price : product.price;
     const savings = ((basePrice - currentPrice) * quantity).toFixed(2);
 
-    // Group selected colors by their count
-    const colorCounts = selectedColors.reduce((acc, color) => {
-      acc[color] = (acc[color] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-
-    // Add items to cart
-    Object.entries(colorCounts).forEach(([color, count]) => {
-      addToCart({
-        id: product.id,
-        name: product.name,
-        price: currentPrice,
-        quantity: count,
-        image_url: product.image_url,
-        color,
-        size: selectedSize || undefined,
-      });
+    // Add as single cart item with all details
+    addToCart({
+      id: product.id,
+      name: product.name,
+      price: currentPrice,
+      quantity: quantity,
+      image_url: product.image_url,
+      color_options: selectedColors.length > 0 ? selectedColors : undefined,
+      size: selectedSize || undefined,
     });
 
     if (parseFloat(savings) > 0) {
@@ -268,7 +276,7 @@ const ProductDetails = () => {
       </Button>
 
       <div className="grid md:grid-cols-2 gap-8">
-        <div>
+        <div className="space-y-2">
           <Card className="overflow-hidden border-2 border-primary/20">
             <img
               src={product.image_url || "/placeholder.svg"}
@@ -276,6 +284,19 @@ const ProductDetails = () => {
               className="w-full object-contain aspect-square bg-muted"
             />
           </Card>
+          {productImages.length > 0 && (
+            <div className="grid grid-cols-2 gap-2">
+              {productImages.map((img, idx) => (
+                <Card key={idx} className="overflow-hidden border border-border">
+                  <img
+                    src={img}
+                    alt={`${product.name} ${idx + 2}`}
+                    className="w-full object-contain aspect-square bg-muted"
+                  />
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="space-y-4">
@@ -305,19 +326,25 @@ const ProductDetails = () => {
             <Card className="p-3 bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
               <h3 className="font-semibold text-sm mb-2 text-primary">🎁 عروض الكمية</h3>
               <div className="space-y-1">
-                {offers.map((offer) => (
-                  <div key={offer.id} className="flex justify-between items-center text-xs">
-                    <span className="font-medium">
-                      {offer.min_quantity === offer.max_quantity 
-                        ? `${offer.min_quantity} قطعة`
-                        : offer.max_quantity 
-                          ? `${offer.min_quantity} - ${offer.max_quantity} قطعة`
-                          : `${offer.min_quantity}+ قطعة`
-                      }
-                    </span>
-                    <span className="font-bold text-primary">{offer.offer_price} ج.م/قطعة</span>
-                  </div>
-                ))}
+                {offers.map((offer) => {
+                  const discount = ((product.price - offer.offer_price) / product.price * 100).toFixed(0);
+                  return (
+                    <div key={offer.id} className="flex justify-between items-center text-xs">
+                      <span className="font-medium">
+                        {offer.min_quantity === offer.max_quantity 
+                          ? `${offer.min_quantity} قطعة`
+                          : offer.max_quantity 
+                            ? `${offer.min_quantity}-${offer.max_quantity} قطعة`
+                            : `${offer.min_quantity}+ قطعة`
+                        }
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-primary">{offer.offer_price} ج.م</span>
+                        <span className="text-green-600 font-semibold">({discount}% خصم)</span>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </Card>
           )}

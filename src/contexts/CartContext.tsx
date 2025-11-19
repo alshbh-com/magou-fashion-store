@@ -11,7 +11,6 @@ interface CartItem {
   color?: string;
   notes?: string;
   color_options?: string[];
-  size_options?: string[];
 }
 
 interface CartContextType {
@@ -39,27 +38,49 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   const addToCart = (item: Omit<CartItem, "quantity"> & { quantity?: number }) => {
     setItems((prev) => {
+      // Group by id and size only, not by color
       const existing = prev.find((i) => 
         i.id === item.id && 
-        i.color === item.color && 
-        i.size === item.size
+        i.size === item.size &&
+        JSON.stringify(i.color_options) === JSON.stringify(item.color_options)
       );
       if (existing) {
         return prev.map((i) =>
-          i.id === item.id && i.color === item.color && i.size === item.size
+          i.id === item.id && i.size === item.size && JSON.stringify(i.color_options) === JSON.stringify(item.color_options)
             ? { ...i, quantity: i.quantity + (item.quantity || 1) }
             : i
         );
       }
-      return [...prev, { ...item, quantity: item.quantity || 1 }];
+      
+      // Build notes from color_options and size
+      let notes = "";
+      if (item.color_options && item.color_options.length > 0) {
+        const colorCounts = item.color_options.reduce((acc, color) => {
+          acc[color] = (acc[color] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>);
+        const colorText = Object.entries(colorCounts)
+          .map(([color, count]) => count > 1 ? `${color} (${count})` : color)
+          .join(", ");
+        notes = `الألوان: ${colorText}`;
+      }
+      if (item.size) {
+        notes += notes ? ` - المقاس: ${item.size}` : `المقاس: ${item.size}`;
+      }
+      
+      return [...prev, { ...item, quantity: item.quantity || 1, notes }];
     });
     toast.success(`تم إضافة ${item.name} إلى السلة`);
   };
 
   const removeFromCart = (id: string, color?: string, size?: string) => {
-    setItems((prev) => prev.filter((item) => 
-      !(item.id === id && item.color === color && item.size === size)
-    ));
+    setItems((prev) => prev.filter((item) => {
+      if (item.id !== id) return true;
+      if (item.color_options) {
+        return !(item.size === size && JSON.stringify(item.color_options) === JSON.stringify(color ? [color] : []));
+      }
+      return !(item.color === color && item.size === size);
+    }));
     toast.success("تم حذف المنتج من السلة");
   };
 
@@ -69,11 +90,15 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
     setItems((prev) =>
-      prev.map((item) => 
-        (item.id === id && item.color === color && item.size === size) 
-          ? { ...item, quantity } 
-          : item
-      )
+      prev.map((item) => {
+        if (item.id !== id) return item;
+        if (item.color_options) {
+          return (item.size === size && JSON.stringify(item.color_options) === JSON.stringify(color ? [color] : []))
+            ? { ...item, quantity }
+            : item;
+        }
+        return (item.color === color && item.size === size) ? { ...item, quantity } : item;
+      })
     );
   };
 
