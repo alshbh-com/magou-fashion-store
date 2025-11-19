@@ -13,8 +13,7 @@ const Cart = () => {
 
   // Check if all items with options have selections
   const hasIncompleteSelections = items.some(item => 
-    (item.color_options && item.color_options.length > 0 && !item.color) ||
-    (item.size_options && item.size_options.length > 0 && !item.size)
+    (item.color_options && item.color_options.length > 0 && !item.color)
   );
 
   const handleCheckout = (e: React.MouseEvent) => {
