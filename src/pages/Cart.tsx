@@ -58,66 +58,62 @@ const Cart = () => {
 
       <div className="max-w-6xl mx-auto grid lg:grid-cols-3 gap-8">
         {/* Cart Items */}
-        <div className="lg:col-span-2 space-y-4">
+        <div className="lg:col-span-2 space-y-3">
           {items.map((item, index) => (
-            <Card key={`${item.id}-${item.color}-${item.size}-${index}`} className="p-4 bg-cart-rose">
-              <div className="flex gap-4">
+            <Card key={`${item.id}-${item.color}-${item.size}-${index}`} className="p-3 bg-cart-rose">
+              <div className="flex gap-3">
                 <img
                   src={item.image_url || "/placeholder.svg"}
                   alt={item.name}
-                  className="w-24 h-24 object-cover rounded-lg"
+                  className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-lg flex-shrink-0"
                 />
-                <div className="flex-1">
-                  <h3 className="font-semibold text-lg mb-1">{item.name}</h3>
-                  {item.notes && (
-                    <p className="text-sm text-muted-foreground mb-2 font-semibold">
-                      {item.notes}
-                    </p>
-                  )}
-                  
-                  {/* Product Details */}
-                  <div className="text-sm space-y-1 mb-2 text-muted-foreground">
-                    {item.color && <p>اللون: <span className="font-semibold text-foreground">{item.color}</span></p>}
-                    {item.size && <p>المقاس: <span className="font-semibold text-foreground">{item.size}</span></p>}
-                    <p>السعر: <span className="font-semibold text-primary">{item.price} جنيه</span></p>
-                  </div>
-                  
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2 bg-background border border-border rounded-lg p-1">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="h-8 w-8 border-0 hover:bg-muted"
-                        onClick={() => updateQuantity(item.id, item.quantity - 1, item.color, item.size)}
-                      >
-                        <Minus className="h-4 w-4" />
-                      </Button>
-                      <span className="w-8 text-center font-bold text-foreground">{item.quantity}</span>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="h-8 w-8 border-0 hover:bg-muted"
-                        onClick={() => updateQuantity(item.id, item.quantity + 1, item.color, item.size)}
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    
+                <div className="flex-1 min-w-0">
+                  <div className="flex justify-between items-start gap-2 mb-1">
+                    <h3 className="font-semibold text-base sm:text-lg truncate flex-1">{item.name}</h3>
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="text-destructive hover:text-destructive"
+                      className="h-7 w-7 text-destructive hover:text-destructive flex-shrink-0"
                       onClick={() => removeFromCart(item.id, item.color, item.size)}
                     >
-                      <Trash2 className="h-5 w-5" />
+                      <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
-                </div>
-                
-                <div className="text-left">
-                  <p className="font-bold text-lg">
-                    {(item.price * item.quantity).toFixed(2)} جنيه
-                  </p>
+                  
+                  {/* Product Details - Compact */}
+                  <div className="text-xs sm:text-sm space-y-0.5 mb-2">
+                    {item.notes && (
+                      <p className="text-muted-foreground font-medium">
+                        {item.notes}
+                      </p>
+                    )}
+                    <p className="text-muted-foreground">السعر: <span className="font-semibold text-primary">{item.price.toFixed(2)} ج</span></p>
+                  </div>
+                  
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 bg-background border border-border rounded-lg p-0.5">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-7 w-7 border-0 hover:bg-muted"
+                        onClick={() => updateQuantity(item.id, item.quantity - 1, item.color, item.size)}
+                      >
+                        <Minus className="h-3 w-3" />
+                      </Button>
+                      <span className="w-7 text-center font-semibold text-sm">{item.quantity}</span>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-7 w-7 border-0 hover:bg-muted"
+                        onClick={() => updateQuantity(item.id, item.quantity + 1, item.color, item.size)}
+                      >
+                        <Plus className="h-3 w-3" />
+                      </Button>
+                    </div>
+                    <div className="text-sm sm:text-base font-bold text-primary">
+                      {(item.price * item.quantity).toFixed(2)} ج
+                    </div>
+                  </div>
                 </div>
               </div>
             </Card>

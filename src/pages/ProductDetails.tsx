@@ -53,7 +53,7 @@ const ProductDetails = () => {
   const [productImages, setProductImages] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
-  const [selectedColors, setSelectedColors] = useState<string[]>([]);
+  const [selectedColors, setSelectedColors] = useState<Record<string, number>>({});
   const [selectedSize, setSelectedSize] = useState("");
 
   useEffect(() => {
@@ -153,93 +153,132 @@ const ProductDetails = () => {
   };
 
   const getCurrentPrice = () => {
-    // Check for size-specific pricing first
-    if (selectedSize && sizes.length > 0) {
-      const sizeData = sizes.find(s => s.size_name === selectedSize);
-      if (sizeData && sizeData.price > 0) {
-        return sizeData.price;
-      }
-    }
-
-    // Check for quantity-based offers
+    if (!product) return 0;
+    
+    // Get the base price (either from selected size or product)
+    const selectedSizeData = sizes.find(s => s.size_name === selectedSize);
+    const basePrice = selectedSizeData && selectedSizeData.price > 0 
+      ? selectedSizeData.price 
+      : product.price;
+    
+    // Check for quantity offers first
     const offerPrice = getOfferPrice(quantity);
-    if (offerPrice) return offerPrice;
-
-    // Check for regular offer
-    if (product?.is_offer && product.offer_price) {
-      return product.offer_price;
+    if (offerPrice) {
+      return offerPrice;
     }
-
-    return product?.price || 0;
+    
+    // Check for regular offer
+    if (product.is_offer && product.offer_price) {
+      return product.offer_price * quantity;
+    }
+    
+    // Return base price
+    return basePrice * quantity;
   };
 
-  const handleColorClick = (colorName: string) => {
-    setSelectedColors(prev => {
-      // If already selected, remove it
-      if (prev.includes(colorName)) {
-        return prev.filter(c => c !== colorName);
+  const getTotalSelectedColors = () => {
+    return Object.values(selectedColors).reduce((sum, count) => sum + count, 0);
+  };
+
+  const handleColorQuantityChange = (colorName: string, count: number) => {
+    setSelectedColors((prev) => {
+      const newColors = { ...prev };
+      
+      if (count <= 0) {
+        delete newColors[colorName];
+      } else {
+        const currentTotal = getTotalSelectedColors() - (prev[colorName] || 0);
+        const maxAllowed = quantity - currentTotal;
+        newColors[colorName] = Math.min(count, maxAllowed);
       }
-      // If less than quantity, add it
-      if (prev.length < quantity) {
-        return [...prev, colorName];
-      }
-      // If equals quantity, replace the last one
-      return [...prev.slice(0, -1), colorName];
+      
+      return newColors;
     });
   };
 
   const updateQuantity = (newQuantity: number) => {
     if (newQuantity < 1 || newQuantity > 12) return;
-    
     setQuantity(newQuantity);
-    // If one color selected, fill all quantities with same color
-    if (selectedColors.length === 1) {
-      setSelectedColors(Array(newQuantity).fill(selectedColors[0]));
-    } else if (selectedColors.length > newQuantity) {
-      setSelectedColors(selectedColors.slice(0, newQuantity));
+    
+    // Adjust color selections if needed
+    const totalColors = getTotalSelectedColors();
+    if (totalColors > newQuantity) {
+      // Proportionally reduce colors
+      const ratio = newQuantity / totalColors;
+      const newColors: Record<string, number> = {};
+      
+      Object.entries(selectedColors).forEach(([color, count]) => {
+        const newCount = Math.max(1, Math.floor(count * ratio));
+        newColors[color] = newCount;
+      });
+      
+      setSelectedColors(newColors);
     }
   };
 
   const handleAddToCart = () => {
     if (!product) return;
-
-    // Validate color selection
-    if (colors.length > 0) {
-      if (selectedColors.length === 0) {
-        toast.error("الرجاء اختيار اللون");
-        return;
-      }
-      if (selectedColors.length !== quantity) {
-        toast.error(`الرجاء اختيار ${quantity} لون`);
-        return;
-      }
+    
+    // Validation
+    const totalColors = getTotalSelectedColors();
+    if (colors.length > 0 && totalColors === 0) {
+      toast.error("يرجى اختيار الألوان");
+      return;
+    }
+    
+    if (colors.length > 0 && totalColors !== quantity) {
+      toast.error(`يرجى اختيار ${quantity} قطع من الألوان (المجموع الحالي: ${totalColors})`);
+      return;
     }
 
-    const currentPrice = getCurrentPrice();
-    const basePrice = product.is_offer && product.offer_price ? product.offer_price : product.price;
-    const savings = ((basePrice - currentPrice) * quantity).toFixed(2);
+    // Get the base price (either from selected size or product)
+    const selectedSizeData = sizes.find(s => s.size_name === selectedSize);
+    const basePrice = selectedSizeData && selectedSizeData.price > 0 
+      ? selectedSizeData.price 
+      : product.price;
+    
+    // Calculate unit price considering offers
+    let unitPrice = basePrice;
+    const offerPrice = getOfferPrice(quantity);
+    
+    if (offerPrice) {
+      unitPrice = offerPrice / quantity;
+    } else if (product.is_offer && product.offer_price) {
+      unitPrice = product.offer_price;
+    }
 
-    // Add as single cart item with all details
+    // Calculate savings
+    const regularTotal = basePrice * quantity;
+    const discountedTotal = unitPrice * quantity;
+    const savings = regularTotal - discountedTotal;
+
+    // Build color options array for cart
+    const colorOptionsArray: string[] = [];
+    Object.entries(selectedColors).forEach(([color, count]) => {
+      for (let i = 0; i < count; i++) {
+        colorOptionsArray.push(color);
+      }
+    });
+
+    // Add single item with combined color options
     addToCart({
       id: product.id,
       name: product.name,
-      price: currentPrice,
-      quantity: quantity,
+      price: unitPrice,
       image_url: product.image_url,
-      color_options: selectedColors.length > 0 ? selectedColors : undefined,
+      quantity: quantity,
       size: selectedSize || undefined,
+      color_options: colorOptionsArray
     });
 
-    if (parseFloat(savings) > 0) {
-      toast.success(`تم الإضافة للسلة! وفرت ${savings} جنيه 💰`);
-    } else {
-      toast.success("تم الإضافة للسلة");
+    if (savings > 0) {
+      toast.success(`تم إضافة ${product.name} إلى السلة مع توفير ${savings.toFixed(2)} جنيه! 🎉`);
     }
 
     // Reset selections
-    setSelectedColors([]);
-    setSelectedSize("");
     setQuantity(1);
+    setSelectedColors({});
+    setSelectedSize("");
   };
 
 
@@ -327,20 +366,18 @@ const ProductDetails = () => {
               <h3 className="font-semibold text-sm mb-2 text-primary">🎁 عروض الكمية</h3>
               <div className="space-y-1">
                 {offers.map((offer) => {
-                  const discount = ((product.price - offer.offer_price) / product.price * 100).toFixed(0);
+                  const unitPrice = offer.offer_price / offer.min_quantity;
+                  const discount = ((product.price - unitPrice) / product.price * 100).toFixed(0);
                   return (
                     <div key={offer.id} className="flex justify-between items-center text-xs">
                       <span className="font-medium">
-                        {offer.min_quantity === offer.max_quantity 
-                          ? `${offer.min_quantity} قطعة`
-                          : offer.max_quantity 
-                            ? `${offer.min_quantity}-${offer.max_quantity} قطعة`
-                            : `${offer.min_quantity}+ قطعة`
-                        }
+                        {offer.min_quantity} قطعة
                       </span>
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-primary">{offer.offer_price} ج.م</span>
-                        <span className="text-green-600 font-semibold">({discount}% خصم)</span>
+                        {parseFloat(discount) > 0 && (
+                          <span className="text-green-600 font-semibold">({discount}% خصم)</span>
+                        )}
                       </div>
                     </div>
                   );
@@ -374,30 +411,56 @@ const ProductDetails = () => {
           {colors && colors.length > 0 && (
             <div>
               <label className="block text-sm font-medium mb-2">
-                اللون ({selectedColors.length}/{quantity})
+                اللون ({getTotalSelectedColors()}/{quantity})
               </label>
-              <div className="flex flex-wrap gap-2">
-                {colors.map((color) => {
-                  const count = selectedColors.filter(c => c === color.color_name_ar).length;
-                  return (
-                    <button
-                      key={color.id}
-                      onClick={() => handleColorClick(color.color_name_ar)}
-                      className={`relative px-4 py-2 border-2 rounded-lg transition-all ${
-                        selectedColors.includes(color.color_name_ar)
-                          ? "border-primary bg-primary/10 font-semibold"
-                          : "border-border hover:border-primary/50"
-                      }`}
-                    >
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {colors.map((color) => (
+                  <div
+                    key={color.id}
+                    className={`group relative flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all ${
+                      selectedColors[color.color_name_ar]
+                        ? "border-primary bg-primary/10 shadow-lg"
+                        : "border-border hover:border-primary/50 hover:bg-muted"
+                    }`}
+                  >
+                    <div
+                      className="w-10 h-10 rounded-full border-2 border-border shadow-md"
+                      style={{ backgroundColor: color.color_code || "#cccccc" }}
+                    />
+                    <span className="text-xs font-medium text-center">
                       {color.color_name_ar}
-                      {count > 0 && (
-                        <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
-                          {count}
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
+                    </span>
+                    <div className="flex items-center gap-1 w-full">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={() => handleColorQuantityChange(color.color_name_ar, (selectedColors[color.color_name_ar] || 0) - 1)}
+                      >
+                        <Minus className="h-3 w-3" />
+                      </Button>
+                      <input
+                        type="number"
+                        min="0"
+                        max={quantity - getTotalSelectedColors() + (selectedColors[color.color_name_ar] || 0)}
+                        value={selectedColors[color.color_name_ar] || 0}
+                        onChange={(e) => handleColorQuantityChange(color.color_name_ar, parseInt(e.target.value) || 0)}
+                        className="w-full h-7 text-center border rounded text-sm"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={() => handleColorQuantityChange(color.color_name_ar, (selectedColors[color.color_name_ar] || 0) + 1)}
+                        disabled={getTotalSelectedColors() >= quantity}
+                      >
+                        <Plus className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           )}
