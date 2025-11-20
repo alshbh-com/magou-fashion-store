@@ -1,16 +1,39 @@
-import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { ShoppingCart, Heart, Menu, X, Lock } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { ShoppingCart, Heart, Menu, X, Lock, User, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/contexts/CartContext";
 import magouLogo from "@/assets/magou-logo-bg.png";
 import AdminLoginDialog from "@/components/AdminLoginDialog";
+import { supabase } from "@/integrations/supabase/client";
+import { User as SupabaseUser } from "@supabase/supabase-js";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isAdminDialogOpen, setIsAdminDialogOpen] = useState(false);
+  const [user, setUser] = useState<SupabaseUser | null>(null);
   const location = useLocation();
+  const navigate = useNavigate();
   const { totalItems } = useCart();
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setUser(session?.user ?? null);
+      }
+    );
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+  };
 
   const navLinks = [
     { name: "الرئيسية", path: "/" },
@@ -58,6 +81,29 @@ const Header = () => {
 
           {/* Icons */}
           <div className="flex items-center gap-4">
+            {user ? (
+              <>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="hover:bg-gray-100 text-black"
+                  onClick={handleLogout}
+                  title="تسجيل الخروج"
+                >
+                  <LogOut className="h-5 w-5" />
+                </Button>
+              </>
+            ) : (
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="hover:bg-gray-100 text-black"
+                onClick={() => navigate("/auth")}
+                title="تسجيل الدخول"
+              >
+                <User className="h-5 w-5" />
+              </Button>
+            )}
             <Button 
               variant="ghost" 
               size="icon" 
