@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 interface CartItem {
   id: string;
@@ -11,14 +12,15 @@ interface CartItem {
   color?: string;
   notes?: string;
   color_options?: string[];
+  original_price?: number; // السعر الأصلي قبل العروض
 }
 
 interface CartContextType {
   items: CartItem[];
   addToCart: (item: Omit<CartItem, "quantity"> & { quantity?: number }) => void;
   removeFromCart: (id: string, color?: string, size?: string) => void;
-  updateQuantity: (id: string, quantity: number, color?: string, size?: string) => void;
-  updateItemOptions: (id: string, color?: string, size?: string, newColor?: string, newSize?: string) => void;
+  updateQuantity: (id: string, quantity: number, color?: string, size?: string) => Promise<void>;
+  updateItemOptions: (id: string, color?: string, size?: string, newColor?: string, newSize?: string, newColorOptions?: string[]) => void;
   clearCart: () => void;
   totalItems: number;
   totalPrice: number;
@@ -82,42 +84,81 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     toast.success("تم حذف المنتج من السلة");
   };
 
-  const updateQuantity = (id: string, quantity: number, color?: string, size?: string) => {
+  const updateQuantity = async (id: string, quantity: number, color?: string, size?: string) => {
     if (quantity <= 0) {
       removeFromCart(id, color, size);
       return;
     }
-    setItems((prev) =>
-      prev.map((item) => {
-        // Update by id and size only
-        if (item.id === id && item.size === size) {
-          return { ...item, quantity };
-        }
-        return item;
-      })
-    );
+    
+    // Fetch product offers to recalculate price based on quantity
+    try {
+      const { data: offers } = await supabase
+        .from("product_offers")
+        .select("*")
+        .eq("product_id", id)
+        .order("min_quantity", { ascending: true });
+      
+      setItems((prev) =>
+        prev.map((item) => {
+          // Update by id and size only
+          if (item.id === id && item.size === size) {
+            let newPrice = item.original_price || item.price;
+            
+            // Find applicable offer based on quantity
+            if (offers && offers.length > 0) {
+              const applicableOffer = offers
+                .filter(o => quantity >= o.min_quantity && (!o.max_quantity || quantity <= o.max_quantity))
+                .sort((a, b) => b.min_quantity - a.min_quantity)[0];
+              
+              if (applicableOffer) {
+                newPrice = applicableOffer.offer_price;
+              }
+            }
+            
+            return { ...item, quantity, price: newPrice };
+          }
+          return item;
+        })
+      );
+    } catch (error) {
+      console.error("Error fetching offers:", error);
+      setItems((prev) =>
+        prev.map((item) => {
+          if (item.id === id && item.size === size) {
+            return { ...item, quantity };
+          }
+          return item;
+        })
+      );
+    }
   };
 
-  const updateItemOptions = (id: string, color?: string, size?: string, newColor?: string, newSize?: string) => {
+  const updateItemOptions = (id: string, color?: string, size?: string, newColor?: string, newSize?: string, newColorOptions?: string[]) => {
     setItems((prev) => {
       const updated = prev.map((item) => {
-        if (item.id === id && item.color === color && item.size === size) {
-          const finalColor = newColor !== undefined ? newColor : item.color;
+        if (item.id === id && item.size === size) {
           const finalSize = newSize !== undefined ? newSize : item.size;
+          const finalColorOptions = newColorOptions !== undefined ? newColorOptions : item.color_options;
           
           let notes = "";
-          if (finalColor && finalSize) {
-            notes = `اللون ${finalColor} والمقاس ${finalSize}`;
-          } else if (finalColor) {
-            notes = `اللون ${finalColor}`;
-          } else if (finalSize) {
-            notes = `المقاس ${finalSize}`;
+          if (finalColorOptions && finalColorOptions.length > 0) {
+            const colorCounts = finalColorOptions.reduce((acc, color) => {
+              acc[color] = (acc[color] || 0) + 1;
+              return acc;
+            }, {} as Record<string, number>);
+            const colorText = Object.entries(colorCounts)
+              .map(([color, count]) => count > 1 ? `${color} (${count})` : color)
+              .join(", ");
+            notes = `الألوان: ${colorText}`;
+          }
+          if (finalSize) {
+            notes += notes ? ` - المقاس: ${finalSize}` : `المقاس: ${finalSize}`;
           }
           
           return { 
             ...item, 
-            color: finalColor, 
             size: finalSize,
+            color_options: finalColorOptions,
             notes
           };
         }

@@ -153,15 +153,31 @@ const { data: existingCustomer } = await supabase
       console.log("Order created successfully:", order);
 
 // 3. Create order items
-      const orderItems = items.map((item) => ({
-        order_id: order.id,
-        product_id: item.id,
-        product_name: item.name,
-        quantity: item.quantity,
-        price: item.price,
-        color_name: item.color || null,
-        size_name: item.size || null,
-      }));
+      const orderItems = items.map((item) => {
+        // Combine color_options into a single string
+        let colorName = null;
+        if (item.color_options && item.color_options.length > 0) {
+          const colorCounts = item.color_options.reduce((acc, color) => {
+            acc[color] = (acc[color] || 0) + 1;
+            return acc;
+          }, {} as Record<string, number>);
+          colorName = Object.entries(colorCounts)
+            .map(([color, count]) => count > 1 ? `${color} (${count})` : color)
+            .join(", ");
+        } else if (item.color) {
+          colorName = item.color;
+        }
+        
+        return {
+          order_id: order.id,
+          product_id: item.id,
+          product_name: item.name,
+          quantity: item.quantity,
+          price: item.price,
+          color_name: colorName,
+          size_name: item.size || null,
+        };
+      });
 
       const { error: itemsError } = await supabase
         .from("order_items")
