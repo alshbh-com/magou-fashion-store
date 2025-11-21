@@ -1,27 +1,18 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ShoppingBag, Trash2, Plus, Minus, AlertCircle } from "lucide-react";
+import { ShoppingBag, Trash2, Plus, Minus } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "@/contexts/CartContext";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+
 import { toast } from "sonner";
 
 const Cart = () => {
   const { items, removeFromCart, updateQuantity, updateItemOptions, totalPrice } = useCart();
   const navigate = useNavigate();
 
-  // Check if all items with options have selections
-  const hasIncompleteSelections = items.some(item => 
-    (item.color_options && item.color_options.length > 0 && !item.color)
-  );
 
-  const handleCheckout = (e: React.MouseEvent) => {
-    if (hasIncompleteSelections) {
-      e.preventDefault();
-      toast.error("يرجى اختيار اللون والمقاس لجميع المنتجات");
-      return;
-    }
+  const handleCheckout = () => {
     navigate("/checkout");
   };
 
@@ -74,7 +65,7 @@ const Cart = () => {
                       variant="ghost"
                       size="icon"
                       className="h-7 w-7 text-destructive hover:text-destructive flex-shrink-0"
-                      onClick={() => removeFromCart(item.id, item.color, item.size)}
+                      onClick={() => removeFromCart(item.id, undefined, item.size)}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -96,7 +87,7 @@ const Cart = () => {
                         variant="outline"
                         size="icon"
                         className="h-7 w-7 border-0 hover:bg-muted"
-                        onClick={() => updateQuantity(item.id, item.quantity - 1, item.color, item.size)}
+                        onClick={() => updateQuantity(item.id, item.quantity - 1, undefined, item.size)}
                       >
                         <Minus className="h-3 w-3" />
                       </Button>
@@ -105,7 +96,7 @@ const Cart = () => {
                         variant="outline"
                         size="icon"
                         className="h-7 w-7 border-0 hover:bg-muted"
-                        onClick={() => updateQuantity(item.id, item.quantity + 1, item.color, item.size)}
+                        onClick={() => updateQuantity(item.id, item.quantity + 1, undefined, item.size)}
                       >
                         <Plus className="h-3 w-3" />
                       </Button>
@@ -124,15 +115,6 @@ const Cart = () => {
         <div>
           <Card className="p-6 sticky top-24">
             <h2 className="text-2xl font-bold mb-6 text-gradient-gold">ملخص الطلب</h2>
-            
-            {hasIncompleteSelections && (
-              <Alert className="mb-4 border-destructive/50 bg-destructive/10">
-                <AlertCircle className="h-4 w-4 text-destructive" />
-                <AlertDescription className="text-destructive text-sm">
-                  يرجى اختيار اللون والمقاس لجميع المنتجات قبل إتمام الطلب
-                </AlertDescription>
-              </Alert>
-            )}
             
             <div className="space-y-4 mb-6">
               <div className="flex justify-between">
@@ -158,7 +140,6 @@ const Cart = () => {
               className="w-full hover-glow" 
               size="lg"
               onClick={handleCheckout}
-              disabled={hasIncompleteSelections}
             >
               إتمام الطلب
             </Button>
