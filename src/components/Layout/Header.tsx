@@ -82,23 +82,21 @@ const Header = () => {
           {/* Icons */}
           <div className="flex items-center gap-4">
             {user ? (
-              <>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="hover:bg-gray-100 text-black"
-                  onClick={handleLogout}
-                  title="تسجيل الخروج"
-                >
-                  <LogOut className="h-5 w-5" />
-                </Button>
-              </>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="hover:bg-gray-100 text-black"
+                onClick={handleLogout}
+                title="تسجيل الخروج"
+              >
+                <LogOut className="h-5 w-5" />
+              </Button>
             ) : (
               <Button 
                 variant="ghost" 
                 size="icon" 
                 className="hover:bg-gray-100 text-black"
-                onClick={() => navigate("/auth")}
+                onClick={() => navigate("/user-auth")}
                 title="تسجيل الدخول"
               >
                 <User className="h-5 w-5" />
