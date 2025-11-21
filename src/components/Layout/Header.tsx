@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { ShoppingCart, Heart, Menu, X, Lock, User, LogOut } from "lucide-react";
+import { ShoppingCart, Heart, Menu, X, Lock, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/contexts/CartContext";
 import magouLogo from "@/assets/magou-logo-bg.png";
@@ -29,11 +29,6 @@ const Header = () => {
 
     return () => subscription.unsubscribe();
   }, []);
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-  };
 
   const navLinks = [
     { name: "الرئيسية", path: "/" },
@@ -81,27 +76,15 @@ const Header = () => {
 
           {/* Icons */}
           <div className="flex items-center gap-4">
-            {user ? (
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="hover:bg-gray-100 text-black"
-                onClick={handleLogout}
-                title="تسجيل الخروج"
-              >
-                <LogOut className="h-5 w-5" />
-              </Button>
-            ) : (
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="hover:bg-gray-100 text-black"
-                onClick={() => navigate("/user-auth")}
-                title="تسجيل الدخول"
-              >
-                <User className="h-5 w-5" />
-              </Button>
-            )}
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="hover:bg-gray-100 text-black"
+              onClick={() => navigate(user ? "/account" : "/user-auth")}
+              title={user ? "حسابي" : "تسجيل الدخول"}
+            >
+              <User className="h-5 w-5" />
+            </Button>
             <Button 
               variant="ghost" 
               size="icon" 

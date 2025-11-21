@@ -75,11 +75,9 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   const removeFromCart = (id: string, color?: string, size?: string) => {
     setItems((prev) => prev.filter((item) => {
+      // Remove item by id and size only (since we group by these)
       if (item.id !== id) return true;
-      if (item.color_options) {
-        return !(item.size === size && JSON.stringify(item.color_options) === JSON.stringify(color ? [color] : []));
-      }
-      return !(item.color === color && item.size === size);
+      return item.size !== size;
     }));
     toast.success("تم حذف المنتج من السلة");
   };
@@ -91,13 +89,11 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     }
     setItems((prev) =>
       prev.map((item) => {
-        if (item.id !== id) return item;
-        if (item.color_options) {
-          return (item.size === size && JSON.stringify(item.color_options) === JSON.stringify(color ? [color] : []))
-            ? { ...item, quantity }
-            : item;
+        // Update by id and size only
+        if (item.id === id && item.size === size) {
+          return { ...item, quantity };
         }
-        return (item.color === color && item.size === size) ? { ...item, quantity } : item;
+        return item;
       })
     );
   };
