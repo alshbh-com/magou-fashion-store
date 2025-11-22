@@ -26,8 +26,9 @@ const Cart = () => {
   const [editingItem, setEditingItem] = useState<string | null>(null);
   const [availableColors, setAvailableColors] = useState<Record<string, ProductColor[]>>({});
   const [availableSizes, setAvailableSizes] = useState<Record<string, ProductSize[]>>({});
-  const [selectedColors, setSelectedColors] = useState<string[]>([]);
+  const [selectedColors, setSelectedColors] = useState<Record<string, number>>({});
   const [selectedSize, setSelectedSize] = useState<string>("");
+  const [editingQuantity, setEditingQuantity] = useState<number>(1);
 
   useEffect(() => {
     items.forEach(item => {
@@ -55,12 +56,49 @@ const Cart = () => {
 
   const handleEditItem = (item: any) => {
     setEditingItem(item.id);
-    setSelectedColors(item.color_options || []);
+    setEditingQuantity(item.quantity);
+    
+    // Convert color_options array to Record<string, number>
+    const colorCounts: Record<string, number> = {};
+    if (item.color_options && item.color_options.length > 0) {
+      item.color_options.forEach((color: string) => {
+        colorCounts[color] = (colorCounts[color] || 0) + 1;
+      });
+    }
+    setSelectedColors(colorCounts);
     setSelectedSize(item.size || "");
   };
 
-  const handleSaveOptions = (itemId: string) => {
-    updateItemOptions(itemId, undefined, undefined, undefined, selectedSize, selectedColors);
+  const getTotalSelectedColors = () => {
+    return Object.values(selectedColors).reduce((sum, count) => sum + count, 0);
+  };
+
+  const handleColorQuantityChange = (colorName: string, count: number) => {
+    setSelectedColors((prev) => {
+      const newColors = { ...prev };
+      
+      if (count <= 0) {
+        delete newColors[colorName];
+      } else {
+        const currentTotal = getTotalSelectedColors() - (prev[colorName] || 0);
+        const maxAllowed = editingQuantity - currentTotal;
+        newColors[colorName] = Math.min(count, maxAllowed);
+      }
+      
+      return newColors;
+    });
+  };
+
+  const handleSaveOptions = (itemId: string, itemSize?: string) => {
+    // Convert Record<string, number> back to array
+    const colorOptionsArray: string[] = [];
+    Object.entries(selectedColors).forEach(([color, count]) => {
+      for (let i = 0; i < count; i++) {
+        colorOptionsArray.push(color);
+      }
+    });
+    
+    updateItemOptions(itemId, undefined, itemSize, undefined, selectedSize, colorOptionsArray);
     setEditingItem(null);
   };
 
@@ -178,36 +216,54 @@ const Cart = () => {
                         <div className="space-y-4">
                           {availableColors[item.id] && availableColors[item.id].length > 0 && (
                             <div>
-                              <label className="text-sm font-medium mb-2 block">الألوان المتاحة</label>
-                              <div className="space-y-2 max-h-40 overflow-y-auto">
+                              <label className="text-sm font-medium mb-2 block">
+                                الألوان ({getTotalSelectedColors()}/{editingQuantity})
+                              </label>
+                              <div className="grid grid-cols-2 gap-2 max-h-64 overflow-y-auto">
                                 {availableColors[item.id].map((color) => (
-                                  <div key={color.id} className="flex items-center gap-2">
-                                    <input
-                                      type="checkbox"
-                                      id={`color-${color.id}`}
-                                      checked={selectedColors.includes(color.color_name_ar)}
-                                      onChange={(e) => {
-                                        if (e.target.checked) {
-                                          if (selectedColors.length < item.quantity) {
-                                            setSelectedColors([...selectedColors, color.color_name_ar]);
-                                          } else {
-                                            toast.error(`لا يمكنك اختيار أكثر من ${item.quantity} ألوان`);
-                                          }
-                                        } else {
-                                          setSelectedColors(selectedColors.filter(c => c !== color.color_name_ar));
-                                        }
-                                      }}
-                                      className="rounded"
-                                    />
-                                    <label htmlFor={`color-${color.id}`} className="text-sm">
+                                  <div
+                                    key={color.id}
+                                    className={`flex flex-col items-center gap-1.5 p-2 rounded-lg border-2 transition-all ${
+                                      selectedColors[color.color_name_ar]
+                                        ? "border-primary bg-primary/10"
+                                        : "border-border hover:border-primary/50"
+                                    }`}
+                                  >
+                                    <span className="text-xs font-medium text-center">
                                       {color.color_name_ar}
-                                    </label>
+                                    </span>
+                                    <div className="flex items-center gap-1 w-full">
+                                      <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="icon"
+                                        className="h-6 w-6"
+                                        onClick={() => handleColorQuantityChange(color.color_name_ar, (selectedColors[color.color_name_ar] || 0) - 1)}
+                                      >
+                                        <Minus className="h-3 w-3" />
+                                      </Button>
+                                      <input
+                                        type="number"
+                                        min="0"
+                                        max={editingQuantity - getTotalSelectedColors() + (selectedColors[color.color_name_ar] || 0)}
+                                        value={selectedColors[color.color_name_ar] || 0}
+                                        onChange={(e) => handleColorQuantityChange(color.color_name_ar, parseInt(e.target.value) || 0)}
+                                        className="w-full h-6 text-center border rounded text-xs"
+                                      />
+                                      <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="icon"
+                                        className="h-6 w-6"
+                                        onClick={() => handleColorQuantityChange(color.color_name_ar, (selectedColors[color.color_name_ar] || 0) + 1)}
+                                        disabled={getTotalSelectedColors() >= editingQuantity}
+                                      >
+                                        <Plus className="h-3 w-3" />
+                                      </Button>
+                                    </div>
                                   </div>
                                 ))}
                               </div>
-                              <p className="text-xs text-muted-foreground mt-2">
-                                تم اختيار {selectedColors.length} من {item.quantity}
-                              </p>
                             </div>
                           )}
                           
@@ -231,7 +287,7 @@ const Cart = () => {
                           
                           <Button 
                             className="w-full" 
-                            onClick={() => handleSaveOptions(item.id)}
+                            onClick={() => handleSaveOptions(item.id, item.size)}
                           >
                             حفظ التعديلات
                           </Button>
