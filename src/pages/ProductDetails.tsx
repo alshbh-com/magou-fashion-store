@@ -64,9 +64,14 @@ const ProductDetails = () => {
       fetchColors();
       fetchSizes();
       fetchOffers();
-      fetchProductImages();
     }
   }, [id]);
+
+  useEffect(() => {
+    if (product) {
+      fetchProductImages();
+    }
+  }, [product]);
 
   const fetchProductImages = async () => {
     try {
@@ -77,7 +82,17 @@ const ProductDetails = () => {
         .order("display_order");
 
       if (error) throw error;
-      setProductImages(data?.map(img => img.image_url) || []);
+      
+      // Combine main image with additional images
+      const allImages: string[] = [];
+      if (product?.image_url) {
+        allImages.push(product.image_url);
+      }
+      if (data && data.length > 0) {
+        allImages.push(...data.map(img => img.image_url));
+      }
+      
+      setProductImages(allImages);
     } catch (error) {
       console.error("Error fetching product images:", error);
     }
@@ -324,29 +339,30 @@ const ProductDetails = () => {
           <Card className="overflow-hidden border-2 border-primary/20 relative">
             <div className="overflow-hidden" ref={emblaRef}>
               <div className="flex">
-                {/* Main product image */}
-                <div className="flex-[0_0_100%] min-w-0">
-                  <img
-                    src={product.image_url || "/placeholder.svg"}
-                    alt={product.name}
-                    className="w-full object-contain aspect-square bg-muted"
-                  />
-                </div>
-                {/* Additional images */}
-                {productImages.map((img, idx) => (
-                  <div key={idx} className="flex-[0_0_100%] min-w-0">
+                {productImages.length > 0 ? (
+                  productImages.map((img, idx) => (
+                    <div key={idx} className="flex-[0_0_100%] min-w-0">
+                      <img
+                        src={img}
+                        alt={`${product.name} ${idx + 1}`}
+                        className="w-full object-contain aspect-square bg-muted"
+                      />
+                    </div>
+                  ))
+                ) : (
+                  <div className="flex-[0_0_100%] min-w-0">
                     <img
-                      src={img}
-                      alt={`${product.name} ${idx + 2}`}
+                      src={product.image_url || "/placeholder.svg"}
+                      alt={product.name}
                       className="w-full object-contain aspect-square bg-muted"
                     />
                   </div>
-                ))}
+                )}
               </div>
             </div>
             
             {/* Navigation buttons */}
-            {productImages.length > 0 && (
+            {productImages.length > 1 && (
               <>
                 <Button
                   variant="ghost"
