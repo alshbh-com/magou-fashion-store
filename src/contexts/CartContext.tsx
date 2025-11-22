@@ -70,7 +70,12 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         notes += notes ? ` - المقاس: ${item.size}` : `المقاس: ${item.size}`;
       }
       
-      return [...prev, { ...item, quantity: item.quantity || 1, notes }];
+      return [...prev, { 
+        ...item, 
+        quantity: item.quantity || 1, 
+        notes,
+        original_price: item.original_price || item.price
+      }];
     });
     toast.success(`تم إضافة ${item.name} إلى السلة`);
   };
@@ -90,32 +95,48 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
     
-    // Fetch product offers to recalculate price based on quantity
+    // Fetch product and offers to recalculate price based on quantity
     try {
-      const { data: offers } = await supabase
-        .from("product_offers")
-        .select("*")
-        .eq("product_id", id)
-        .order("min_quantity", { ascending: true });
+      const [offersRes, productRes] = await Promise.all([
+        supabase
+          .from("product_offers")
+          .select("*")
+          .eq("product_id", id)
+          .order("min_quantity", { ascending: true }),
+        supabase
+          .from("products")
+          .select("price")
+          .eq("id", id)
+          .single()
+      ]);
       
       setItems((prev) =>
         prev.map((item) => {
           // Update by id and size only
           if (item.id === id && item.size === size) {
-            let newPrice = item.original_price || item.price;
+            // Get base price (original price before any offers)
+            const basePrice = item.original_price || productRes.data?.price || item.price;
+            
+            let unitPrice = basePrice;
             
             // Find applicable offer based on quantity
-            if (offers && offers.length > 0) {
-              const applicableOffer = offers
+            if (offersRes.data && offersRes.data.length > 0) {
+              const applicableOffer = offersRes.data
                 .filter(o => quantity >= o.min_quantity && (!o.max_quantity || quantity <= o.max_quantity))
                 .sort((a, b) => b.min_quantity - a.min_quantity)[0];
               
               if (applicableOffer) {
-                newPrice = applicableOffer.offer_price;
+                // offer_price is total price for the quantity range, so divide by quantity
+                unitPrice = applicableOffer.offer_price / quantity;
               }
             }
             
-            return { ...item, quantity, price: newPrice };
+            return { 
+              ...item, 
+              quantity, 
+              price: unitPrice,
+              original_price: basePrice 
+            };
           }
           return item;
         })

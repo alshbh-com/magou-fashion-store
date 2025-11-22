@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { ArrowRight, ShoppingCart, Minus, Plus } from "lucide-react";
+import { ArrowRight, ShoppingCart, Minus, Plus, ChevronLeft, ChevronRight } from "lucide-react";
+import useEmblaCarousel from "embla-carousel-react";
 
 interface Product {
   id: string;
@@ -55,6 +56,7 @@ const ProductDetails = () => {
   const [quantity, setQuantity] = useState(1);
   const [selectedColors, setSelectedColors] = useState<Record<string, number>>({});
   const [selectedSize, setSelectedSize] = useState("");
+  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true });
 
   useEffect(() => {
     if (id) {
@@ -242,6 +244,7 @@ const ProductDetails = () => {
     const offerPrice = getOfferPrice(quantity);
     
     if (offerPrice) {
+      // offer_price is the total for the quantity, so divide to get unit price
       unitPrice = offerPrice / quantity;
     } else if (product.is_offer && product.offer_price) {
       unitPrice = product.offer_price;
@@ -268,7 +271,8 @@ const ProductDetails = () => {
       image_url: product.image_url,
       quantity: quantity,
       size: selectedSize || undefined,
-      color_options: colorOptionsArray
+      color_options: colorOptionsArray,
+      original_price: basePrice
     });
 
     if (savings > 0) {
@@ -316,26 +320,53 @@ const ProductDetails = () => {
 
       <div className="grid md:grid-cols-2 gap-8">
         <div className="space-y-2">
-          <Card className="overflow-hidden border-2 border-primary/20">
-            <img
-              src={product.image_url || "/placeholder.svg"}
-              alt={product.name}
-              className="w-full object-contain aspect-square bg-muted"
-            />
-          </Card>
-          {productImages.length > 0 && (
-            <div className="grid grid-cols-2 gap-2">
-              {productImages.map((img, idx) => (
-                <Card key={idx} className="overflow-hidden border border-border">
+          {/* Main carousel */}
+          <Card className="overflow-hidden border-2 border-primary/20 relative">
+            <div className="overflow-hidden" ref={emblaRef}>
+              <div className="flex">
+                {/* Main product image */}
+                <div className="flex-[0_0_100%] min-w-0">
                   <img
-                    src={img}
-                    alt={`${product.name} ${idx + 2}`}
+                    src={product.image_url || "/placeholder.svg"}
+                    alt={product.name}
                     className="w-full object-contain aspect-square bg-muted"
                   />
-                </Card>
-              ))}
+                </div>
+                {/* Additional images */}
+                {productImages.map((img, idx) => (
+                  <div key={idx} className="flex-[0_0_100%] min-w-0">
+                    <img
+                      src={img}
+                      alt={`${product.name} ${idx + 2}`}
+                      className="w-full object-contain aspect-square bg-muted"
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
-          )}
+            
+            {/* Navigation buttons */}
+            {productImages.length > 0 && (
+              <>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute left-2 top-1/2 -translate-y-1/2 bg-background/80 hover:bg-background shadow-lg"
+                  onClick={() => emblaApi?.scrollPrev()}
+                >
+                  <ChevronLeft className="h-6 w-6" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-background/80 hover:bg-background shadow-lg"
+                  onClick={() => emblaApi?.scrollNext()}
+                >
+                  <ChevronRight className="h-6 w-6" />
+                </Button>
+              </>
+            )}
+          </Card>
         </div>
 
         <div className="space-y-4">
