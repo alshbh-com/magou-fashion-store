@@ -241,6 +241,12 @@ const ProductDetails = () => {
   const handleAddToCart = () => {
     if (!product) return;
     
+    // Check stock availability
+    if (product.stock_quantity <= 0) {
+      toast.error("عذراً، نفذت الكمية من هذا المنتج");
+      return;
+    }
+    
     // Make size selection mandatory if sizes are available
     if (sizes.length > 0 && !selectedSize) {
       toast.error("اختيار المقاس إجباري");
@@ -552,14 +558,21 @@ const ProductDetails = () => {
             </div>
           )}
 
-          <Button
-            onClick={handleAddToCart}
-            className="w-full hover-glow"
-            size="lg"
-          >
-            <ShoppingCart className="ml-2 h-5 w-5" />
-            إضافة إلى السلة
-          </Button>
+          {product.stock_quantity <= 0 ? (
+            <div className="w-full p-4 text-center bg-destructive/10 border-2 border-destructive rounded-lg">
+              <p className="text-destructive font-bold text-lg">نفذت الكمية</p>
+              <p className="text-muted-foreground text-sm mt-1">سيتوفر المنتج قريباً</p>
+            </div>
+          ) : (
+            <Button
+              onClick={handleAddToCart}
+              className="w-full hover-glow"
+              size="lg"
+            >
+              <ShoppingCart className="ml-2 h-5 w-5" />
+              إضافة إلى السلة
+            </Button>
+          )}
 
           {product.details && (
             <Card className="p-4 mt-4">

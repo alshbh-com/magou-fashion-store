@@ -232,6 +232,37 @@ const ProductsManagement = () => {
     if (!confirm("هل أنت متأكد من حذف هذا المنتج؟")) return;
 
     try {
+      // First, delete related order items
+      await supabase
+        .from("order_items")
+        .update({ product_id: null })
+        .eq("product_id", id);
+
+      // Delete related product offers
+      await supabase
+        .from("product_offers")
+        .delete()
+        .eq("product_id", id);
+
+      // Delete related product colors
+      await supabase
+        .from("product_colors")
+        .delete()
+        .eq("product_id", id);
+
+      // Delete related product sizes
+      await supabase
+        .from("product_sizes")
+        .delete()
+        .eq("product_id", id);
+
+      // Delete related product images
+      await supabase
+        .from("product_images")
+        .delete()
+        .eq("product_id", id);
+
+      // Finally, delete the product
       const { error } = await supabase
         .from("products")
         .delete()
