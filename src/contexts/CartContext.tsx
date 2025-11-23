@@ -38,20 +38,22 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem("cart", JSON.stringify(items));
   }, [items]);
 
-  const addToCart = (item: Omit<CartItem, "quantity"> & { quantity?: number }) => {
-    setItems((prev) => {
-      // Group by id and size only, not by color
-      const existing = prev.find((i) => 
+  const addToCart = async (item: Omit<CartItem, "quantity"> & { quantity?: number }) => {
+    try {
+      const qty = item.quantity || 1;
+      
+      // Check for existing item with same specs
+      const existing = items.find((i) => 
         i.id === item.id && 
         i.size === item.size &&
         JSON.stringify(i.color_options) === JSON.stringify(item.color_options)
       );
+      
       if (existing) {
-        return prev.map((i) =>
-          i.id === item.id && i.size === item.size && JSON.stringify(i.color_options) === JSON.stringify(item.color_options)
-            ? { ...i, quantity: i.quantity + (item.quantity || 1) }
-            : i
-        );
+        // Update quantity for existing item
+        await updateQuantity(item.id, existing.quantity + qty, undefined, item.size);
+        toast.success(`تم تحديث ${item.name} في السلة`);
+        return;
       }
       
       // Build notes from color_options and size
@@ -70,21 +72,30 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         notes += notes ? ` - المقاس: ${item.size}` : `المقاس: ${item.size}`;
       }
       
-      return [...prev, { 
+      // Add new item with calculated price
+      setItems(prev => [...prev, { 
         ...item, 
-        quantity: item.quantity || 1, 
+        quantity: qty, 
         notes,
         original_price: item.original_price || item.price
-      }];
-    });
-    toast.success(`تم إضافة ${item.name} إلى السلة`);
+      }]);
+      
+      toast.success(`تم إضافة ${item.name} إلى السلة`);
+    } catch (error) {
+      console.error("Error adding to cart:", error);
+      toast.error("حدث خطأ أثناء الإضافة للسلة");
+    }
   };
 
   const removeFromCart = (id: string, color?: string, size?: string) => {
     setItems((prev) => prev.filter((item) => {
-      // Remove item by id and size only (since we group by these)
+      // Keep items that don't match the id
       if (item.id !== id) return true;
-      return item.size !== size;
+      // Remove only if size matches (or no size specified)
+      if (size !== undefined && item.size === size) return false;
+      // If no size specified, remove all items with this id
+      if (size === undefined) return false;
+      return true;
     }));
     toast.success("تم حذف المنتج من السلة");
   };
@@ -126,8 +137,11 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
                 .sort((a, b) => b.min_quantity - a.min_quantity)[0];
               
               if (applicableOffer) {
-                // offer_price is total price for the quantity range, so divide by quantity
-                unitPrice = applicableOffer.offer_price / quantity;
+                // offer_price is a discount amount to subtract from total
+                // Formula: (basePrice × quantity - discount) / quantity
+                const subtotal = basePrice * quantity;
+                const finalTotal = subtotal - applicableOffer.offer_price;
+                unitPrice = finalTotal / quantity;
               }
             }
             

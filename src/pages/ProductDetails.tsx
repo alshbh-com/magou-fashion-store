@@ -163,6 +163,7 @@ const ProductDetails = () => {
     
     for (const offer of offers) {
       if (qty >= offer.min_quantity && (!offer.max_quantity || qty <= offer.max_quantity)) {
+        // Return the discount amount, not the final price
         return offer.offer_price;
       }
     }
@@ -178,10 +179,14 @@ const ProductDetails = () => {
       ? selectedSizeData.price 
       : product.price;
     
-    // Check for quantity offers first
-    const offerPrice = getOfferPrice(quantity);
-    if (offerPrice) {
-      return offerPrice;
+    // Calculate subtotal
+    const subtotal = basePrice * quantity;
+    
+    // Check for quantity offers first (discount amount)
+    const offerDiscount = getOfferPrice(quantity);
+    if (offerDiscount) {
+      // Subtract discount from subtotal
+      return subtotal - offerDiscount;
     }
     
     // Check for regular offer
@@ -189,8 +194,8 @@ const ProductDetails = () => {
       return product.offer_price * quantity;
     }
     
-    // Return base price
-    return basePrice * quantity;
+    // Return base price * quantity
+    return subtotal;
   };
 
   const getTotalSelectedColors = () => {
@@ -236,7 +241,13 @@ const ProductDetails = () => {
   const handleAddToCart = () => {
     if (!product) return;
     
-    // Validation
+    // Make size selection mandatory if sizes are available
+    if (sizes.length > 0 && !selectedSize) {
+      toast.error("اختيار المقاس إجباري");
+      return;
+    }
+    
+    // Validation for colors
     const totalColors = getTotalSelectedColors();
     if (colors.length > 0 && totalColors === 0) {
       toast.error("يرجى اختيار الألوان");
@@ -256,11 +267,13 @@ const ProductDetails = () => {
     
     // Calculate unit price considering offers
     let unitPrice = basePrice;
-    const offerPrice = getOfferPrice(quantity);
+    const subtotal = basePrice * quantity;
+    const offerDiscount = getOfferPrice(quantity);
     
-    if (offerPrice) {
-      // offer_price is the total for the quantity, so divide to get unit price
-      unitPrice = offerPrice / quantity;
+    if (offerDiscount) {
+      // offer_price is a discount amount to subtract from subtotal
+      const finalTotal = subtotal - offerDiscount;
+      unitPrice = finalTotal / quantity;
     } else if (product.is_offer && product.offer_price) {
       unitPrice = product.offer_price;
     }
@@ -413,18 +426,18 @@ const ProductDetails = () => {
               <h3 className="font-semibold text-sm mb-2 text-primary">🎁 عروض الكمية</h3>
               <div className="space-y-1">
                 {offers.map((offer) => {
-                  const unitPrice = offer.offer_price / offer.min_quantity;
-                  const discount = ((product.price - unitPrice) / product.price * 100).toFixed(0);
+                  const basePrice = product.price;
+                  const subtotal = basePrice * offer.min_quantity;
+                  const finalPrice = subtotal - offer.offer_price;
+                  const discountPercent = ((offer.offer_price / subtotal) * 100).toFixed(0);
                   return (
                     <div key={offer.id} className="flex justify-between items-center text-xs">
                       <span className="font-medium">
-                        {offer.min_quantity} قطعة
+                        {offer.min_quantity} قطعة {offer.max_quantity ? `- ${offer.max_quantity}` : '+'}
                       </span>
                       <div className="flex items-center gap-2">
-                        <span className="font-bold text-primary">{offer.offer_price} ج.م</span>
-                        {parseFloat(discount) > 0 && (
-                          <span className="text-green-600 font-semibold">({discount}% خصم)</span>
-                        )}
+                        <span className="font-bold text-primary">{finalPrice.toFixed(2)} ج.م</span>
+                        <span className="text-green-600 font-semibold">(خصم {offer.offer_price} ج)</span>
                       </div>
                     </div>
                   );
