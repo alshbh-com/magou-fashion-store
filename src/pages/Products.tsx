@@ -210,11 +210,15 @@ const { data, error } = await supabase
               onClick={() => navigate(`/products/${product.id}`)}
             >
               <div className="relative overflow-hidden aspect-square">
-                {product.is_offer && (
+                {product.stock_quantity <= 0 ? (
+                  <div className="absolute top-4 left-4 bg-destructive text-destructive-foreground px-3 py-1 rounded-full text-sm font-semibold z-10">
+                    نفذت الكمية
+                  </div>
+                ) : product.is_offer ? (
                   <div className="absolute top-4 left-4 bg-primary text-primary-foreground px-3 py-1 rounded-full text-sm font-semibold z-10">
                     عرض خاص
                   </div>
-                )}
+                ) : null}
                 <img
                   src={product.image_url || "/placeholder.svg"}
                   alt={product.name}
@@ -273,15 +277,25 @@ const { data, error } = await supabase
               </CardContent>
 
               <CardFooter className="p-4 pt-0">
-                <Button 
-                  className="w-full hover-glow" 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    navigate(`/products/${product.id}`);
-                  }}
-                >
-                  عرض التفاصيل
-                </Button>
+                {product.stock_quantity <= 0 ? (
+                  <Button 
+                    className="w-full" 
+                    variant="outline"
+                    disabled
+                  >
+                    نفذت الكمية
+                  </Button>
+                ) : (
+                  <Button 
+                    className="w-full hover-glow" 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/products/${product.id}`);
+                    }}
+                  >
+                    عرض التفاصيل
+                  </Button>
+                )}
               </CardFooter>
             </Card>
           );
