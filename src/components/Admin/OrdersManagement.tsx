@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Trash2, Eye, Loader2 } from "lucide-react";
+import { Trash2, Eye, Loader2, Filter, Mail } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -34,6 +34,7 @@ interface Order {
   customer_phone: string;
   customer_address: string;
   customer_city: string;
+  customer_email: string | null;
   total: number;
   status: string;
   created_at: string;
@@ -52,14 +53,24 @@ interface OrderItem {
 
 const OrdersManagement = () => {
   const [orders, setOrders] = useState<Order[]>([]);
+  const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<string>("all");
 
   useEffect(() => {
     fetchOrders();
   }, []);
+
+  useEffect(() => {
+    if (statusFilter === "all") {
+      setFilteredOrders(orders);
+    } else {
+      setFilteredOrders(orders.filter(o => o.status === statusFilter));
+    }
+  }, [statusFilter, orders]);
 
   const fetchOrders = async () => {
     try {
@@ -70,6 +81,7 @@ const OrdersManagement = () => {
 
       if (error) throw error;
       setOrders(data || []);
+      setFilteredOrders(data || []);
     } catch (error) {
       console.error("Error fetching orders:", error);
       toast.error("فشل في تحميل الطلبات");
@@ -123,7 +135,6 @@ const OrdersManagement = () => {
     if (!confirm("هل أنت متأكد من حذف هذا الطلب؟")) return;
 
     try {
-      // حذف عناصر الطلب أولاً
       const { error: itemsError } = await supabase
         .from("order_items")
         .delete()
@@ -131,7 +142,6 @@ const OrdersManagement = () => {
 
       if (itemsError) throw itemsError;
 
-      // حذف الطلب
       const { error } = await supabase
         .from("orders")
         .delete()
@@ -149,7 +159,7 @@ const OrdersManagement = () => {
 
   const getStatusBadge = (status: string) => {
     const statusColors: Record<string, string> = {
-      pending: "bg-orange-light text-orange-dark",
+      pending: "bg-orange-100 text-orange-800",
       processing: "bg-blue-100 text-blue-800",
       shipped: "bg-purple-100 text-purple-800",
       delivered: "bg-green-100 text-green-800",
@@ -159,7 +169,7 @@ const OrdersManagement = () => {
 
     const statusLabels: Record<string, string> = {
       pending: "قيد الانتظار",
-      processing: "قيد المعالجة",
+      processing: "قيد التنفيذ",
       shipped: "تم الشحن",
       delivered: "تم التوصيل",
       cancelled: "ملغي",
@@ -173,6 +183,26 @@ const OrdersManagement = () => {
     );
   };
 
+  const getStatusCounts = () => {
+    const counts: Record<string, number> = {
+      all: orders.length,
+      pending: 0,
+      processing: 0,
+      shipped: 0,
+      delivered: 0,
+      cancelled: 0,
+      transferred: 0,
+    };
+    orders.forEach(o => {
+      if (counts[o.status] !== undefined) {
+        counts[o.status]++;
+      }
+    });
+    return counts;
+  };
+
+  const statusCounts = getStatusCounts();
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -183,20 +213,40 @@ const OrdersManagement = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <h2 className="text-2xl font-bold">إدارة الطلبات</h2>
-        <Badge variant="outline" className="text-lg">
-          إجمالي الطلبات: {orders.length}
-        </Badge>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="فلتر الحالة" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">الكل ({statusCounts.all})</SelectItem>
+                <SelectItem value="pending">قيد الانتظار ({statusCounts.pending})</SelectItem>
+                <SelectItem value="processing">قيد التنفيذ ({statusCounts.processing})</SelectItem>
+                <SelectItem value="shipped">تم الشحن ({statusCounts.shipped})</SelectItem>
+                <SelectItem value="delivered">تم التوصيل ({statusCounts.delivered})</SelectItem>
+                <SelectItem value="cancelled">ملغي ({statusCounts.cancelled})</SelectItem>
+                <SelectItem value="transferred">تم النقل للسيستم ({statusCounts.transferred})</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <Badge variant="outline" className="text-lg">
+            عرض: {filteredOrders.length}
+          </Badge>
+        </div>
       </div>
 
-      <Card className="p-6">
+      <Card className="p-6 overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead className="text-right">رقم الطلب</TableHead>
               <TableHead className="text-right">العميل</TableHead>
               <TableHead className="text-right">الهاتف</TableHead>
+              <TableHead className="text-right">البريد</TableHead>
               <TableHead className="text-right">المدينة</TableHead>
               <TableHead className="text-right">الإجمالي</TableHead>
               <TableHead className="text-right">الحالة</TableHead>
@@ -205,11 +255,18 @@ const OrdersManagement = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {orders.map((order) => (
+            {filteredOrders.map((order) => (
               <TableRow key={order.id}>
                 <TableCell className="font-medium">#{order.order_number}</TableCell>
                 <TableCell>{order.customer_name}</TableCell>
-                <TableCell>{order.customer_phone}</TableCell>
+                <TableCell dir="ltr">{order.customer_phone}</TableCell>
+                <TableCell>
+                  {order.customer_email ? (
+                    <span className="text-xs">{order.customer_email}</span>
+                  ) : (
+                    <span className="text-muted-foreground text-xs">-</span>
+                  )}
+                </TableCell>
                 <TableCell>{order.customer_city}</TableCell>
                 <TableCell>{order.total} جنيه</TableCell>
                 <TableCell>{getStatusBadge(order.status)}</TableCell>
@@ -260,6 +317,15 @@ const OrdersManagement = () => {
                       <span className="font-medium text-muted-foreground">الهاتف:</span>
                       <p className="font-semibold mt-1" dir="ltr">{selectedOrder.customer_phone}</p>
                     </div>
+                    {selectedOrder.customer_email && (
+                      <div>
+                        <span className="font-medium text-muted-foreground flex items-center gap-1">
+                          <Mail className="h-3 w-3" />
+                          البريد الإلكتروني:
+                        </span>
+                        <p className="font-semibold mt-1 text-xs break-all">{selectedOrder.customer_email}</p>
+                      </div>
+                    )}
                     <div>
                       <span className="font-medium text-muted-foreground">العنوان:</span>
                       <p className="font-semibold mt-1">{selectedOrder.customer_address}, {selectedOrder.customer_city}</p>
@@ -291,7 +357,7 @@ const OrdersManagement = () => {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="pending">قيد الانتظار</SelectItem>
-                        <SelectItem value="processing">قيد المعالجة</SelectItem>
+                        <SelectItem value="processing">قيد التنفيذ</SelectItem>
                         <SelectItem value="shipped">تم الشحن</SelectItem>
                         <SelectItem value="delivered">تم التوصيل</SelectItem>
                         <SelectItem value="cancelled">ملغي</SelectItem>

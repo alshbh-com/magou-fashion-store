@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { MessageCircle, Phone, Mail, MapPin } from "lucide-react";
+import { MessageCircle, Phone, MapPin, Instagram, Facebook } from "lucide-react";
 import { toast } from "sonner";
 
 const Contact = () => {
@@ -14,10 +14,17 @@ const Contact = () => {
     message: "",
   });
 
+  const customerServiceNumbers = ["01109427244", "01095317035", "01109427245"];
+  
+  const facebookLinks = [
+    { url: "https://www.facebook.com/share/1DhYtEuZu9/?mibextid=wwXIfr", name: "صفحة 1" },
+    { url: "https://www.facebook.com/share/1VqCRDCkEw/?mibextid=wwXIfr", name: "صفحة 2" },
+    { url: "https://www.facebook.com/share/1AC5zCSYw2/?mibextid=wwXIfr", name: "صفحة 3" },
+  ];
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Send to WhatsApp
     const whatsappMessage = `
 الاسم: ${formData.name}
 البريد الإلكتروني: ${formData.email}
@@ -30,7 +37,6 @@ const Contact = () => {
     
     toast.success("سيتم فتح واتساب لإرسال رسالتك");
     
-    // Reset form
     setFormData({
       name: "",
       email: "",
@@ -94,23 +100,34 @@ const Contact = () => {
 
         {/* Contact Info */}
         <div className="space-y-6">
+          {/* Phone Numbers */}
           <Card className="p-6 hover-scale">
             <div className="flex items-start gap-4">
               <div className="p-3 bg-primary/10 rounded-full text-primary">
                 <Phone className="h-6 w-6" />
               </div>
-              <div>
-                <h3 className="font-semibold text-lg mb-1">الهاتف</h3>
-                <a href="tel:+201095317035" className="text-muted-foreground hover:text-primary transition-colors">
-                  +201095317035
-                </a>
+              <div className="flex-1">
+                <h3 className="font-semibold text-lg mb-2">أرقام خدمة العملاء</h3>
+                <div className="space-y-2">
+                  {customerServiceNumbers.map((number, index) => (
+                    <a
+                      key={index}
+                      href={`tel:+2${number}`}
+                      className="block text-muted-foreground hover:text-primary transition-colors"
+                      dir="ltr"
+                    >
+                      +2{number}
+                    </a>
+                  ))}
+                </div>
               </div>
             </div>
           </Card>
 
+          {/* WhatsApp */}
           <Card className="p-6 hover-scale">
             <div className="flex items-start gap-4">
-              <div className="p-3 bg-primary/10 rounded-full text-primary">
+              <div className="p-3 bg-green-500/10 rounded-full text-green-500">
                 <MessageCircle className="h-6 w-6" />
               </div>
               <div>
@@ -127,6 +144,51 @@ const Contact = () => {
             </div>
           </Card>
 
+          {/* Social Media */}
+          <Card className="p-6 hover-scale">
+            <h3 className="font-semibold text-lg mb-4">تابعنا على</h3>
+            <div className="space-y-3">
+              {/* Instagram */}
+              <a
+                href="https://www.instagram.com/ma_g0u?igsh=aG9nbzM2Z2loMm52&utm_source=qr"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 text-muted-foreground hover:text-pink-500 transition-colors"
+              >
+                <Instagram className="h-5 w-5" />
+                <span>Instagram - @ma_g0u</span>
+              </a>
+              
+              {/* Facebook Pages */}
+              {facebookLinks.map((fb, index) => (
+                <a
+                  key={index}
+                  href={fb.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 text-muted-foreground hover:text-blue-600 transition-colors"
+                >
+                  <Facebook className="h-5 w-5" />
+                  <span>Facebook - {fb.name}</span>
+                </a>
+              ))}
+              
+              {/* TikTok */}
+              <a
+                href="https://www.tiktok.com/@mag0u_fashion?_r=1&_t=ZS-91pf447Z36z"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/>
+                </svg>
+                <span>TikTok - @mag0u_fashion</span>
+              </a>
+            </div>
+          </Card>
+
+          {/* Location */}
           <Card className="p-6 hover-scale">
             <div className="flex items-start gap-4">
               <div className="p-3 bg-primary/10 rounded-full text-primary">
@@ -141,6 +203,7 @@ const Contact = () => {
             </div>
           </Card>
 
+          {/* Working Hours */}
           <Card className="p-8 bg-gradient-to-br from-primary/10 to-accent/10 border-primary/30">
             <h3 className="text-xl font-bold mb-4 text-gradient-gold">ساعات العمل</h3>
             <div className="space-y-2 text-foreground/90">

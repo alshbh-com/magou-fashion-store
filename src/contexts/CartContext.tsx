@@ -12,15 +12,16 @@ interface CartItem {
   color?: string;
   notes?: string;
   color_options?: string[];
-  original_price?: number; // السعر الأصلي قبل العروض
+  original_price?: number;
+  cartItemId?: string; // Unique identifier for each cart item
 }
 
 interface CartContextType {
   items: CartItem[];
   addToCart: (item: Omit<CartItem, "quantity"> & { quantity?: number }) => void;
-  removeFromCart: (id: string, color?: string, size?: string) => void;
-  updateQuantity: (id: string, quantity: number, color?: string, size?: string) => Promise<void>;
-  updateItemOptions: (id: string, color?: string, size?: string, newColor?: string, newSize?: string, newColorOptions?: string[]) => void;
+  removeFromCart: (cartItemId: string) => void;
+  updateQuantity: (cartItemId: string, quantity: number) => Promise<void>;
+  updateItemOptions: (cartItemId: string, newSize?: string, newColorOptions?: string[]) => void;
   clearCart: () => void;
   totalItems: number;
   totalPrice: number;
@@ -28,10 +29,21 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
+// Generate unique cart item ID
+const generateCartItemId = () => `cart_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [items, setItems] = useState<CartItem[]>(() => {
     const saved = localStorage.getItem("cart");
-    return saved ? JSON.parse(saved) : [];
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      // Ensure all items have cartItemId
+      return parsed.map((item: CartItem) => ({
+        ...item,
+        cartItemId: item.cartItemId || generateCartItemId()
+      }));
+    }
+    return [];
   });
 
   useEffect(() => {
@@ -49,9 +61,9 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         JSON.stringify(i.color_options) === JSON.stringify(item.color_options)
       );
       
-      if (existing) {
+      if (existing && existing.cartItemId) {
         // Update quantity for existing item
-        await updateQuantity(item.id, existing.quantity + qty, undefined, item.size);
+        await updateQuantity(existing.cartItemId, existing.quantity + qty);
         toast.success(`تم تحديث ${item.name} في السلة`);
         return;
       }
@@ -72,14 +84,16 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         notes += notes ? ` - المقاس: ${item.size}` : `المقاس: ${item.size}`;
       }
       
-      // Add new item with calculated price
-      setItems(prev => [...prev, { 
-        ...item, 
-        quantity: qty, 
+      // Add new item with unique cartItemId
+      const newItem: CartItem = {
+        ...item,
+        quantity: qty,
         notes,
-        original_price: item.original_price || item.price
-      }]);
+        original_price: item.original_price || item.price,
+        cartItemId: generateCartItemId()
+      };
       
+      setItems(prev => [...prev, newItem]);
       toast.success(`تم إضافة ${item.name} إلى السلة`);
     } catch (error) {
       console.error("Error adding to cart:", error);
@@ -87,24 +101,20 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const removeFromCart = (id: string, color?: string, size?: string) => {
-    setItems((prev) => prev.filter((item) => {
-      // Keep items that don't match the id
-      if (item.id !== id) return true;
-      // Remove only if size matches (or no size specified)
-      if (size !== undefined && item.size === size) return false;
-      // If no size specified, remove all items with this id
-      if (size === undefined) return false;
-      return true;
-    }));
+  const removeFromCart = (cartItemId: string) => {
+    setItems((prev) => prev.filter((item) => item.cartItemId !== cartItemId));
     toast.success("تم حذف المنتج من السلة");
   };
 
-  const updateQuantity = async (id: string, quantity: number, color?: string, size?: string) => {
+  const updateQuantity = async (cartItemId: string, quantity: number) => {
     if (quantity <= 0) {
-      removeFromCart(id, color, size);
+      removeFromCart(cartItemId);
       return;
     }
+    
+    // Find the item to get its product id
+    const targetItem = items.find(i => i.cartItemId === cartItemId);
+    if (!targetItem) return;
     
     // Fetch product and offers to recalculate price based on quantity
     try {
@@ -112,19 +122,18 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         supabase
           .from("product_offers")
           .select("*")
-          .eq("product_id", id)
+          .eq("product_id", targetItem.id)
           .order("min_quantity", { ascending: true }),
         supabase
           .from("products")
           .select("price")
-          .eq("id", id)
+          .eq("id", targetItem.id)
           .single()
       ]);
       
       setItems((prev) =>
         prev.map((item) => {
-          // Update by id and size only
-          if (item.id === id && item.size === size) {
+          if (item.cartItemId === cartItemId) {
             // Get base price (original price before any offers)
             const basePrice = item.original_price || productRes.data?.price || item.price;
             
@@ -138,7 +147,6 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
               
               if (applicableOffer) {
                 // offer_price is a discount amount to subtract from total
-                // Formula: (basePrice × quantity - discount) / quantity
                 const subtotal = basePrice * quantity;
                 const finalTotal = subtotal - applicableOffer.offer_price;
                 unitPrice = finalTotal / quantity;
@@ -159,7 +167,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       console.error("Error fetching offers:", error);
       setItems((prev) =>
         prev.map((item) => {
-          if (item.id === id && item.size === size) {
+          if (item.cartItemId === cartItemId) {
             return { ...item, quantity };
           }
           return item;
@@ -168,10 +176,10 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const updateItemOptions = (id: string, color?: string, size?: string, newColor?: string, newSize?: string, newColorOptions?: string[]) => {
+  const updateItemOptions = (cartItemId: string, newSize?: string, newColorOptions?: string[]) => {
     setItems((prev) => {
       const updated = prev.map((item) => {
-        if (item.id === id && item.size === size) {
+        if (item.cartItemId === cartItemId) {
           const finalSize = newSize !== undefined ? newSize : item.size;
           const finalColorOptions = newColorOptions !== undefined ? newColorOptions : item.color_options;
           
@@ -200,7 +208,6 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         return item;
       });
       
-      // Force update localStorage immediately
       localStorage.setItem("cart", JSON.stringify(updated));
       return updated;
     });
