@@ -92,8 +92,12 @@ const Checkout = () => {
     console.log("Form Data:", formData);
 
     try {
+      // Check if user is logged in to get their email
+      const { data: { user } } = await supabase.auth.getUser();
+      const userEmail = user?.email || null;
+
       // 1. Create or get customer
-const { data: existingCustomer } = await supabase
+      const { data: existingCustomer } = await supabase
         .from("customers")
         .select("*")
         .eq("phone", formData.phone)
@@ -121,7 +125,7 @@ const { data: existingCustomer } = await supabase
         customerId = newCustomer.id;
       }
 
-// 2. Create order
+      // 2. Create order
       const shippingCost = selectedGovernorate.shipping_cost;
       const orderData = {
         customer_name: formData.name,
@@ -129,6 +133,7 @@ const { data: existingCustomer } = await supabase
         customer_address: formData.address,
         customer_city: selectedGovernorate.name,
         customer_notes: formData.notes || null,
+        customer_email: userEmail,
         customer_id: customerId,
         governorate_id: selectedGovernorate.id,
         subtotal: totalPrice,

@@ -55,7 +55,7 @@ const Cart = () => {
   };
 
   const handleEditItem = (item: any) => {
-    setEditingItem(item.id);
+    setEditingItem(item.cartItemId);
     setEditingQuantity(item.quantity);
     
     // Convert color_options array to Record<string, number>
@@ -89,7 +89,7 @@ const Cart = () => {
     });
   };
 
-  const handleSaveOptions = (itemId: string, itemSize?: string) => {
+  const handleSaveOptions = (cartItemId: string) => {
     // Convert Record<string, number> back to array
     const colorOptionsArray: string[] = [];
     Object.entries(selectedColors).forEach(([color, count]) => {
@@ -98,7 +98,7 @@ const Cart = () => {
       }
     });
     
-    updateItemOptions(itemId, undefined, itemSize, undefined, selectedSize, colorOptionsArray);
+    updateItemOptions(cartItemId, selectedSize, colorOptionsArray);
     setEditingItem(null);
   };
 
@@ -140,8 +140,8 @@ const Cart = () => {
       <div className="max-w-6xl mx-auto grid lg:grid-cols-3 gap-8">
         {/* Cart Items */}
         <div className="lg:col-span-2 space-y-3">
-          {items.map((item, index) => (
-            <Card key={`${item.id}-${item.color}-${item.size}-${index}`} className="p-3 bg-cart-rose">
+          {items.map((item) => (
+            <Card key={item.cartItemId} className="p-3 bg-cart-rose">
               <div className="flex gap-3">
                 <img
                   src={item.image_url || "/placeholder.svg"}
@@ -155,7 +155,7 @@ const Cart = () => {
                       variant="ghost"
                       size="icon"
                       className="h-7 w-7 text-destructive hover:text-destructive flex-shrink-0"
-                      onClick={() => removeFromCart(item.id, undefined, item.size)}
+                      onClick={() => removeFromCart(item.cartItemId!)}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -178,7 +178,7 @@ const Cart = () => {
                           variant="outline"
                           size="icon"
                           className="h-7 w-7 border-0 hover:bg-muted"
-                          onClick={() => updateQuantity(item.id, item.quantity - 1, undefined, item.size)}
+                          onClick={() => updateQuantity(item.cartItemId!, item.quantity - 1)}
                         >
                           <Minus className="h-3 w-3" />
                         </Button>
@@ -187,7 +187,7 @@ const Cart = () => {
                           variant="outline"
                           size="icon"
                           className="h-7 w-7 border-0 hover:bg-muted"
-                          onClick={() => updateQuantity(item.id, item.quantity + 1, undefined, item.size)}
+                          onClick={() => updateQuantity(item.cartItemId!, item.quantity + 1)}
                         >
                           <Plus className="h-3 w-3" />
                         </Button>
@@ -287,7 +287,7 @@ const Cart = () => {
                           
                           <Button 
                             className="w-full" 
-                            onClick={() => handleSaveOptions(item.id, item.size)}
+                            onClick={() => handleSaveOptions(item.cartItemId!)}
                           >
                             حفظ التعديلات
                           </Button>
