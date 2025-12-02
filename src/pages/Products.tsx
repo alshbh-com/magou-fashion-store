@@ -223,6 +223,10 @@ const { data, error } = await supabase
                   src={product.image_url || "/placeholder.svg"}
                   alt={product.name}
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.src = "/placeholder.svg";
+                  }}
                 />
                 <div className="absolute top-4 right-4 flex gap-2">
                   <Button

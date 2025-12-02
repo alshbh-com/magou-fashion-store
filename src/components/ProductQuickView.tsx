@@ -150,6 +150,10 @@ const ProductQuickView = ({ product, open, onOpenChange }: ProductQuickViewProps
               src={product.image_url || "/placeholder.svg"} 
               alt={product.name}
               className="w-full h-full object-cover rounded-lg aspect-square"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.src = "/placeholder.svg";
+              }}
             />
           </div>
 
