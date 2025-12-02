@@ -487,6 +487,10 @@ const ProductDetails = () => {
                         src={img}
                         alt={`${product.name} ${idx + 1}`}
                         className="w-full object-contain aspect-square bg-muted"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.src = "/placeholder.svg";
+                        }}
                       />
                     </div>
                   ))
@@ -496,6 +500,10 @@ const ProductDetails = () => {
                       src={product.image_url || "/placeholder.svg"}
                       alt={product.name}
                       className="w-full object-contain aspect-square bg-muted"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = "/placeholder.svg";
+                      }}
                     />
                   </div>
                 )}
