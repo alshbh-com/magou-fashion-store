@@ -66,7 +66,7 @@ const Footer = () => {
                 href="https://www.instagram.com/ma_g0u?igsh=aG9nbzM2Z2loMm52&utm_source=qr"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-3 bg-secondary rounded-full hover:bg-gradient-to-r hover:from-purple-500 hover:to-pink-500 hover:text-white transition-all hover-scale"
+                className="p-3 bg-muted text-foreground rounded-full hover:bg-gradient-to-r hover:from-purple-500 hover:to-pink-500 hover:text-white transition-all hover-scale"
                 title="Instagram"
               >
                 <Instagram className="h-5 w-5" />
@@ -79,7 +79,7 @@ const Footer = () => {
                   href={link}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="p-3 bg-secondary rounded-full hover:bg-blue-600 hover:text-white transition-colors hover-scale"
+                  className="p-3 bg-muted text-foreground rounded-full hover:bg-blue-600 hover:text-white transition-colors hover-scale"
                   title={`Facebook ${index + 1}`}
                 >
                   <Facebook className="h-5 w-5" />
@@ -91,7 +91,7 @@ const Footer = () => {
                 href="https://www.tiktok.com/@mag0u_fashion?_r=1&_t=ZS-91pf447Z36z"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-3 bg-secondary rounded-full hover:bg-black hover:text-white transition-colors hover-scale"
+                className="p-3 bg-muted text-foreground rounded-full hover:bg-gray-800 hover:text-white transition-colors hover-scale"
                 title="TikTok"
               >
                 <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
@@ -104,7 +104,7 @@ const Footer = () => {
                 href="https://wa.me/201095317035"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-3 bg-secondary rounded-full hover:bg-green-500 hover:text-white transition-colors hover-scale"
+                className="p-3 bg-muted text-foreground rounded-full hover:bg-green-500 hover:text-white transition-colors hover-scale"
                 title="WhatsApp"
               >
                 <MessageCircle className="h-5 w-5" />

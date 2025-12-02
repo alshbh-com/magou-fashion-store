@@ -251,6 +251,7 @@ const OffersManagement = () => {
                     id="min_quantity"
                     type="number"
                     min="1"
+                    max="500"
                     value={formData.min_quantity}
                     onChange={(e) => setFormData({ ...formData, min_quantity: parseInt(e.target.value) })}
                     required
@@ -262,6 +263,7 @@ const OffersManagement = () => {
                     id="max_quantity"
                     type="number"
                     min="1"
+                    max="500"
                     value={formData.max_quantity || ""}
                     onChange={(e) => setFormData({ ...formData, max_quantity: e.target.value ? parseInt(e.target.value) : null })}
                   />

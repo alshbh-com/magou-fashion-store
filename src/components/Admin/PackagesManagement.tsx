@@ -271,7 +271,7 @@ const PackagesManagement = () => {
 
   const updateProductQuantity = (productId: string, quantity: number) => {
     setSelectedProducts(selectedProducts.map(sp =>
-      sp.product_id === productId ? { ...sp, quantity: Math.max(1, quantity) } : sp
+      sp.product_id === productId ? { ...sp, quantity: Math.max(0, quantity) } : sp
     ));
   };
 
@@ -338,6 +338,7 @@ const PackagesManagement = () => {
                 />
               </div>
 
+              {/* صورة الباكدج - مخفية حسب طلب المستخدم
               <div>
                 <Label htmlFor="image">صورة الباكدج</Label>
                 <Input
@@ -354,6 +355,7 @@ const PackagesManagement = () => {
                   />
                 )}
               </div>
+              */}
 
               <div>
                 <Label className="mb-3 block">اختر المنتجات للباكدج</Label>
@@ -377,8 +379,13 @@ const PackagesManagement = () => {
                           <Input
                             type="number"
                             min="1"
-                            value={selectedProduct?.quantity || 1}
-                            onChange={(e) => updateProductQuantity(product.id, parseInt(e.target.value) || 1)}
+                            value={selectedProduct?.quantity || ""}
+                            onChange={(e) => updateProductQuantity(product.id, parseInt(e.target.value) || 0)}
+                            onBlur={(e) => {
+                              if (!e.target.value || parseInt(e.target.value) < 1) {
+                                updateProductQuantity(product.id, 1);
+                              }
+                            }}
                             className="w-16 h-8"
                           />
                         )}
