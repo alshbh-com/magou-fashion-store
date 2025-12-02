@@ -43,6 +43,14 @@ interface ProductOffer {
   offer_price: number;
 }
 
+interface ProductPackage {
+  id: string;
+  name_ar: string;
+  description_ar: string | null;
+  price: number;
+  quantity: number;
+}
+
 const ProductDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -51,6 +59,7 @@ const ProductDetails = () => {
   const [colors, setColors] = useState<ProductColor[]>([]);
   const [sizes, setSizes] = useState<ProductSize[]>([]);
   const [offers, setOffers] = useState<ProductOffer[]>([]);
+  const [packages, setPackages] = useState<ProductPackage[]>([]);
   const [productImages, setProductImages] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
@@ -64,6 +73,7 @@ const ProductDetails = () => {
       fetchColors();
       fetchSizes();
       fetchOffers();
+      fetchPackages();
     }
   }, [id]);
 
@@ -83,13 +93,22 @@ const ProductDetails = () => {
 
       if (error) throw error;
       
-      // Combine main image with additional images
+      // Combine main image with additional images, filter out empty URLs
       const allImages: string[] = [];
-      if (product?.image_url) {
+      if (product?.image_url && product.image_url.trim()) {
         allImages.push(product.image_url);
       }
       if (data && data.length > 0) {
-        allImages.push(...data.map(img => img.image_url));
+        data.forEach(img => {
+          if (img.image_url && img.image_url.trim()) {
+            allImages.push(img.image_url);
+          }
+        });
+      }
+      
+      // If no images, add placeholder
+      if (allImages.length === 0) {
+        allImages.push("/placeholder.svg");
       }
       
       setProductImages(allImages);
@@ -155,6 +174,40 @@ const ProductDetails = () => {
       setOffers(data || []);
     } catch (error) {
       console.error("Error fetching offers:", error);
+    }
+  };
+
+  const fetchPackages = async () => {
+    try {
+      // جلب الباكدجات التي تحتوي على هذا المنتج
+      const { data: packageProducts, error: ppError } = await supabase
+        .from("package_products")
+        .select("package_id, quantity")
+        .eq("product_id", id);
+
+      if (ppError) throw ppError;
+      
+      if (packageProducts && packageProducts.length > 0) {
+        const packageIds = packageProducts.map(pp => pp.package_id);
+        const { data: packagesData, error: pkgError } = await supabase
+          .from("packages")
+          .select("id, name_ar, description_ar, price")
+          .in("id", packageIds);
+
+        if (pkgError) throw pkgError;
+        
+        const packagesWithQuantity = (packagesData || []).map(pkg => {
+          const pp = packageProducts.find(p => p.package_id === pkg.id);
+          return {
+            ...pkg,
+            quantity: pp?.quantity || 1
+          };
+        });
+        
+        setPackages(packagesWithQuantity);
+      }
+    } catch (error) {
+      console.error("Error fetching packages:", error);
     }
   };
 
@@ -472,6 +525,26 @@ const ProductDetails = () => {
               </Button>
             </div>
           </div>
+
+          {/* Packages Section */}
+          {packages && packages.length > 0 && (
+            <Card className="p-3 bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 border-orange-200 dark:border-orange-800">
+              <h3 className="font-semibold text-sm mb-2 text-orange-700 dark:text-orange-400">📦 متوفر في الباكدجات التالية</h3>
+              <div className="space-y-2">
+                {packages.map((pkg) => (
+                  <div key={pkg.id} className="flex justify-between items-center text-xs bg-background/50 p-2 rounded-lg">
+                    <div>
+                      <span className="font-medium">{pkg.name_ar}</span>
+                      {pkg.description_ar && (
+                        <p className="text-muted-foreground mt-0.5">{pkg.description_ar}</p>
+                      )}
+                    </div>
+                    <span className="font-bold text-orange-600 dark:text-orange-400">{pkg.price} ج.م</span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
 
           {/* Colors Selection */}
           {colors && colors.length > 0 && (
