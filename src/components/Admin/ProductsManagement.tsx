@@ -216,6 +216,39 @@ const ProductsManagement = () => {
         }
       }
 
+      // Upload and save additional images to product_images table
+      if (imageFiles.length > 1) {
+        // Delete existing additional images first
+        await supabase
+          .from("product_images")
+          .delete()
+          .eq("product_id", productId);
+
+        for (let i = 1; i < imageFiles.length; i++) {
+          const file = imageFiles[i];
+          const fileExt = file.name.split('.').pop();
+          const fileName = `${Math.random()}.${fileExt}`;
+
+          const { error: uploadError } = await supabase.storage
+            .from('products')
+            .upload(fileName, file);
+
+          if (!uploadError) {
+            const { data: { publicUrl } } = supabase.storage
+              .from('products')
+              .getPublicUrl(fileName);
+
+            await supabase
+              .from("product_images")
+              .insert({
+                product_id: productId,
+                image_url: publicUrl,
+                display_order: i,
+              });
+          }
+        }
+      }
+
       setDialogOpen(false);
       setEditingProduct(null);
       resetForm();

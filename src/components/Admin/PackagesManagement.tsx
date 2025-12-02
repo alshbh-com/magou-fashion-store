@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Trash2, Edit, Plus, Loader2 } from "lucide-react";
+import { Trash2, Edit, Plus, Loader2, X } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -22,6 +22,14 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface Package {
   id: string;
@@ -33,20 +41,37 @@ interface Package {
   image_url: string | null;
 }
 
+interface Product {
+  id: string;
+  name_ar: string;
+  price: number;
+  image_url: string | null;
+}
+
+interface PackageProduct {
+  product_id: string;
+  quantity: number;
+}
+
 const PackagesManagement = () => {
   const [packages, setPackages] = useState<Package[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingPackage, setEditingPackage] = useState<Package | null>(null);
+  const [selectedProducts, setSelectedProducts] = useState<PackageProduct[]>([]);
   const [formData, setFormData] = useState({
     name_ar: "",
     description_ar: "",
     price: 0,
     image_url: "",
   });
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     fetchPackages();
+    fetchProducts();
   }, []);
 
   const fetchPackages = async () => {
@@ -66,18 +91,68 @@ const PackagesManagement = () => {
     }
   };
 
+  const fetchProducts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("products")
+        .select("id, name_ar, price, image_url")
+        .order("name_ar");
+
+      if (error) throw error;
+      setProducts(data || []);
+    } catch (error) {
+      console.error("Error fetching products:", error);
+    }
+  };
+
+  const fetchPackageProducts = async (packageId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("package_products")
+        .select("product_id, quantity")
+        .eq("package_id", packageId);
+
+      if (error) throw error;
+      setSelectedProducts(data || []);
+    } catch (error) {
+      console.error("Error fetching package products:", error);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setUploading(true);
 
     try {
+      let imageUrl = formData.image_url;
+
+      // Upload image if selected
+      if (imageFile) {
+        const fileExt = imageFile.name.split('.').pop();
+        const fileName = `packages/${Math.random()}.${fileExt}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('products')
+          .upload(fileName, imageFile);
+
+        if (!uploadError) {
+          const { data: { publicUrl } } = supabase.storage
+            .from('products')
+            .getPublicUrl(fileName);
+          imageUrl = publicUrl;
+        }
+      }
+
       const dataToSave = {
         name: formData.name_ar,
         name_ar: formData.name_ar,
         description: formData.description_ar,
         description_ar: formData.description_ar,
         price: formData.price,
-        image_url: formData.image_url,
+        image_url: imageUrl || null,
       };
+
+      let packageId: string;
 
       if (editingPackage) {
         const { error } = await supabase
@@ -86,14 +161,42 @@ const PackagesManagement = () => {
           .eq("id", editingPackage.id);
 
         if (error) throw error;
+        packageId = editingPackage.id;
+
+        // Delete existing package products
+        await supabase
+          .from("package_products")
+          .delete()
+          .eq("package_id", packageId);
+
         toast.success("تم تحديث الباكدج");
       } else {
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from("packages")
-          .insert([dataToSave]);
+          .insert([dataToSave])
+          .select()
+          .single();
 
         if (error) throw error;
+        packageId = data.id;
         toast.success("تم إضافة الباكدج");
+      }
+
+      // Save package products
+      if (selectedProducts.length > 0) {
+        const productsToInsert = selectedProducts.map(sp => ({
+          package_id: packageId,
+          product_id: sp.product_id,
+          quantity: sp.quantity,
+        }));
+
+        const { error: productsError } = await supabase
+          .from("package_products")
+          .insert(productsToInsert);
+
+        if (productsError) {
+          console.error("Error saving package products:", productsError);
+        }
       }
 
       setDialogOpen(false);
@@ -103,6 +206,8 @@ const PackagesManagement = () => {
     } catch (error) {
       console.error("Error saving package:", error);
       toast.error("فشل في حفظ الباكدج");
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -125,7 +230,7 @@ const PackagesManagement = () => {
     }
   };
 
-  const openEditDialog = (pkg: Package) => {
+  const openEditDialog = async (pkg: Package) => {
     setEditingPackage(pkg);
     setFormData({
       name_ar: pkg.name_ar,
@@ -133,6 +238,8 @@ const PackagesManagement = () => {
       price: pkg.price,
       image_url: pkg.image_url || "",
     });
+    setImageFile(null);
+    await fetchPackageProducts(pkg.id);
     setDialogOpen(true);
   };
 
@@ -143,6 +250,8 @@ const PackagesManagement = () => {
       price: 0,
       image_url: "",
     });
+    setSelectedProducts([]);
+    setImageFile(null);
   };
 
   const openAddDialog = () => {
@@ -150,6 +259,23 @@ const PackagesManagement = () => {
     resetForm();
     setDialogOpen(true);
   };
+
+  const toggleProductSelection = (productId: string) => {
+    const exists = selectedProducts.find(sp => sp.product_id === productId);
+    if (exists) {
+      setSelectedProducts(selectedProducts.filter(sp => sp.product_id !== productId));
+    } else {
+      setSelectedProducts([...selectedProducts, { product_id: productId, quantity: 1 }]);
+    }
+  };
+
+  const updateProductQuantity = (productId: string, quantity: number) => {
+    setSelectedProducts(selectedProducts.map(sp =>
+      sp.product_id === productId ? { ...sp, quantity: Math.max(1, quantity) } : sp
+    ));
+  };
+
+  const getProductById = (id: string) => products.find(p => p.id === id);
 
   if (loading) {
     return (
@@ -170,7 +296,7 @@ const PackagesManagement = () => {
               إضافة باكدج
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
                 {editingPackage ? "تعديل باكدج" : "إضافة باكدج جديد"}
@@ -213,16 +339,87 @@ const PackagesManagement = () => {
               </div>
 
               <div>
-                <Label htmlFor="image_url">رابط الصورة</Label>
+                <Label htmlFor="image">صورة الباكدج</Label>
                 <Input
-                  id="image_url"
-                  value={formData.image_url}
-                  onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                  placeholder="https://example.com/image.jpg"
+                  id="image"
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setImageFile(e.target.files?.[0] || null)}
                 />
+                {(formData.image_url || imageFile) && (
+                  <img 
+                    src={imageFile ? URL.createObjectURL(imageFile) : formData.image_url} 
+                    alt="Preview" 
+                    className="h-20 w-20 object-cover rounded mt-2"
+                  />
+                )}
               </div>
 
-              <Button type="submit" className="w-full">
+              <div>
+                <Label className="mb-3 block">اختر المنتجات للباكدج</Label>
+                <div className="border rounded-lg p-4 max-h-60 overflow-y-auto space-y-2">
+                  {products.map((product) => {
+                    const isSelected = selectedProducts.some(sp => sp.product_id === product.id);
+                    const selectedProduct = selectedProducts.find(sp => sp.product_id === product.id);
+                    
+                    return (
+                      <div key={product.id} className="flex items-center gap-3 p-2 hover:bg-muted rounded">
+                        <Checkbox
+                          checked={isSelected}
+                          onCheckedChange={() => toggleProductSelection(product.id)}
+                        />
+                        {product.image_url && (
+                          <img src={product.image_url} alt="" className="h-10 w-10 object-cover rounded" />
+                        )}
+                        <span className="flex-1 text-sm">{product.name_ar}</span>
+                        <span className="text-sm text-muted-foreground">{product.price} ج.م</span>
+                        {isSelected && (
+                          <Input
+                            type="number"
+                            min="1"
+                            value={selectedProduct?.quantity || 1}
+                            onChange={(e) => updateProductQuantity(product.id, parseInt(e.target.value) || 1)}
+                            className="w-16 h-8"
+                          />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {selectedProducts.length > 0 && (
+                <Card className="p-3 bg-muted/50">
+                  <h4 className="font-semibold mb-2">المنتجات المختارة ({selectedProducts.length})</h4>
+                  <div className="space-y-1">
+                    {selectedProducts.map(sp => {
+                      const product = getProductById(sp.product_id);
+                      return product ? (
+                        <div key={sp.product_id} className="flex justify-between text-sm">
+                          <span>{product.name_ar} × {sp.quantity}</span>
+                          <span>{(product.price * sp.quantity).toFixed(2)} ج.م</span>
+                        </div>
+                      ) : null;
+                    })}
+                    <div className="border-t pt-1 mt-2 flex justify-between font-bold">
+                      <span>السعر الأصلي:</span>
+                      <span className="line-through text-muted-foreground">
+                        {selectedProducts.reduce((sum, sp) => {
+                          const product = getProductById(sp.product_id);
+                          return sum + (product ? product.price * sp.quantity : 0);
+                        }, 0).toFixed(2)} ج.م
+                      </span>
+                    </div>
+                    <div className="flex justify-between font-bold text-primary">
+                      <span>سعر الباكدج:</span>
+                      <span>{formData.price} ج.م</span>
+                    </div>
+                  </div>
+                </Card>
+              )}
+
+              <Button type="submit" className="w-full" disabled={uploading}>
+                {uploading ? <Loader2 className="h-4 w-4 animate-spin ml-2" /> : null}
                 {editingPackage ? "تحديث" : "إضافة"}
               </Button>
             </form>
