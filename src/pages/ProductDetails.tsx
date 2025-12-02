@@ -219,7 +219,7 @@ const ProductDetails = () => {
   };
 
   const updateQuantity = (newQuantity: number) => {
-    if (newQuantity < 1 || newQuantity > 12) return;
+    if (newQuantity < 1 || newQuantity > 500) return;
     setQuantity(newQuantity);
     
     // Adjust color selections if needed
