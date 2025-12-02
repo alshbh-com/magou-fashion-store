@@ -377,16 +377,22 @@ const PackagesManagement = () => {
                         <span className="text-sm text-muted-foreground">{product.price} ج.م</span>
                         {isSelected && (
                           <Input
-                            type="number"
-                            min="1"
-                            value={selectedProduct?.quantity || ""}
-                            onChange={(e) => updateProductQuantity(product.id, parseInt(e.target.value) || 0)}
+                            type="text"
+                            inputMode="numeric"
+                            value={selectedProduct?.quantity ?? ""}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (val === "" || /^\d+$/.test(val)) {
+                                updateProductQuantity(product.id, val === "" ? 0 : parseInt(val));
+                              }
+                            }}
                             onBlur={(e) => {
-                              if (!e.target.value || parseInt(e.target.value) < 1) {
+                              const val = parseInt(e.target.value);
+                              if (isNaN(val) || val < 1) {
                                 updateProductQuantity(product.id, 1);
                               }
                             }}
-                            className="w-16 h-8"
+                            className="w-16 h-8 text-center"
                           />
                         )}
                       </div>

@@ -14,6 +14,9 @@ interface CartItem {
   color_options?: string[];
   original_price?: number;
   cartItemId?: string; // Unique identifier for each cart item
+  package_id?: string;
+  package_name?: string;
+  package_price?: number;
 }
 
 interface CartContextType {

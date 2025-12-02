@@ -51,6 +51,8 @@ interface ProductPackage {
   quantity: number;
 }
 
+type CartMode = 'normal' | 'package';
+
 const ProductDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -66,6 +68,8 @@ const ProductDetails = () => {
   const [selectedColors, setSelectedColors] = useState<Record<string, number>>({});
   const [selectedSize, setSelectedSize] = useState("");
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true });
+  const [cartMode, setCartMode] = useState<CartMode>('normal');
+  const [selectedPackage, setSelectedPackage] = useState<ProductPackage | null>(null);
 
   useEffect(() => {
     if (id) {
@@ -93,20 +97,27 @@ const ProductDetails = () => {
 
       if (error) throw error;
       
-      // Combine main image with additional images, filter out empty URLs
+      // Combine main image with additional images, filter out empty/invalid URLs
       const allImages: string[] = [];
-      if (product?.image_url && product.image_url.trim()) {
+      
+      // Add main product image first
+      if (product?.image_url && product.image_url.trim() && isValidImageUrl(product.image_url)) {
         allImages.push(product.image_url);
       }
+      
+      // Add additional images
       if (data && data.length > 0) {
         data.forEach(img => {
-          if (img.image_url && img.image_url.trim()) {
-            allImages.push(img.image_url);
+          if (img.image_url && img.image_url.trim() && isValidImageUrl(img.image_url)) {
+            // Avoid duplicates
+            if (!allImages.includes(img.image_url)) {
+              allImages.push(img.image_url);
+            }
           }
         });
       }
       
-      // If no images, add placeholder
+      // If no valid images, add placeholder
       if (allImages.length === 0) {
         allImages.push("/placeholder.svg");
       }
@@ -114,6 +125,19 @@ const ProductDetails = () => {
       setProductImages(allImages);
     } catch (error) {
       console.error("Error fetching product images:", error);
+      setProductImages(["/placeholder.svg"]);
+    }
+  };
+
+  const isValidImageUrl = (url: string): boolean => {
+    if (!url || url.trim() === '') return false;
+    // Check if it's a valid URL format
+    try {
+      new URL(url);
+      return true;
+    } catch {
+      // If not a full URL, check if it's a valid relative path
+      return url.startsWith('/') || url.startsWith('./');
     }
   };
 
@@ -226,6 +250,11 @@ const ProductDetails = () => {
   const getCurrentPrice = () => {
     if (!product) return 0;
     
+    // If package is selected, return package price
+    if (cartMode === 'package' && selectedPackage) {
+      return selectedPackage.price;
+    }
+    
     // Get the base price (either from selected size or product)
     const selectedSizeData = sizes.find(s => s.size_name === selectedSize);
     const basePrice = selectedSizeData && selectedSizeData.price > 0 
@@ -249,6 +278,22 @@ const ProductDetails = () => {
     
     // Return base price * quantity
     return subtotal;
+  };
+
+  const handlePackageSelect = (pkg: ProductPackage) => {
+    if (selectedPackage?.id === pkg.id) {
+      // Deselect package
+      setSelectedPackage(null);
+      setCartMode('normal');
+      setQuantity(1);
+      setSelectedColors({});
+    } else {
+      // Select package
+      setSelectedPackage(pkg);
+      setCartMode('package');
+      setQuantity(pkg.quantity);
+      setSelectedColors({});
+    }
   };
 
   const getTotalSelectedColors = () => {
@@ -318,30 +363,6 @@ const ProductDetails = () => {
       return;
     }
 
-    // Get the base price (either from selected size or product)
-    const selectedSizeData = sizes.find(s => s.size_name === selectedSize);
-    const basePrice = selectedSizeData && selectedSizeData.price > 0 
-      ? selectedSizeData.price 
-      : product.price;
-    
-    // Calculate unit price considering offers
-    let unitPrice = basePrice;
-    const subtotal = basePrice * quantity;
-    const offerDiscount = getOfferPrice(quantity);
-    
-    if (offerDiscount) {
-      // offer_price is a discount amount to subtract from subtotal
-      const finalTotal = subtotal - offerDiscount;
-      unitPrice = finalTotal / quantity;
-    } else if (product.is_offer && product.offer_price) {
-      unitPrice = product.offer_price;
-    }
-
-    // Calculate savings
-    const regularTotal = basePrice * quantity;
-    const discountedTotal = unitPrice * quantity;
-    const savings = regularTotal - discountedTotal;
-
     // Build color options array for cart
     const colorOptionsArray: string[] = [];
     Object.entries(selectedColors).forEach(([color, count]) => {
@@ -350,7 +371,56 @@ const ProductDetails = () => {
       }
     });
 
-    // Add single item with combined color options
+    // If package mode
+    if (cartMode === 'package' && selectedPackage) {
+      const unitPrice = selectedPackage.price / selectedPackage.quantity;
+      
+      addToCart({
+        id: product.id,
+        name: `${product.name} (${selectedPackage.name_ar})`,
+        price: unitPrice,
+        image_url: product.image_url,
+        quantity: selectedPackage.quantity,
+        size: selectedSize || undefined,
+        color_options: colorOptionsArray,
+        original_price: product.price,
+        package_id: selectedPackage.id,
+        package_name: selectedPackage.name_ar,
+        package_price: selectedPackage.price
+      });
+
+      toast.success(`تم إضافة ${selectedPackage.name_ar} إلى السلة! 📦`);
+      
+      // Reset
+      setQuantity(1);
+      setSelectedColors({});
+      setSelectedSize("");
+      setCartMode('normal');
+      setSelectedPackage(null);
+      return;
+    }
+
+    // Normal mode
+    const selectedSizeData = sizes.find(s => s.size_name === selectedSize);
+    const basePrice = selectedSizeData && selectedSizeData.price > 0 
+      ? selectedSizeData.price 
+      : product.price;
+    
+    let unitPrice = basePrice;
+    const subtotal = basePrice * quantity;
+    const offerDiscount = getOfferPrice(quantity);
+    
+    if (offerDiscount) {
+      const finalTotal = subtotal - offerDiscount;
+      unitPrice = finalTotal / quantity;
+    } else if (product.is_offer && product.offer_price) {
+      unitPrice = product.offer_price;
+    }
+
+    const regularTotal = basePrice * quantity;
+    const discountedTotal = unitPrice * quantity;
+    const savings = regularTotal - discountedTotal;
+
     addToCart({
       id: product.id,
       name: product.name,
@@ -366,7 +436,6 @@ const ProductDetails = () => {
       toast.success(`تم إضافة ${product.name} إلى السلة مع توفير ${savings.toFixed(2)} جنيه! 🎉`);
     }
 
-    // Reset selections
     setQuantity(1);
     setSelectedColors({});
     setSelectedSize("");
@@ -512,6 +581,7 @@ const ProductDetails = () => {
                 variant="outline"
                 size="icon"
                 onClick={() => updateQuantity(quantity - 1)}
+                disabled={cartMode === 'package'}
               >
                 <Minus className="h-4 w-4" />
               </Button>
@@ -520,29 +590,52 @@ const ProductDetails = () => {
                 variant="outline"
                 size="icon"
                 onClick={() => updateQuantity(quantity + 1)}
+                disabled={cartMode === 'package'}
               >
                 <Plus className="h-4 w-4" />
               </Button>
+              {cartMode === 'package' && selectedPackage && (
+                <span className="text-sm text-muted-foreground">(كمية الباكدج ثابتة)</span>
+              )}
             </div>
           </div>
 
           {/* Packages Section */}
           {packages && packages.length > 0 && (
             <Card className="p-3 bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 border-orange-200 dark:border-orange-800">
-              <h3 className="font-semibold text-sm mb-2 text-orange-700 dark:text-orange-400">📦 متوفر في الباكدجات التالية</h3>
+              <h3 className="font-semibold text-sm mb-2 text-orange-700 dark:text-orange-400">📦 اختر باكدج (اختياري)</h3>
               <div className="space-y-2">
                 {packages.map((pkg) => (
-                  <div key={pkg.id} className="flex justify-between items-center text-xs bg-background/50 p-2 rounded-lg">
-                    <div>
-                      <span className="font-medium">{pkg.name_ar}</span>
+                  <button
+                    key={pkg.id}
+                    onClick={() => handlePackageSelect(pkg)}
+                    className={`w-full flex justify-between items-center text-xs p-3 rounded-lg transition-all border-2 ${
+                      selectedPackage?.id === pkg.id
+                        ? "border-orange-500 bg-orange-100 dark:bg-orange-900/40 shadow-md"
+                        : "border-transparent bg-background/50 hover:bg-background/80"
+                    }`}
+                  >
+                    <div className="text-right">
+                      <span className="font-bold block">{pkg.name_ar}</span>
+                      <span className="text-muted-foreground">{pkg.quantity} قطعة</span>
                       {pkg.description_ar && (
                         <p className="text-muted-foreground mt-0.5">{pkg.description_ar}</p>
                       )}
                     </div>
-                    <span className="font-bold text-orange-600 dark:text-orange-400">{pkg.price} ج.م</span>
-                  </div>
+                    <div className="text-left">
+                      <span className="font-bold text-orange-600 dark:text-orange-400 text-base">{pkg.price} ج.م</span>
+                      {selectedPackage?.id === pkg.id && (
+                        <span className="block text-green-600 text-[10px]">✓ تم الاختيار</span>
+                      )}
+                    </div>
+                  </button>
                 ))}
               </div>
+              {selectedPackage && (
+                <p className="mt-2 text-xs text-orange-700 dark:text-orange-400">
+                  اختر {selectedPackage.quantity} لون للباكدج
+                </p>
+              )}
             </Card>
           )}
 
