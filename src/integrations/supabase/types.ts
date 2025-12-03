@@ -489,6 +489,8 @@ export type Database = {
           details: string | null
           id: string
           image_url: string | null
+          image_url_2: string | null
+          image_url_3: string | null
           is_featured: boolean | null
           is_offer: boolean | null
           low_stock_alert: number | null
@@ -509,6 +511,8 @@ export type Database = {
           details?: string | null
           id?: string
           image_url?: string | null
+          image_url_2?: string | null
+          image_url_3?: string | null
           is_featured?: boolean | null
           is_offer?: boolean | null
           low_stock_alert?: number | null
@@ -529,6 +533,8 @@ export type Database = {
           details?: string | null
           id?: string
           image_url?: string | null
+          image_url_2?: string | null
+          image_url_3?: string | null
           is_featured?: boolean | null
           is_offer?: boolean | null
           low_stock_alert?: number | null

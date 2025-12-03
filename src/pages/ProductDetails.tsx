@@ -18,6 +18,8 @@ interface Product {
   is_offer: boolean;
   offer_price: number | null;
   image_url: string | null;
+  image_url_2: string | null;
+  image_url_3: string | null;
   size_pricing: any;
   stock_quantity: number;
 }
@@ -69,7 +71,7 @@ const ProductDetails = () => {
   const [selectedSize, setSelectedSize] = useState("");
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true });
   const [cartMode, setCartMode] = useState<CartMode>('normal');
-  const [selectedPackage, setSelectedPackage] = useState<ProductPackage | null>(null);
+  const [selectedPackages, setSelectedPackages] = useState<ProductPackage[]>([]);
 
   useEffect(() => {
     if (id) {
@@ -88,45 +90,25 @@ const ProductDetails = () => {
   }, [product]);
 
   const fetchProductImages = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("product_images")
-        .select("image_url")
-        .eq("product_id", id)
-        .order("display_order");
-
-      if (error) throw error;
-      
-      // Combine main image with additional images, filter out empty/invalid URLs
-      const allImages: string[] = [];
-      
-      // Add main product image first
-      if (product?.image_url && product.image_url.trim() && isValidImageUrl(product.image_url)) {
-        allImages.push(product.image_url);
-      }
-      
-      // Add additional images
-      if (data && data.length > 0) {
-        data.forEach(img => {
-          if (img.image_url && img.image_url.trim() && isValidImageUrl(img.image_url)) {
-            // Avoid duplicates
-            if (!allImages.includes(img.image_url)) {
-              allImages.push(img.image_url);
-            }
-          }
-        });
-      }
-      
-      // If no valid images, add placeholder
-      if (allImages.length === 0) {
-        allImages.push("/placeholder.svg");
-      }
-      
-      setProductImages(allImages);
-    } catch (error) {
-      console.error("Error fetching product images:", error);
-      setProductImages(["/placeholder.svg"]);
+    // Get images directly from product table (image_url, image_url_2, image_url_3)
+    const allImages: string[] = [];
+    
+    if (product?.image_url && product.image_url.trim() && isValidImageUrl(product.image_url)) {
+      allImages.push(product.image_url);
     }
+    if (product?.image_url_2 && product.image_url_2.trim() && isValidImageUrl(product.image_url_2)) {
+      allImages.push(product.image_url_2);
+    }
+    if (product?.image_url_3 && product.image_url_3.trim() && isValidImageUrl(product.image_url_3)) {
+      allImages.push(product.image_url_3);
+    }
+    
+    // If no valid images, add placeholder
+    if (allImages.length === 0) {
+      allImages.push("/placeholder.svg");
+    }
+    
+    setProductImages(allImages);
   };
 
   const isValidImageUrl = (url: string): boolean => {
@@ -250,9 +232,9 @@ const ProductDetails = () => {
   const getCurrentPrice = () => {
     if (!product) return 0;
     
-    // If package is selected, return package price
-    if (cartMode === 'package' && selectedPackage) {
-      return selectedPackage.price;
+    // If packages are selected, return total package price
+    if (cartMode === 'package' && selectedPackages.length > 0) {
+      return selectedPackages.reduce((sum, pkg) => sum + pkg.price, 0);
     }
     
     // Get the base price (either from selected size or product)
@@ -281,17 +263,25 @@ const ProductDetails = () => {
   };
 
   const handlePackageSelect = (pkg: ProductPackage) => {
-    if (selectedPackage?.id === pkg.id) {
+    const isSelected = selectedPackages.some(p => p.id === pkg.id);
+    
+    if (isSelected) {
       // Deselect package
-      setSelectedPackage(null);
-      setCartMode('normal');
-      setQuantity(1);
+      const newPackages = selectedPackages.filter(p => p.id !== pkg.id);
+      setSelectedPackages(newPackages);
+      if (newPackages.length === 0) {
+        setCartMode('normal');
+        setQuantity(1);
+      } else {
+        setQuantity(newPackages.reduce((sum, p) => sum + p.quantity, 0));
+      }
       setSelectedColors({});
     } else {
-      // Select package
-      setSelectedPackage(pkg);
+      // Add package
+      const newPackages = [...selectedPackages, pkg];
+      setSelectedPackages(newPackages);
       setCartMode('package');
-      setQuantity(pkg.quantity);
+      setQuantity(newPackages.reduce((sum, p) => sum + p.quantity, 0));
       setSelectedColors({});
     }
   };
@@ -317,7 +307,18 @@ const ProductDetails = () => {
   };
 
   const updateQuantity = (newQuantity: number) => {
-    if (newQuantity < 1 || newQuantity > 500) return;
+    if (newQuantity < 1) return;
+    if (newQuantity > 24) {
+      toast.error(
+        <div className="text-right">
+          <p className="font-bold text-lg mb-2">⚠️ الحد الأقصى للطلب 24 قطعة</p>
+          <p className="text-sm">لو محتاج أكتر من 24 قطعة، اعمل أوردر تاني</p>
+          <p className="text-sm text-muted-foreground mt-1">واكتب في الملاحظات: "عندي أوردر أولاني باسم [اسمك]"</p>
+        </div>,
+        { duration: 6000 }
+      );
+      return;
+    }
     setQuantity(newQuantity);
     
     // Adjust color selections if needed
@@ -371,32 +372,47 @@ const ProductDetails = () => {
       }
     });
 
-    // If package mode
-    if (cartMode === 'package' && selectedPackage) {
-      const unitPrice = selectedPackage.price / selectedPackage.quantity;
-      
-      addToCart({
-        id: product.id,
-        name: `${product.name} (${selectedPackage.name_ar})`,
-        price: unitPrice,
-        image_url: product.image_url,
-        quantity: selectedPackage.quantity,
-        size: selectedSize || undefined,
-        color_options: colorOptionsArray,
-        original_price: product.price,
-        package_id: selectedPackage.id,
-        package_name: selectedPackage.name_ar,
-        package_price: selectedPackage.price
+    // If packages are selected
+    if (cartMode === 'package' && selectedPackages.length > 0) {
+      // Validate package selection is mandatory if packages exist
+      if (packages.length > 0 && selectedPackages.length === 0) {
+        toast.error("يجب اختيار باكدج واحد على الأقل");
+        return;
+      }
+
+      // Add each package separately to cart
+      selectedPackages.forEach(pkg => {
+        const unitPrice = pkg.price / pkg.quantity;
+        addToCart({
+          id: product.id,
+          name: `${product.name} (${pkg.name_ar})`,
+          price: unitPrice,
+          image_url: product.image_url,
+          quantity: pkg.quantity,
+          size: selectedSize || undefined,
+          color_options: colorOptionsArray.slice(0, pkg.quantity),
+          original_price: product.price,
+          package_id: pkg.id,
+          package_name: pkg.name_ar,
+          package_price: pkg.price
+        });
       });
 
-      toast.success(`تم إضافة ${selectedPackage.name_ar} إلى السلة! 📦`);
+      const packageNames = selectedPackages.map(p => p.name_ar).join(" + ");
+      toast.success(`تم إضافة ${packageNames} إلى السلة! 📦`);
       
       // Reset
       setQuantity(1);
       setSelectedColors({});
       setSelectedSize("");
       setCartMode('normal');
-      setSelectedPackage(null);
+      setSelectedPackages([]);
+      return;
+    }
+
+    // Validate package selection is mandatory if packages exist
+    if (packages.length > 0) {
+      toast.error("يجب اختيار باكدج واحد على الأقل قبل الإضافة للسلة");
       return;
     }
 
@@ -602,7 +618,7 @@ const ProductDetails = () => {
               >
                 <Plus className="h-4 w-4" />
               </Button>
-              {cartMode === 'package' && selectedPackage && (
+              {cartMode === 'package' && selectedPackages.length > 0 && (
                 <span className="text-sm text-muted-foreground">(كمية الباكدج ثابتة)</span>
               )}
             </div>
@@ -611,37 +627,40 @@ const ProductDetails = () => {
           {/* Packages Section */}
           {packages && packages.length > 0 && (
             <Card className="p-3 bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 border-orange-200 dark:border-orange-800">
-              <h3 className="font-semibold text-sm mb-2 text-orange-700 dark:text-orange-400">📦 اختر باكدج (اختياري)</h3>
+              <h3 className="font-semibold text-sm mb-2 text-orange-700 dark:text-orange-400">📦 اختر باكدج (إجباري)</h3>
               <div className="space-y-2">
-                {packages.map((pkg) => (
-                  <button
-                    key={pkg.id}
-                    onClick={() => handlePackageSelect(pkg)}
-                    className={`w-full flex justify-between items-center text-xs p-3 rounded-lg transition-all border-2 ${
-                      selectedPackage?.id === pkg.id
-                        ? "border-orange-500 bg-orange-100 dark:bg-orange-900/40 shadow-md"
-                        : "border-transparent bg-background/50 hover:bg-background/80"
-                    }`}
-                  >
-                    <div className="text-right">
-                      <span className="font-bold block">{pkg.name_ar}</span>
-                      <span className="text-muted-foreground">{pkg.quantity} قطعة</span>
-                      {pkg.description_ar && (
-                        <p className="text-muted-foreground mt-0.5">{pkg.description_ar}</p>
-                      )}
-                    </div>
-                    <div className="text-left">
-                      <span className="font-bold text-orange-600 dark:text-orange-400 text-base">{pkg.price} ج.م</span>
-                      {selectedPackage?.id === pkg.id && (
-                        <span className="block text-green-600 text-[10px]">✓ تم الاختيار</span>
-                      )}
-                    </div>
-                  </button>
-                ))}
+                {packages.map((pkg) => {
+                  const isSelected = selectedPackages.some(p => p.id === pkg.id);
+                  return (
+                    <button
+                      key={pkg.id}
+                      onClick={() => handlePackageSelect(pkg)}
+                      className={`w-full flex justify-between items-center text-xs p-3 rounded-lg transition-all border-2 ${
+                        isSelected
+                          ? "border-orange-500 bg-orange-100 dark:bg-orange-900/40 shadow-md"
+                          : "border-transparent bg-background/50 hover:bg-background/80"
+                      }`}
+                    >
+                      <div className="text-right">
+                        <span className="font-bold block">{pkg.name_ar}</span>
+                        <span className="text-muted-foreground">{pkg.quantity} قطعة</span>
+                        {pkg.description_ar && (
+                          <p className="text-muted-foreground mt-0.5">{pkg.description_ar}</p>
+                        )}
+                      </div>
+                      <div className="text-left">
+                        <span className="font-bold text-orange-600 dark:text-orange-400 text-base">{pkg.price} ج.م</span>
+                        {isSelected && (
+                          <span className="block text-green-600 text-[10px]">✓ تم الاختيار</span>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
-              {selectedPackage && (
+              {selectedPackages.length > 0 && (
                 <p className="mt-2 text-xs text-orange-700 dark:text-orange-400">
-                  اختر {selectedPackage.quantity} لون للباكدج
+                  اختر {quantity} لون للباكدجات المختارة ({selectedPackages.length} باكدج)
                 </p>
               )}
             </Card>
