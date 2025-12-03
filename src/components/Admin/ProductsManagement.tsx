@@ -302,14 +302,12 @@ const ProductsManagement = () => {
     });
     setImageFiles([]);
     
-    // Fetch existing additional images
-    const { data: images } = await supabase
-      .from("product_images")
-      .select("image_url")
-      .eq("product_id", product.id)
-      .order("display_order");
+    // Get existing additional images from product table directly
+    const additionalImages: string[] = [];
+    if (product.image_url_2) additionalImages.push(product.image_url_2);
+    if (product.image_url_3) additionalImages.push(product.image_url_3);
+    setExistingImages(additionalImages);
     
-    setExistingImages(images?.map(img => img.image_url) || []);
     await fetchProductOffers(product.id);
     setDialogOpen(true);
   };
@@ -456,6 +454,7 @@ const ProductsManagement = () => {
 
               <div>
                 <Label htmlFor="images">صور المنتج (حتى 3 صور)</Label>
+                <p className="text-xs text-muted-foreground mb-2">الصورة الأولى هي الصورة الرئيسية</p>
                 <Input
                   id="images"
                   type="file"
@@ -468,12 +467,29 @@ const ProductsManagement = () => {
                 />
                 <div className="flex gap-2 mt-2 flex-wrap">
                   {editingProduct?.image_url && (
-                    <img src={editingProduct.image_url} alt="Main" className="h-20 w-20 object-cover rounded border-2 border-primary" />
+                    <div className="text-center">
+                      <img src={editingProduct.image_url} alt="الصورة الرئيسية" className="h-20 w-20 object-cover rounded border-2 border-primary" />
+                      <span className="text-xs">رئيسية</span>
+                    </div>
                   )}
-                  {existingImages.map((img, idx) => (
-                    <img key={idx} src={img} alt={`Additional ${idx + 1}`} className="h-20 w-20 object-cover rounded" />
-                  ))}
+                  {editingProduct?.image_url_2 && (
+                    <div className="text-center">
+                      <img src={editingProduct.image_url_2} alt="صورة 2" className="h-20 w-20 object-cover rounded border" />
+                      <span className="text-xs">صورة 2</span>
+                    </div>
+                  )}
+                  {editingProduct?.image_url_3 && (
+                    <div className="text-center">
+                      <img src={editingProduct.image_url_3} alt="صورة 3" className="h-20 w-20 object-cover rounded border" />
+                      <span className="text-xs">صورة 3</span>
+                    </div>
+                  )}
                 </div>
+                {imageFiles.length > 0 && (
+                  <div className="mt-2">
+                    <span className="text-xs text-green-600">سيتم رفع {imageFiles.length} صورة جديدة</span>
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center gap-6">
