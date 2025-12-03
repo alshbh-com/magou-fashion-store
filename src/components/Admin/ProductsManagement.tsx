@@ -41,6 +41,8 @@ interface Product {
   is_offer: boolean;
   offer_price: number | null;
   image_url: string | null;
+  image_url_2: string | null;
+  image_url_3: string | null;
   category_id: string | null;
 }
 
@@ -133,30 +135,34 @@ const ProductsManagement = () => {
     try {
       setUploading(true);
       let mainImageUrl = editingProduct?.image_url || null;
+      let imageUrl2 = editingProduct?.image_url_2 || null;
+      let imageUrl3 = editingProduct?.image_url_3 || null;
 
-      // Upload first image as main image
-      if (imageFiles.length > 0 && imageFiles[0]) {
-        const fileExt = imageFiles[0].name.split('.').pop();
+      // Upload images directly to products table
+      for (let i = 0; i < Math.min(imageFiles.length, 3); i++) {
+        const file = imageFiles[i];
+        const fileExt = file.name.split('.').pop();
         const fileName = `${Math.random()}.${fileExt}`;
-        const filePath = `${fileName}`;
 
         const { error: uploadError } = await supabase.storage
           .from('products')
-          .upload(filePath, imageFiles[0]);
+          .upload(fileName, file);
 
         if (uploadError) throw uploadError;
 
         const { data: { publicUrl } } = supabase.storage
           .from('products')
-          .getPublicUrl(filePath);
+          .getPublicUrl(fileName);
 
-        mainImageUrl = publicUrl;
+        if (i === 0) mainImageUrl = publicUrl;
+        else if (i === 1) imageUrl2 = publicUrl;
+        else if (i === 2) imageUrl3 = publicUrl;
       }
 
       const productData = {
-        name: formData.name_ar, // Use Arabic name for English field too
+        name: formData.name_ar,
         name_ar: formData.name_ar,
-        description: formData.description_ar, // Use Arabic description for English field too
+        description: formData.description_ar,
         description_ar: formData.description_ar,
         price: formData.price,
         stock_quantity: formData.stock_quantity,
@@ -164,6 +170,8 @@ const ProductsManagement = () => {
         is_offer: formData.is_offer,
         offer_price: formData.is_offer ? formData.offer_price : null,
         image_url: mainImageUrl,
+        image_url_2: imageUrl2,
+        image_url_3: imageUrl3,
         category_id: formData.category_id || null,
       };
 
@@ -216,38 +224,7 @@ const ProductsManagement = () => {
         }
       }
 
-      // Upload and save additional images to product_images table
-      if (imageFiles.length > 1) {
-        // Delete existing additional images first
-        await supabase
-          .from("product_images")
-          .delete()
-          .eq("product_id", productId);
-
-        for (let i = 1; i < imageFiles.length; i++) {
-          const file = imageFiles[i];
-          const fileExt = file.name.split('.').pop();
-          const fileName = `${Math.random()}.${fileExt}`;
-
-          const { error: uploadError } = await supabase.storage
-            .from('products')
-            .upload(fileName, file);
-
-          if (!uploadError) {
-            const { data: { publicUrl } } = supabase.storage
-              .from('products')
-              .getPublicUrl(fileName);
-
-            await supabase
-              .from("product_images")
-              .insert({
-                product_id: productId,
-                image_url: publicUrl,
-                display_order: i,
-              });
-          }
-        }
-      }
+      // Images are now stored directly in products table (image_url, image_url_2, image_url_3)
 
       setDialogOpen(false);
       setEditingProduct(null);
@@ -358,8 +335,8 @@ const ProductsManagement = () => {
     const lastOffer = quantityOffers[quantityOffers.length - 1];
     const nextMin = lastOffer ? (lastOffer.max_quantity || lastOffer.min_quantity) + 1 : 1;
     
-    if (nextMin > 12) {
-      toast.error("الحد الأقصى 12 قطعة");
+    if (nextMin > 24) {
+      toast.error("الحد الأقصى 24 قطعة");
       return;
     }
 
@@ -367,7 +344,7 @@ const ProductsManagement = () => {
       ...quantityOffers,
       {
         min_quantity: nextMin,
-        max_quantity: nextMin === 12 ? null : nextMin,
+        max_quantity: nextMin === 24 ? null : nextMin,
         offer_price: formData.price,
       },
     ]);
@@ -541,7 +518,7 @@ const ProductsManagement = () => {
                     size="sm"
                     variant="outline"
                     onClick={addQuantityOffer}
-                    disabled={quantityOffers.length >= 12}
+                    disabled={quantityOffers.length >= 24}
                   >
                     <Plus className="h-4 w-4 ml-2" />
                     إضافة عرض
@@ -560,7 +537,7 @@ const ProductsManagement = () => {
                           <Input
                             type="number"
                             min="1"
-                            max="12"
+                            max="24"
                             value={offer.min_quantity}
                             onChange={(e) => updateQuantityOffer(index, "min_quantity", parseInt(e.target.value))}
                           />
@@ -570,7 +547,7 @@ const ProductsManagement = () => {
                           <Input
                             type="number"
                             min={offer.min_quantity}
-                            max="12"
+                            max="24"
                             value={offer.max_quantity || ""}
                             placeholder="غير محدود"
                             onChange={(e) => updateQuantityOffer(index, "max_quantity", e.target.value ? parseInt(e.target.value) : null)}
