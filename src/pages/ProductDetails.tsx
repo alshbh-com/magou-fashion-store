@@ -83,45 +83,38 @@ const ProductDetails = () => {
     }
   }, [id]);
 
-  useEffect(() => {
-    if (product) {
-      fetchProductImages();
-    }
-  }, [product]);
-
-  const fetchProductImages = async () => {
-    // Get images directly from product table (image_url, image_url_2, image_url_3)
-    const allImages: string[] = [];
-    
-    if (product?.image_url && product.image_url.trim() && isValidImageUrl(product.image_url)) {
-      allImages.push(product.image_url);
-    }
-    if (product?.image_url_2 && product.image_url_2.trim() && isValidImageUrl(product.image_url_2)) {
-      allImages.push(product.image_url_2);
-    }
-    if (product?.image_url_3 && product.image_url_3.trim() && isValidImageUrl(product.image_url_3)) {
-      allImages.push(product.image_url_3);
-    }
-    
-    // If no valid images, add placeholder
-    if (allImages.length === 0) {
-      allImages.push("/placeholder.svg");
-    }
-    
-    setProductImages(allImages);
-  };
-
   const isValidImageUrl = (url: string): boolean => {
     if (!url || url.trim() === '') return false;
-    // Check if it's a valid URL format
     try {
       new URL(url);
       return true;
     } catch {
-      // If not a full URL, check if it's a valid relative path
       return url.startsWith('/') || url.startsWith('./');
     }
   };
+
+  useEffect(() => {
+    if (product) {
+      // Get images directly from product table
+      const allImages: string[] = [];
+      
+      if (product.image_url && product.image_url.trim() && isValidImageUrl(product.image_url)) {
+        allImages.push(product.image_url);
+      }
+      if (product.image_url_2 && product.image_url_2.trim() && isValidImageUrl(product.image_url_2)) {
+        allImages.push(product.image_url_2);
+      }
+      if (product.image_url_3 && product.image_url_3.trim() && isValidImageUrl(product.image_url_3)) {
+        allImages.push(product.image_url_3);
+      }
+      
+      if (allImages.length === 0) {
+        allImages.push("/placeholder.svg");
+      }
+      
+      setProductImages(allImages);
+    }
+  }, [product]);
 
   const fetchProduct = async () => {
     try {
