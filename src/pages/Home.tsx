@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { ArrowLeft, Star, Truck, CreditCard, HeadphonesIcon, Heart, Package, Eye } from "lucide-react";
+import { ArrowLeft, Star, Truck, CreditCard, HeadphonesIcon, Heart, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { useCart } from "@/contexts/CartContext";
 import BannersSection from "@/components/BannersSection";
@@ -131,7 +131,7 @@ const Home = () => {
   ];
 
   return (
-    <div className="animate-fade-in min-h-screen bg-white">
+    <div className="animate-fade-in min-h-screen bg-background">
       {/* Content Container */}
       <div>
         {/* Banners Section */}
@@ -139,36 +139,23 @@ const Home = () => {
 
         {/* Categories Section */}
         {categories.length > 0 && (
-          <section className="py-20 bg-gray-50">
+          <section className="py-12 bg-muted/50">
             <div className="container mx-auto px-4">
-              <h2 className="text-3xl md:text-4xl font-display font-bold text-center mb-12 bg-gradient-to-r from-primary to-orange-light bg-clip-text text-transparent">
+              <h2 className="text-3xl md:text-4xl font-display font-bold text-center mb-8 text-gradient-gold">
                 الأقسام
               </h2>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              <div className="flex flex-wrap justify-center gap-3">
                 {categories.map((category) => (
                   <Link 
                     key={category.id} 
                     to={`/products?category=${category.id}`}
-                    className="group"
                   >
-                    <Card className="overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-2 bg-white border-2 border-gray-200 hover:border-primary">
-                      <div className="relative overflow-hidden aspect-square">
-                        {category.image_url ? (
-                          <img
-                            src={category.image_url}
-                            alt={category.name}
-                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-orange-50 to-orange-100">
-                            <Package className="h-16 w-16 text-primary" />
-                          </div>
-                        )}
-                      </div>
-                      <CardContent className="p-4 text-center">
-                        <h3 className="font-bold text-lg mb-1 text-black">{category.name_ar}</h3>
-                      </CardContent>
-                    </Card>
+                    <Button
+                      variant="outline"
+                      className="h-12 px-6 text-base font-semibold border-2 border-primary/30 hover:border-primary hover:bg-primary hover:text-primary-foreground transition-all duration-300"
+                    >
+                      {category.name_ar}
+                    </Button>
                   </Link>
                 ))}
               </div>
@@ -177,14 +164,14 @@ const Home = () => {
         )}
 
         {/* Products Section */}
-        <section className="py-20 bg-white">
+        <section className="py-20 bg-background">
           <div className="container mx-auto px-4">
           <div className="flex items-center justify-between mb-12">
-            <h2 className="text-3xl md:text-4xl font-display font-bold bg-gradient-to-r from-primary to-orange-light bg-clip-text text-transparent">
+            <h2 className="text-3xl md:text-4xl font-display font-bold text-gradient-gold">
               منتجاتنا المميزة
             </h2>
             <Link to="/products">
-              <Button variant="outline" className="border-2 border-primary text-primary hover:bg-primary hover:text-white transition-colors">
+              <Button variant="outline" className="border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-colors">
                 عرض الكل
                 <ArrowLeft className="mr-2 h-4 w-4" />
               </Button>
@@ -201,10 +188,10 @@ const Home = () => {
                 const currentPrice = product.is_offer && product.offer_price ? product.offer_price : product.price;
                 
                 return (
-                  <Card key={product.id} className="group overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-2 bg-white border-2 border-gray-200 hover:border-primary">
+                  <Card key={product.id} className="group overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-2 bg-card border-2 border-border hover:border-primary">
                     <div className="relative overflow-hidden aspect-square">
                       {product.is_offer && (
-                        <div className="absolute top-4 left-4 bg-gradient-to-r from-primary to-orange-light text-white px-3 py-1 rounded-full text-sm font-bold z-10 shadow-lg">
+                        <div className="absolute top-4 left-4 bg-gradient-to-r from-primary to-accent text-primary-foreground px-3 py-1 rounded-full text-sm font-bold z-10 shadow-lg">
                           عرض خاص
                         </div>
                       )}
@@ -217,7 +204,7 @@ const Home = () => {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="bg-white/90 hover:bg-white text-black shadow-md"
+                          className="bg-background/90 hover:bg-background text-foreground shadow-md"
                           onClick={() => addToFavorites(product)}
                         >
                           <Heart className="h-5 w-5" />
@@ -225,7 +212,7 @@ const Home = () => {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="bg-white/90 hover:bg-white text-black shadow-md"
+                          className="bg-background/90 hover:bg-background text-foreground shadow-md"
                           onClick={() => {
                             setSelectedProduct(product);
                             setQuickViewOpen(true);
@@ -237,8 +224,8 @@ const Home = () => {
                     </div>
                     
                     <CardContent className="p-4">
-                      <h3 className="font-bold text-lg mb-2 line-clamp-1 text-black">{product.name}</h3>
-                      <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+                      <h3 className="font-bold text-lg mb-2 line-clamp-1 text-card-foreground">{product.name}</h3>
+                      <p className="text-muted-foreground text-sm mb-3 line-clamp-2">
                         {product.description || "منتج عالي الجودة"}
                       </p>
                       <div className="flex items-center gap-2 mb-2">
@@ -250,7 +237,7 @@ const Home = () => {
                       </div>
                       <div className="flex items-center gap-2">
                         {product.is_offer && product.offer_price && (
-                          <span className="text-gray-400 line-through text-sm">
+                          <span className="text-muted-foreground line-through text-sm">
                             {product.price} جنيه
                           </span>
                         )}
@@ -263,7 +250,7 @@ const Home = () => {
                     <CardFooter className="p-4 pt-0">
                       <Link to={`/products/${product.id}`} className="w-full">
                         <Button 
-                          className="w-full bg-gradient-to-r from-primary to-orange-light hover:from-orange-dark hover:to-primary text-white font-bold shadow-lg hover:shadow-xl transition-all" 
+                          className="w-full bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-primary-foreground font-bold shadow-lg hover:shadow-xl transition-all" 
 disabled={product.stock_quantity === 0}
                         >
                           {product.stock_quantity === 0 ? "نفذت الكمية" : "عرض التفاصيل"}
@@ -284,22 +271,22 @@ disabled={product.stock_quantity === 0}
         </section>
 
         {/* Features Section */}
-        <section className="py-20 bg-gray-50">
+        <section className="py-20 bg-muted/50">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl md:text-4xl font-display font-bold text-center mb-12 bg-gradient-to-r from-primary to-orange-light bg-clip-text text-transparent">
+          <h2 className="text-3xl md:text-4xl font-display font-bold text-center mb-12 text-gradient-gold">
             لماذا تختارنا؟
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {features.map((feature, index) => (
               <div
                 key={index}
-                className="text-center p-6 rounded-lg bg-white hover:shadow-xl transition-all duration-300 hover:-translate-y-2 border-2 border-gray-200 hover:border-primary"
+                className="text-center p-6 rounded-lg bg-card hover:shadow-xl transition-all duration-300 hover:-translate-y-2 border-2 border-border hover:border-primary"
               >
-                <div className="inline-flex p-4 rounded-full bg-gradient-to-br from-orange-50 to-orange-100 text-primary mb-4">
+                <div className="inline-flex p-4 rounded-full bg-primary/10 text-primary mb-4">
                   {feature.icon}
                 </div>
-                <h3 className="text-xl font-bold mb-2 text-black">{feature.title}</h3>
-                <p className="text-gray-600">{feature.description}</p>
+                <h3 className="text-xl font-bold mb-2 text-card-foreground">{feature.title}</h3>
+                <p className="text-muted-foreground">{feature.description}</p>
               </div>
             ))}
           </div>
@@ -307,17 +294,17 @@ disabled={product.stock_quantity === 0}
         </section>
 
         {/* CTA Section */}
-        <section className="py-20 bg-white">
+        <section className="py-20 bg-background">
           <div className="container mx-auto px-4">
-            <div className="bg-gradient-to-r from-primary to-orange-light rounded-2xl p-12 text-center shadow-2xl">
-            <h2 className="text-3xl md:text-5xl font-display font-bold mb-6 text-white">
+            <div className="bg-gradient-to-r from-primary to-accent rounded-2xl p-12 text-center shadow-2xl">
+            <h2 className="text-3xl md:text-5xl font-display font-bold mb-6 text-primary-foreground">
               اكتشف مجموعتنا الكاملة
             </h2>
-            <p className="text-xl text-white/90 mb-8 max-w-2xl mx-auto">
+            <p className="text-xl text-primary-foreground/90 mb-8 max-w-2xl mx-auto">
               أحدث صيحات الموضة بأفضل الأسعار
             </p>
             <Link to="/products">
-              <Button size="lg" variant="secondary" className="bg-white text-primary hover:bg-gray-100 font-bold shadow-lg hover:shadow-xl transition-all hover:-translate-y-1">
+              <Button size="lg" variant="secondary" className="bg-background text-primary hover:bg-muted font-bold shadow-lg hover:shadow-xl transition-all hover:-translate-y-1">
                 عرض جميع المنتجات
                 <ArrowLeft className="mr-2 h-5 w-5" />
               </Button>
