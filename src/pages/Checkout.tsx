@@ -218,10 +218,10 @@ const Checkout = () => {
       successDiv.className = 'fixed inset-0 z-50 flex items-center justify-center bg-background/95 backdrop-blur-sm animate-in fade-in duration-300';
       successDiv.innerHTML = `
         <div class="text-center space-y-6 p-8">
-          <div class="text-6xl mb-4">🎉</div>
-          <h2 class="text-3xl font-bold text-primary">شكراً لك!</h2>
-          <p class="text-xl text-muted-foreground">تم إرسال طلبك بنجاح</p>
-          <p class="text-lg">سنتواصل معك قريباً</p>
+          <div class="text-6xl mb-4">✓</div>
+          <h2 class="text-3xl font-bold text-primary">تم تأكيد الطلب الخاص بكم</h2>
+          <p class="text-xl text-muted-foreground">شكراً على استخدامك متجر ماجو فاشون</p>
+          <p class="text-lg">وسيتم التواصل معك قريباً</p>
         </div>
       `;
       document.body.appendChild(successDiv);

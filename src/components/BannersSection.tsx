@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ExternalLink } from "lucide-react";
 
@@ -8,7 +7,9 @@ interface Banner {
   id: string;
   image_url: string;
   title: string;
+  title_ar: string;
   description: string | null;
+  description_ar: string | null;
   link_url: string | null;
   display_order: number;
 }
@@ -50,29 +51,32 @@ const BannersSection = () => {
   if (banners.length === 0) return null;
 
   return (
-    <section className="py-12 bg-gradient-to-br from-gray-50 to-white">
+    <section className="py-8 bg-gradient-to-br from-muted to-background">
       <div className="w-full px-0">
-        <h2 className="text-3xl md:text-4xl font-display font-bold text-center mb-12 text-gradient-rose px-4">
-          العروض والإعلانات 🎉
-        </h2>
         <div className="grid grid-cols-1 gap-6">
           {banners.map((banner) => (
-            <div
-              key={banner.id}
-              className="w-full overflow-hidden"
-            >
+            <div key={banner.id} className="w-full overflow-hidden">
+              {/* Banner Title */}
+              {(banner.title_ar || banner.title) && (
+                <h2 className="text-2xl md:text-3xl font-display font-bold text-center mb-4 text-gradient-gold px-4">
+                  {banner.title_ar || banner.title}
+                </h2>
+              )}
+              
               <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
                 <img
                   src={banner.image_url}
-                  alt={banner.title}
+                  alt={banner.title_ar || banner.title}
                   className="absolute inset-0 w-full h-full object-contain bg-muted"
                 />
               </div>
-              {(banner.title || banner.description || banner.link_url) && (
+              
+              {(banner.description_ar || banner.description || banner.link_url) && (
                 <div className="p-6 container mx-auto">
-                  <h3 className="text-xl font-bold mb-2">{banner.title}</h3>
-                  {banner.description && (
-                    <p className="text-muted-foreground mb-4">{banner.description}</p>
+                  {(banner.description_ar || banner.description) && (
+                    <p className="text-muted-foreground mb-4 text-center">
+                      {banner.description_ar || banner.description}
+                    </p>
                   )}
                   {banner.link_url && (
                     <Button

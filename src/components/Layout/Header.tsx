@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ShoppingCart, Heart, Menu, X, Lock, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/contexts/CartContext";
-import magouLogo from "@/assets/magou-logo-bg.png";
+import magouLogo from "@/assets/magou-logo-new.png";
 import AdminLoginDialog from "@/components/AdminLoginDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { User as SupabaseUser } from "@supabase/supabase-js";
@@ -41,7 +41,7 @@ const Header = () => {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <header className="sticky top-0 z-50 bg-white shadow-md">
+    <header className="sticky top-0 z-50 bg-background shadow-md">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
@@ -49,11 +49,8 @@ const Header = () => {
             <img 
               src={magouLogo} 
               alt="Magou Logo" 
-              className="h-12 w-12 object-contain"
+              className="h-16 w-16 object-contain"
             />
-            <h1 className="text-2xl md:text-3xl font-display font-bold bg-gradient-to-r from-primary to-orange-light bg-clip-text text-transparent">
-              Magou Fashion
-            </h1>
           </Link>
 
           {/* Desktop Navigation */}
@@ -63,7 +60,7 @@ const Header = () => {
                 key={link.path}
                 to={link.path}
                 className={`relative text-sm font-semibold transition-colors hover:text-primary ${
-                  isActive(link.path) ? "text-primary" : "text-black"
+                  isActive(link.path) ? "text-primary" : "text-foreground"
                 }`}
               >
                 {link.name}
@@ -79,7 +76,7 @@ const Header = () => {
             <Button 
               variant="ghost" 
               size="icon" 
-              className="hover:bg-gray-100 text-black"
+              className="hover:bg-muted text-foreground"
               onClick={() => navigate(user ? "/account" : "/user-auth")}
               title={user ? "حسابي" : "تسجيل الدخول"}
             >
@@ -88,21 +85,21 @@ const Header = () => {
             <Button 
               variant="ghost" 
               size="icon" 
-              className="hover:bg-gray-100 text-black"
+              className="hover:bg-muted text-foreground"
               onClick={() => setIsAdminDialogOpen(true)}
             >
               <Lock className="h-5 w-5" />
             </Button>
             <Link to="/favorites">
-              <Button variant="ghost" size="icon" className="hover:bg-gray-100 text-black">
+              <Button variant="ghost" size="icon" className="hover:bg-muted text-foreground">
                 <Heart className="h-5 w-5" />
               </Button>
             </Link>
             <Link to="/cart">
-              <Button variant="ghost" size="icon" className="hover:bg-gray-100 text-black relative">
+              <Button variant="ghost" size="icon" className="hover:bg-muted text-foreground relative">
                 <ShoppingCart className="h-5 w-5" />
                 {totalItems > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-primary text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold shadow-lg">
+                  <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold shadow-lg">
                     {totalItems}
                   </span>
                 )}
@@ -113,7 +110,7 @@ const Header = () => {
             <Button
               variant="ghost"
               size="icon"
-              className="md:hidden hover:bg-gray-100 text-black"
+              className="md:hidden hover:bg-muted text-foreground"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
             >
               {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
@@ -131,7 +128,7 @@ const Header = () => {
                 key={link.path}
                 to={link.path}
                 className={`block py-3 text-sm font-semibold transition-colors hover:text-primary ${
-                  isActive(link.path) ? "text-primary" : "text-black"
+                  isActive(link.path) ? "text-primary" : "text-foreground"
                 }`}
                 onClick={() => setIsMenuOpen(false)}
               >

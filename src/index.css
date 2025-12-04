@@ -9,53 +9,56 @@ All colors MUST be HSL.
 @layer base {
   :root {
     --background: 0 0% 100%;
-    --foreground: 0 0% 0%;
+    --foreground: 0 0% 15%;
 
     --card: 0 0% 98%;
-    --card-foreground: 0 0% 0%;
+    --card-foreground: 0 0% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 0%;
+    --popover-foreground: 0 0% 15%;
 
-    --primary: 24 100% 50%;
+    /* Copper Brown - Primary */
+    --primary: 15 60% 45%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 0 0% 0%;
-    --secondary-foreground: 0 0% 100%;
+    /* Light Grey / Silver Grey - Secondary */
+    --secondary: 0 0% 88%;
+    --secondary-foreground: 0 0% 15%;
 
-    --muted: 0 0% 96%;
+    --muted: 0 0% 94%;
     --muted-foreground: 0 0% 45%;
 
-    --accent: 24 100% 50%;
+    --accent: 15 55% 50%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 90%;
-    --input: 0 0% 90%;
-    --ring: 24 100% 50%;
+    --border: 0 0% 85%;
+    --input: 0 0% 85%;
+    --ring: 15 60% 45%;
 
     --radius: 0.75rem;
 
-    /* Custom design tokens - Orange, Black & White Theme */
+    /* Custom design tokens - Copper Brown & Silver Grey Theme */
     --white: 0 0% 100%;
-    --black: 0 0% 0%;
-    --orange: 24 100% 50%;
-    --orange-light: 24 100% 95%;
-    --orange-dark: 24 100% 35%;
-    --gray-light: 0 0% 96%;
-    --gray-dark: 0 0% 15%;
+    --black: 0 0% 15%;
+    --copper: 15 60% 45%;
+    --copper-light: 15 40% 92%;
+    --copper-dark: 15 65% 32%;
+    --silver: 0 0% 88%;
+    --silver-light: 0 0% 96%;
+    --silver-dark: 0 0% 65%;
     
     /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(24 100% 50%) 0%, hsl(24 100% 60%) 100%);
+    --gradient-primary: linear-gradient(135deg, hsl(15 60% 45%) 0%, hsl(15 55% 55%) 100%);
     --gradient-hero: linear-gradient(135deg, hsl(0 0% 100%) 0%, hsl(0 0% 96%) 100%);
     --gradient-card: linear-gradient(145deg, hsl(0 0% 100%) 0%, hsl(0 0% 98%) 100%);
     
     /* Shadows */
-    --shadow-orange: 0 10px 40px hsl(24 100% 50% / 0.3);
-    --shadow-card: 0 4px 20px hsl(0 0% 0% / 0.08);
-    --shadow-elegant: 0 6px 24px hsl(24 100% 50% / 0.15);
+    --shadow-copper: 0 10px 40px hsl(15 60% 45% / 0.25);
+    --shadow-card: 0 4px 20px hsl(0 0% 0% / 0.06);
+    --shadow-elegant: 0 6px 24px hsl(15 60% 45% / 0.12);
     
     /* Transitions */
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -63,33 +66,33 @@ All colors MUST be HSL.
   }
 
 .dark {
-    --background: 0 0% 0%;
-    --foreground: 0 0% 100%;
+    --background: 0 0% 8%;
+    --foreground: 0 0% 95%;
 
-    --card: 0 0% 5%;
-    --card-foreground: 0 0% 100%;
+    --card: 0 0% 12%;
+    --card-foreground: 0 0% 95%;
 
-    --popover: 0 0% 5%;
-    --popover-foreground: 0 0% 100%;
+    --popover: 0 0% 12%;
+    --popover-foreground: 0 0% 95%;
 
-    --primary: 24 100% 50%;
-    --primary-foreground: 0 0% 0%;
+    --primary: 15 60% 50%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 0 0% 15%;
-    --secondary-foreground: 0 0% 100%;
+    --secondary: 0 0% 20%;
+    --secondary-foreground: 0 0% 95%;
 
-    --muted: 0 0% 15%;
+    --muted: 0 0% 18%;
     --muted-foreground: 0 0% 65%;
 
-    --accent: 24 100% 50%;
-    --accent-foreground: 0 0% 0%;
+    --accent: 15 55% 55%;
+    --accent-foreground: 0 0% 100%;
 
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 20%;
-    --input: 0 0% 20%;
-    --ring: 24 100% 50%;
+    --border: 0 0% 22%;
+    --input: 0 0% 22%;
+    --ring: 15 60% 50%;
   }
 }
 
@@ -104,7 +107,7 @@ All colors MUST be HSL.
 }
 
 @layer utilities {
-.text-gradient-orange {
+.text-gradient-copper {
     background: linear-gradient(to right, hsl(var(--primary)), hsl(var(--accent)));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -112,7 +115,7 @@ All colors MUST be HSL.
   }
   
   .text-gradient-gold {
-    background: linear-gradient(to right, hsl(var(--orange)), hsl(var(--black)));
+    background: linear-gradient(to right, hsl(var(--copper)), hsl(var(--copper-dark)));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -123,7 +126,7 @@ All colors MUST be HSL.
   }
   
   .hover-glow {
-    @apply transition-all duration-500 hover:shadow-[0_10px_40px_hsl(24,100%,50%,0.5)];
+    @apply transition-all duration-500 hover:shadow-[0_10px_40px_hsl(15,60%,45%,0.4)];
   }
 
   .card-gradient {
@@ -146,16 +149,16 @@ All colors MUST be HSL.
     animation: pulseGlow 3s ease-in-out infinite;
   }
 
-.bg-cart-orange {
-    background-color: hsl(24 100% 90%);
+.bg-cart-copper {
+    background-color: hsl(15 40% 92%);
   }
 
   .bg-cart-white {
     background-color: hsl(0 0% 100%);
   }
 
-  .bg-cart-black {
-    background-color: hsl(0 0% 15%);
+  .bg-cart-silver {
+    background-color: hsl(0 0% 88%);
   }
 
   @keyframes fadeIn {
@@ -189,10 +192,10 @@ All colors MUST be HSL.
 
   @keyframes pulseGlow {
     0%, 100% {
-      box-shadow: 0 0 20px hsl(340 100% 64% / 0.3);
+      box-shadow: 0 0 20px hsl(15 60% 45% / 0.3);
     }
     50% {
-      box-shadow: 0 0 40px hsl(340 100% 64% / 0.6);
+      box-shadow: 0 0 40px hsl(15 60% 45% / 0.5);
     }
   }
 }
