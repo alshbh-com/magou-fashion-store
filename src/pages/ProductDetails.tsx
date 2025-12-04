@@ -71,7 +71,8 @@ const ProductDetails = () => {
   const [selectedSize, setSelectedSize] = useState("");
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true });
   const [cartMode, setCartMode] = useState<CartMode>('normal');
-  const [selectedPackages, setSelectedPackages] = useState<ProductPackage[]>([]);
+  // Map of package id -> count (how many times the package is selected)
+  const [selectedPackageCounts, setSelectedPackageCounts] = useState<Record<string, number>>({});
 
   useEffect(() => {
     if (id) {
@@ -226,8 +227,12 @@ const ProductDetails = () => {
     if (!product) return 0;
     
     // If packages are selected, return total package price
-    if (cartMode === 'package' && selectedPackages.length > 0) {
-      return selectedPackages.reduce((sum, pkg) => sum + pkg.price, 0);
+    const totalPackageCount = Object.values(selectedPackageCounts).reduce((a, b) => a + b, 0);
+    if (cartMode === 'package' && totalPackageCount > 0) {
+      return packages.reduce((sum, pkg) => {
+        const count = selectedPackageCounts[pkg.id] || 0;
+        return sum + (pkg.price * count);
+      }, 0);
     }
     
     // Get the base price (either from selected size or product)
@@ -255,28 +260,41 @@ const ProductDetails = () => {
     return subtotal;
   };
 
-  const handlePackageSelect = (pkg: ProductPackage) => {
-    const isSelected = selectedPackages.some(p => p.id === pkg.id);
-    
-    if (isSelected) {
-      // Deselect package
-      const newPackages = selectedPackages.filter(p => p.id !== pkg.id);
-      setSelectedPackages(newPackages);
-      if (newPackages.length === 0) {
-        setCartMode('normal');
-        setQuantity(1);
-      } else {
-        setQuantity(newPackages.reduce((sum, p) => sum + p.quantity, 0));
+  const handlePackageCountChange = (pkgId: string, delta: number) => {
+    setSelectedPackageCounts(prev => {
+      const currentCount = prev[pkgId] || 0;
+      const newCount = Math.max(0, currentCount + delta);
+      
+      if (newCount === 0) {
+        const { [pkgId]: _, ...rest } = prev;
+        const remaining = Object.values(rest).reduce((a, b) => a + b, 0);
+        if (remaining === 0) {
+          setCartMode('normal');
+          setQuantity(1);
+        } else {
+          // Calculate total quantity from remaining packages
+          const totalQty = packages.reduce((sum, p) => {
+            const count = rest[p.id] || 0;
+            return sum + (p.quantity * count);
+          }, 0);
+          setQuantity(totalQty);
+        }
+        return rest;
       }
-      setSelectedColors({});
-    } else {
-      // Add package
-      const newPackages = [...selectedPackages, pkg];
-      setSelectedPackages(newPackages);
+      
+      const newCounts = { ...prev, [pkgId]: newCount };
       setCartMode('package');
-      setQuantity(newPackages.reduce((sum, p) => sum + p.quantity, 0));
+      
+      // Calculate total quantity from all packages
+      const totalQty = packages.reduce((sum, p) => {
+        const count = newCounts[p.id] || 0;
+        return sum + (p.quantity * count);
+      }, 0);
+      setQuantity(totalQty);
       setSelectedColors({});
-    }
+      
+      return newCounts;
+    });
   };
 
   const getTotalSelectedColors = () => {
@@ -366,32 +384,35 @@ const ProductDetails = () => {
     });
 
     // If packages are selected
-    if (cartMode === 'package' && selectedPackages.length > 0) {
-      // Validate package selection is mandatory if packages exist
-      if (packages.length > 0 && selectedPackages.length === 0) {
-        toast.error("يجب اختيار باكدج واحد على الأقل");
-        return;
-      }
-
-      // Add each package separately to cart
-      selectedPackages.forEach(pkg => {
-        const unitPrice = pkg.price / pkg.quantity;
-        addToCart({
-          id: product.id,
-          name: `${product.name} (${pkg.name_ar})`,
-          price: unitPrice,
-          image_url: product.image_url,
-          quantity: pkg.quantity,
-          size: selectedSize || undefined,
-          color_options: colorOptionsArray.slice(0, pkg.quantity),
-          original_price: product.price,
-          package_id: pkg.id,
-          package_name: pkg.name_ar,
-          package_price: pkg.price
-        });
+    const totalPackageCount = Object.values(selectedPackageCounts).reduce((a, b) => a + b, 0);
+    if (cartMode === 'package' && totalPackageCount > 0) {
+      // Add each package to cart with its count
+      packages.forEach(pkg => {
+        const count = selectedPackageCounts[pkg.id] || 0;
+        if (count > 0) {
+          for (let i = 0; i < count; i++) {
+            const unitPrice = pkg.price / pkg.quantity;
+            addToCart({
+              id: product.id,
+              name: `${product.name} (${pkg.name_ar})`,
+              price: unitPrice,
+              image_url: product.image_url,
+              quantity: pkg.quantity,
+              size: selectedSize || undefined,
+              color_options: colorOptionsArray.slice(0, pkg.quantity),
+              original_price: product.price,
+              package_id: pkg.id,
+              package_name: pkg.name_ar,
+              package_price: pkg.price
+            });
+          }
+        }
       });
 
-      const packageNames = selectedPackages.map(p => p.name_ar).join(" + ");
+      const packageNames = packages
+        .filter(p => selectedPackageCounts[p.id] > 0)
+        .map(p => `${p.name_ar} x${selectedPackageCounts[p.id]}`)
+        .join(" + ");
       toast.success(`تم إضافة ${packageNames} إلى السلة! 📦`);
       
       // Reset
@@ -399,7 +420,7 @@ const ProductDetails = () => {
       setSelectedColors({});
       setSelectedSize("");
       setCartMode('normal');
-      setSelectedPackages([]);
+      setSelectedPackageCounts({});
       return;
     }
 
@@ -611,8 +632,8 @@ const ProductDetails = () => {
               >
                 <Plus className="h-4 w-4" />
               </Button>
-              {cartMode === 'package' && selectedPackages.length > 0 && (
-                <span className="text-sm text-muted-foreground">(كمية الباكدج ثابتة)</span>
+              {cartMode === 'package' && Object.values(selectedPackageCounts).reduce((a, b) => a + b, 0) > 0 && (
+                <span className="text-sm text-muted-foreground">(استخدم أزرار الباكدج)</span>
               )}
             </div>
           </div>
@@ -623,15 +644,14 @@ const ProductDetails = () => {
               <h3 className="font-semibold text-sm mb-2 text-orange-700 dark:text-orange-400">📦 اختر باكدج (إجباري)</h3>
               <div className="space-y-2">
                 {packages.map((pkg) => {
-                  const isSelected = selectedPackages.some(p => p.id === pkg.id);
+                  const count = selectedPackageCounts[pkg.id] || 0;
                   return (
-                    <button
+                    <div
                       key={pkg.id}
-                      onClick={() => handlePackageSelect(pkg)}
                       className={`w-full flex justify-between items-center text-xs p-3 rounded-lg transition-all border-2 ${
-                        isSelected
+                        count > 0
                           ? "border-orange-500 bg-orange-100 dark:bg-orange-900/40 shadow-md"
-                          : "border-transparent bg-background/50 hover:bg-background/80"
+                          : "border-transparent bg-background/50"
                       }`}
                     >
                       <div className="text-right">
@@ -641,19 +661,36 @@ const ProductDetails = () => {
                           <p className="text-muted-foreground mt-0.5">{pkg.description_ar}</p>
                         )}
                       </div>
-                      <div className="text-left">
+                      <div className="flex items-center gap-2">
                         <span className="font-bold text-orange-600 dark:text-orange-400 text-base">{pkg.price} ج.م</span>
-                        {isSelected && (
-                          <span className="block text-green-600 text-[10px]">✓ تم الاختيار</span>
-                        )}
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-7 w-7"
+                            onClick={() => handlePackageCountChange(pkg.id, -1)}
+                            disabled={count === 0}
+                          >
+                            <Minus className="h-3 w-3" />
+                          </Button>
+                          <span className="w-6 text-center font-bold">{count}</span>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-7 w-7"
+                            onClick={() => handlePackageCountChange(pkg.id, 1)}
+                          >
+                            <Plus className="h-3 w-3" />
+                          </Button>
+                        </div>
                       </div>
-                    </button>
+                    </div>
                   );
                 })}
               </div>
-              {selectedPackages.length > 0 && (
+              {Object.values(selectedPackageCounts).reduce((a, b) => a + b, 0) > 0 && (
                 <p className="mt-2 text-xs text-orange-700 dark:text-orange-400">
-                  اختر {quantity} لون للباكدجات المختارة ({selectedPackages.length} باكدج)
+                  اختر {quantity} لون للباكدجات المختارة (المجموع: {Object.values(selectedPackageCounts).reduce((a, b) => a + b, 0)} باكدج)
                 </p>
               )}
             </Card>

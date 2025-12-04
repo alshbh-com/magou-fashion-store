@@ -138,8 +138,11 @@ const ProductsManagement = () => {
       let imageUrl2 = editingProduct?.image_url_2 || null;
       let imageUrl3 = editingProduct?.image_url_3 || null;
 
-      // Upload images directly to products table
-      for (let i = 0; i < Math.min(imageFiles.length, 3); i++) {
+      // Upload new images - each image replaces its position
+      // Image 1 = main, Image 2 = secondary, Image 3 = third
+      const uploadedUrls: (string | null)[] = [mainImageUrl, imageUrl2, imageUrl3];
+      
+      for (let i = 0; i < imageFiles.length && i < 3; i++) {
         const file = imageFiles[i];
         const fileExt = file.name.split('.').pop();
         const fileName = `${Math.random()}.${fileExt}`;
@@ -154,10 +157,12 @@ const ProductsManagement = () => {
           .from('products')
           .getPublicUrl(fileName);
 
-        if (i === 0) mainImageUrl = publicUrl;
-        else if (i === 1) imageUrl2 = publicUrl;
-        else if (i === 2) imageUrl3 = publicUrl;
+        uploadedUrls[i] = publicUrl;
       }
+      
+      mainImageUrl = uploadedUrls[0];
+      imageUrl2 = uploadedUrls[1];
+      imageUrl3 = uploadedUrls[2];
 
       const productData = {
         name: formData.name_ar,
