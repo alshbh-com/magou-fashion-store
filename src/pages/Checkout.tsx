@@ -30,6 +30,7 @@ const Checkout = () => {
     address: "",
     notes: "",
   });
+  const [phoneError, setPhoneError] = useState("");
   const [selectedGovernorate, setSelectedGovernorate] = useState<Governorate | null>(null);
 
   useEffect(() => {
@@ -77,8 +78,70 @@ const Checkout = () => {
     setSelectedGovernorate(gov || null);
   };
 
+  const validatePhoneNumber = (phone: string) => {
+    // تنظيف الرقم من المسافات والشرطات
+    const cleanPhone = phone.replace(/\D/g, '');
+    
+    // التحقق من أن الرقم يحتوي على 11 رقمًا
+    if (cleanPhone.length !== 11) {
+      return "يجب أن يتكون رقم الهاتف من 11 رقمًا";
+    }
+    
+    // التحقق من أن الرقم يبدأ بـ 01 (للهواتف المصرية)
+    if (!cleanPhone.startsWith('01')) {
+      return "يجب أن يبدأ رقم الهاتف بـ 01";
+    }
+    
+    // التحقق من أن الرقم يحتوي على أرقام فقط
+    if (!/^\d+$/.test(cleanPhone)) {
+      return "يجب أن يحتوي رقم الهاتف على أرقام فقط";
+    }
+    
+    return "";
+  };
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    
+    // السماح فقط بالأرقام
+    const numericValue = value.replace(/\D/g, '');
+    
+    // حفظ الرقم بالصيغة النظيفة
+    setFormData({ ...formData, phone: numericValue });
+    
+    // التحقق من الصحة في الوقت الفعلي
+    if (numericValue) {
+      const error = validatePhoneNumber(numericValue);
+      setPhoneError(error);
+    } else {
+      setPhoneError("");
+    }
+  };
+
+  const handlePhone2Change = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    
+    // السماح فقط بالأرقام للرقم الإضافي أيضًا
+    const numericValue = value.replace(/\D/g, '');
+    setFormData({ ...formData, phone2: numericValue });
+  };
+
   const handleSubmit = async (e: React.FormEvent, sendWhatsApp: boolean = false) => {
     e.preventDefault();
+    
+    // Validate phone number
+    if (!formData.phone) {
+      toast.error("الرجاء إدخال رقم الهاتف");
+      setPhoneError("رقم الهاتف مطلوب");
+      return;
+    }
+    
+    const phoneValidationError = validatePhoneNumber(formData.phone);
+    if (phoneValidationError) {
+      toast.error(phoneValidationError);
+      setPhoneError(phoneValidationError);
+      return;
+    }
     
     // Validate governorate selection
     if (!selectedGovernorate) {
@@ -157,7 +220,7 @@ const Checkout = () => {
 
       console.log("Order created successfully:", order);
 
-// 3. Create order items
+      // 3. Create order items
       const orderItems = items.map((item) => {
         // Combine color_options into a single string
         let colorName = null;
@@ -193,7 +256,7 @@ const Checkout = () => {
         throw itemsError;
       }
 
-// 4. Update product stock
+      // 4. Update product stock
       for (const item of items) {
         const { data: currentProduct } = await supabase
           .from("products")
@@ -274,24 +337,24 @@ const Checkout = () => {
                     type="tel"
                     required
                     value={formData.phone}
-                    onChange={(e) => {
-                      let value = e.target.value;
-                      // تأكد من أن الرقم يبدأ بـ 2
-                      if (!value.startsWith('2')) {
-                        value = '2' + value.replace(/^2*/, '');
-                      }
-                      setFormData({ ...formData, phone: value });
-                    }}
-                    placeholder="2 01xxxxxxxxx"
+                    onChange={handlePhoneChange}
+                    placeholder="01xxxxxxxxx (11 رقم)"
+                    className={phoneError ? "border-destructive focus-visible:ring-destructive" : ""}
                   />
+                  {phoneError && (
+                    <p className="text-sm text-destructive mt-1">{phoneError}</p>
+                  )}
+                  <p className="text-xs text-muted-foreground mt-1">
+                    يجب أن يتكون رقم الهاتف من 11 رقم ويبدأ بـ 01
+                  </p>
                 </div>
                 <div>
-                  <Label htmlFor="phone2">رقم هاتف إضافي</Label>
+                  <Label htmlFor="phone2">رقم هاتف إضافي (اختياري)</Label>
                   <Input
                     id="phone2"
                     type="tel"
                     value={formData.phone2}
-                    onChange={(e) => setFormData({ ...formData, phone2: e.target.value })}
+                    onChange={handlePhone2Change}
                     placeholder="01xxxxxxxxx (اختياري)"
                   />
                 </div>
@@ -338,11 +401,10 @@ const Checkout = () => {
 
               <div className="space-y-3">
                 <Button 
-                  type="button"
-                  onClick={(e) => handleSubmit(e, false)}
+                  type="submit"
                   className="w-full hover-glow" 
                   size="lg" 
-                  disabled={loading}
+                  disabled={loading || !!phoneError}
                 >
                   {loading ? (
                     <>
