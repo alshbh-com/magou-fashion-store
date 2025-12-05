@@ -24,7 +24,7 @@ const Checkout = () => {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
-    phone: "2",
+    phone: "",
     phone2: "",
     governorate: "",
     address: "",
