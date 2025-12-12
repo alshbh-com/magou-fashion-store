@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { MessageCircle, Phone, MapPin, Instagram, Facebook } from "lucide-react";
+import { MessageCircle, Phone, MapPin, Instagram, Facebook, Truck, Package, Clock } from "lucide-react";
 import { toast } from "sonner";
 
 const Contact = () => {
@@ -100,6 +100,51 @@ const Contact = () => {
 
         {/* Contact Info */}
         <div className="space-y-6">
+          {/* Shipping Policy - NEW SECTION */}
+          <Card className="p-6 hover-scale border-2 border-yellow-200 bg-yellow-50 dark:bg-yellow-950/20">
+            <div className="flex items-start gap-4">
+              <div className="p-3 bg-yellow-500/20 rounded-full text-yellow-600 dark:text-yellow-400">
+                <Truck className="h-6 w-6" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-bold text-lg mb-3 text-yellow-700 dark:text-yellow-300">
+                  سياسة الشحن والتوصيل
+                </h3>
+                <div className="space-y-3 text-sm text-gray-700 dark:text-gray-300">
+                  <div className="flex items-start gap-2">
+                    <Package className="h-4 w-4 mt-0.5 text-yellow-600 dark:text-yellow-400" />
+                    <p className="flex-1">
+                      <span className="font-semibold">تفاصيل المنتج قبل الاستلام:</span>
+                      يتم معاينة المنتج قبل الاستلام، وفي حال رفض الطلب يتم احتساب مصاريف الشحن على العميل.
+                    </p>
+                  </div>
+                  
+                  <div className="flex items-start gap-2">
+                    <Clock className="h-4 w-4 mt-0.5 text-yellow-600 dark:text-yellow-400" />
+                    <p className="flex-1">
+                      <span className="font-semibold">مدة التوصيل للمحافظات:</span>
+                      من 3 إلى 5 أيام عمل لأي محافظة.
+                    </p>
+                  </div>
+                  
+                  <div className="flex items-start gap-2">
+                    <Clock className="h-4 w-4 mt-0.5 text-yellow-600 dark:text-yellow-400" />
+                    <p className="flex-1">
+                      <span className="font-semibold">مدة التوصيل للقاهرة والجيزة:</span>
+                      من يومين إلى 3 أيام عمل.
+                    </p>
+                  </div>
+                  
+                  <div className="mt-4 p-3 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                    <p className="text-xs font-semibold text-yellow-800 dark:text-yellow-300">
+                      ملاحظة: جميع أوقات التوصيل تشمل أيام العمل فقط (السبت - الخميس) ولا تشمل العطلات الرسمية.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Card>
+
           {/* Phone Numbers */}
           <Card className="p-6 hover-scale">
             <div className="flex items-start gap-4">
