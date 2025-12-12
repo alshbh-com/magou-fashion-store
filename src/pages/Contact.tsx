@@ -32,7 +32,7 @@ const Contact = () => {
 الرسالة: ${formData.message}
     `.trim();
     
-    const url = `https://wa.me/201095317035?text=${encodeURIComponent(whatsappMessage)}`;
+    const url = `https://wa.me/201109427245?text=${encodeURIComponent(whatsappMessage)}`;
     window.open(url, "_blank");
     
     toast.success("سيتم فتح واتساب لإرسال رسالتك");
