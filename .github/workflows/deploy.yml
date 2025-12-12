@@ -1,28 +1,28 @@
-name: 🚀 Auto Deploy to Namecheap via FTP
+name: Deploy to GitHub Pages
 
 on:
   push:
     branches:
-      - main  # أو master حسب الفرع اللي بتشتغل عليه
+      - main
 
 jobs:
-  ftp-deploy:
+  build:
     runs-on: ubuntu-latest
     steps:
-      - name: 📦 Checkout Repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: ⚙️ Build React App
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install and Build
         run: |
           npm install
           npm run build
 
-      - name: 🚀 Upload to Namecheap via FTP
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+      - name: Deploy
+        uses: JamesIves/github-pages-deploy-action@v4
         with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          port: ${{ secrets.FTP_PORT }}
-          local-dir: dist/
-          server-dir: public_html/
+          folder: dist
