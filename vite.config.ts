@@ -9,20 +9,21 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8080,
   },
-  plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
+
+  plugins: [
+    react(),
+    mode === "development" && componentTagger()
+  ].filter(Boolean),
+
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
   },
-}));
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react-swc";
 
-export default defineConfig({
-  plugins: [react()],
-  base: "/", // مهم جدًا لمشاريع Cloudflare
+  base: "/",   // مهم جدًا لـ Cloudflare Pages
+
   build: {
     outDir: "dist",
   },
-});
+}));
