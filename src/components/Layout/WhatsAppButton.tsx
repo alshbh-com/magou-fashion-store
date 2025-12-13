@@ -1,4 +1,4 @@
-import { mport { Messa } ircl "lucide-react";
+import { MessageCircle } from "lucide-react";
 
 const WhatsAppButton = () => {
   const phoneNumber = "201109427245";
