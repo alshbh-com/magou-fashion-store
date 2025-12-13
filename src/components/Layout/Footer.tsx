@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Facebook, MessageCircle, Instagram, Phone } from "lucide-react";
+import { Facebook, MessageCircle, Instagram, Phone, Truck, Package, Clock } from "lucide-react";
 
 const Footer = () => {
   const facebookLinks = [
@@ -24,20 +24,37 @@ const Footer = () => {
             </p>
           </div>
 
-          {/* Quick Links */}
+          {/* Shipping Policy - مضافة قبل خدمة العملاء */}
           <div className="space-y-4">
-            <h4 className="text-lg font-semibold text-foreground">روابط سريعة</h4>
-            <nav className="flex flex-col gap-2">
-              <Link to="/products" className="text-muted-foreground hover:text-primary transition-colors">
-                المنتجات
-              </Link>
-              <Link to="/about" className="text-muted-foreground hover:text-primary transition-colors">
-                من نحن
-              </Link>
-              <Link to="/contact" className="text-muted-foreground hover:text-primary transition-colors">
-                اتصل بنا
-              </Link>
-            </nav>
+            <h4 className="text-lg font-semibold text-foreground flex items-center gap-2">
+              <Truck className="h-5 w-5 text-amber-600" />
+              سياسة الشحن والتوصيل
+            </h4>
+            <div className="space-y-3 text-sm text-muted-foreground">
+              <div className="flex items-start gap-2">
+                <Package className="h-4 w-4 mt-0.5 text-amber-500" />
+                <p>
+                  <span className="font-medium text-foreground">معاينة المنتج:</span>
+                  يتم معاينة المنتج قبل الاستلام. في حال رفض الطلب يتم احتساب مصاريف الشحن على العميل.
+                </p>
+              </div>
+              
+              <div className="flex items-start gap-2">
+                <Clock className="h-4 w-4 mt-0.5 text-amber-500" />
+                <p>
+                  <span className="font-medium text-foreground">مدة التوصيل للمحافظات:</span>
+                  من 3 إلى 5 أيام عمل لأي محافظة.
+                </p>
+              </div>
+              
+              <div className="flex items-start gap-2">
+                <Clock className="h-4 w-4 mt-0.5 text-amber-500" />
+                <p>
+                  <span className="font-medium text-foreground">مدة التوصيل للقاهرة والجيزة:</span>
+                  من يومين إلى 3 أيام عمل.
+                </p>
+              </div>
+            </div>
           </div>
 
           {/* Customer Service */}
@@ -57,8 +74,24 @@ const Footer = () => {
             </div>
           </div>
 
-          {/* Social Media */}
+          {/* Quick Links */}
           <div className="space-y-4">
+            <h4 className="text-lg font-semibold text-foreground">روابط سريعة</h4>
+            <nav className="flex flex-col gap-2">
+              <Link to="/products" className="text-muted-foreground hover:text-primary transition-colors">
+                المنتجات
+              </Link>
+              <Link to="/about" className="text-muted-foreground hover:text-primary transition-colors">
+                من نحن
+              </Link>
+              <Link to="/contact" className="text-muted-foreground hover:text-primary transition-colors">
+                اتصل بنا
+              </Link>
+            </nav>
+          </div>
+
+          {/* Social Media */}
+          <div className="space-y-4 md:col-span-2">
             <h4 className="text-lg font-semibold text-foreground">تواصل معنا</h4>
             <div className="flex flex-wrap gap-3">
               {/* Instagram */}
@@ -101,7 +134,7 @@ const Footer = () => {
               
               {/* WhatsApp */}
               <a
-                href="https://wa.me/201095317035"
+                href="https://wa.me/201109427245"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-3 bg-muted text-foreground rounded-full hover:bg-green-500 hover:text-white transition-colors hover-scale"
