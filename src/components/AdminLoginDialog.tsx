@@ -25,7 +25,7 @@ const AdminLoginDialog = ({ open, onOpenChange }: AdminLoginDialogProps) => {
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (password === "magougroub") {
+    if (password === "magoufashiongroud") {
       toast.success("مرحباً في لوحة التحكم");
       onOpenChange(false);
       navigate("/admin");
