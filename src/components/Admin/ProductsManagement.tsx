@@ -139,31 +139,44 @@ const ProductsManagement = () => {
       let imageUrl2 = editingProduct?.image_url_2 || null;
       let imageUrl3 = editingProduct?.image_url_3 || null;
 
-      // Upload new images - each image replaces its position
-      // Image 1 = main, Image 2 = secondary, Image 3 = third
-      const uploadedUrls: (string | null)[] = [mainImageUrl, imageUrl2, imageUrl3];
-      
-      for (let i = 0; i < imageFiles.length && i < 3; i++) {
-        const file = imageFiles[i];
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${Math.random()}.${fileExt}`;
+      // Upload new images - fill empty slots first, then replace from beginning
+      if (imageFiles.length > 0) {
+        const currentImages = [mainImageUrl, imageUrl2, imageUrl3];
+        const uploadedUrls: (string | null)[] = [...currentImages];
+        
+        // Find empty slots first
+        const emptySlots: number[] = [];
+        const filledSlots: number[] = [];
+        currentImages.forEach((img, idx) => {
+          if (!img) emptySlots.push(idx);
+          else filledSlots.push(idx);
+        });
+        
+        // Assign new images: first fill empty slots, then replace from beginning
+        const slotsToFill = [...emptySlots, ...filledSlots].slice(0, imageFiles.length);
+        
+        for (let i = 0; i < imageFiles.length && i < 3; i++) {
+          const file = imageFiles[i];
+          const fileExt = file.name.split('.').pop();
+          const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
 
-        const { error: uploadError } = await supabase.storage
-          .from('products')
-          .upload(fileName, file);
+          const { error: uploadError } = await supabase.storage
+            .from('products')
+            .upload(fileName, file);
 
-        if (uploadError) throw uploadError;
+          if (uploadError) throw uploadError;
 
-        const { data: { publicUrl } } = supabase.storage
-          .from('products')
-          .getPublicUrl(fileName);
+          const { data: { publicUrl } } = supabase.storage
+            .from('products')
+            .getPublicUrl(fileName);
 
-        uploadedUrls[i] = publicUrl;
+          uploadedUrls[slotsToFill[i]] = publicUrl;
+        }
+        
+        mainImageUrl = uploadedUrls[0];
+        imageUrl2 = uploadedUrls[1];
+        imageUrl3 = uploadedUrls[2];
       }
-      
-      mainImageUrl = uploadedUrls[0];
-      imageUrl2 = uploadedUrls[1];
-      imageUrl3 = uploadedUrls[2];
 
       const productData = {
         name: formData.name_ar,
@@ -460,7 +473,7 @@ const ProductsManagement = () => {
 
               <div>
                 <Label htmlFor="images">صور المنتج (حتى 3 صور)</Label>
-                <p className="text-xs text-muted-foreground mb-2">الصورة الأولى هي الصورة الرئيسية</p>
+                <p className="text-xs text-muted-foreground mb-2">الصورة الأولى هي الصورة الرئيسية - اختر الصور اللي عايز تضيفها أو تستبدلها</p>
                 <Input
                   id="images"
                   type="file"
@@ -473,21 +486,72 @@ const ProductsManagement = () => {
                 />
                 <div className="flex gap-2 mt-2 flex-wrap">
                   {editingProduct?.image_url && (
-                    <div className="text-center">
+                    <div className="text-center relative group">
                       <img src={editingProduct.image_url} alt="الصورة الرئيسية" className="h-20 w-20 object-cover rounded border-2 border-primary" />
-                      <span className="text-xs">رئيسية</span>
+                      <span className="text-xs block">رئيسية</span>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          if (!confirm("هل تريد حذف الصورة الرئيسية؟")) return;
+                          const { error } = await supabase
+                            .from("products")
+                            .update({ image_url: null })
+                            .eq("id", editingProduct.id);
+                          if (!error) {
+                            setEditingProduct({ ...editingProduct, image_url: null });
+                            toast.success("تم حذف الصورة");
+                          }
+                        }}
+                        className="absolute top-0 right-0 bg-destructive text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
                     </div>
                   )}
                   {editingProduct?.image_url_2 && (
-                    <div className="text-center">
+                    <div className="text-center relative group">
                       <img src={editingProduct.image_url_2} alt="صورة 2" className="h-20 w-20 object-cover rounded border" />
-                      <span className="text-xs">صورة 2</span>
+                      <span className="text-xs block">صورة 2</span>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          if (!confirm("هل تريد حذف الصورة 2؟")) return;
+                          const { error } = await supabase
+                            .from("products")
+                            .update({ image_url_2: null })
+                            .eq("id", editingProduct.id);
+                          if (!error) {
+                            setEditingProduct({ ...editingProduct, image_url_2: null });
+                            toast.success("تم حذف الصورة");
+                          }
+                        }}
+                        className="absolute top-0 right-0 bg-destructive text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
                     </div>
                   )}
                   {editingProduct?.image_url_3 && (
-                    <div className="text-center">
+                    <div className="text-center relative group">
                       <img src={editingProduct.image_url_3} alt="صورة 3" className="h-20 w-20 object-cover rounded border" />
-                      <span className="text-xs">صورة 3</span>
+                      <span className="text-xs block">صورة 3</span>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          if (!confirm("هل تريد حذف الصورة 3؟")) return;
+                          const { error } = await supabase
+                            .from("products")
+                            .update({ image_url_3: null })
+                            .eq("id", editingProduct.id);
+                          if (!error) {
+                            setEditingProduct({ ...editingProduct, image_url_3: null });
+                            toast.success("تم حذف الصورة");
+                          }
+                        }}
+                        className="absolute top-0 right-0 bg-destructive text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
                     </div>
                   )}
                 </div>
@@ -658,13 +722,18 @@ const ProductsManagement = () => {
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
-                    <span>{product.stock_quantity}</span>
-                    {product.stock_quantity <= 10 && (
-                      <Badge variant="destructive" className="flex items-center gap-1">
-                        <AlertTriangle className="h-3 w-3" />
-                        {product.stock_quantity === 0 ? "نفذ" : "قليل"}
+                    <span className="font-medium">{product.stock_quantity}</span>
+                    {product.stock_quantity === 0 ? (
+                      <Badge variant="destructive" className="flex items-center gap-1 animate-pulse bg-red-600 text-white px-3 py-1">
+                        <AlertTriangle className="h-4 w-4" />
+                        <span className="font-bold">نفذ المخزون!</span>
                       </Badge>
-                    )}
+                    ) : product.stock_quantity <= 10 ? (
+                      <Badge variant="outline" className="flex items-center gap-1 border-orange-500 bg-orange-100 text-orange-700 px-3 py-1">
+                        <AlertTriangle className="h-4 w-4" />
+                        <span className="font-bold">مخزون قليل ({product.stock_quantity})</span>
+                      </Badge>
+                    ) : null}
                   </div>
                 </TableCell>
                 <TableCell>

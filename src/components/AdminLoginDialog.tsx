@@ -10,7 +10,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Lock } from "lucide-react";
+import { Lock, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 
 interface AdminLoginDialogProps {
@@ -20,6 +20,7 @@ interface AdminLoginDialogProps {
 
 const AdminLoginDialog = ({ open, onOpenChange }: AdminLoginDialogProps) => {
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
   const handleLogin = (e: React.FormEvent) => {
@@ -51,14 +52,25 @@ const AdminLoginDialog = ({ open, onOpenChange }: AdminLoginDialogProps) => {
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
             <Label htmlFor="password">كلمة السر</Label>
-            <Input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="أدخل كلمة السر"
-              autoComplete="off"
-            />
+            <div className="relative">
+              <Input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="أدخل كلمة السر"
+                autoComplete="off"
+                className="pl-10"
+                dir="ltr"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
           </div>
           <Button type="submit" className="w-full">
             دخول
