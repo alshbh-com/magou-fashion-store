@@ -3,8 +3,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Trash2, Eye, Loader2, Filter, Mail } from "lucide-react";
+import { Trash2, Eye, Loader2, Filter, Mail, Edit, Plus, Minus, X, Save } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -35,11 +37,19 @@ interface Order {
   customer_address: string;
   customer_city: string;
   customer_email: string | null;
+  customer_notes: string | null;
   total: number;
   status: string;
   created_at: string;
   shipping_cost: number;
   subtotal: number;
+  discount: number;
+}
+
+interface Product {
+  id: string;
+  name_ar: string;
+  price: number;
 }
 
 interface OrderItem {
@@ -59,10 +69,29 @@ const OrdersManagement = () => {
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingItems, setEditingItems] = useState<OrderItem[]>([]);
+  const [editingOrder, setEditingOrder] = useState<Order | null>(null);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     fetchOrders();
+    fetchProducts();
   }, []);
+
+  const fetchProducts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("products")
+        .select("id, name_ar, price")
+        .order("name_ar");
+      if (error) throw error;
+      setProducts(data || []);
+    } catch (error) {
+      console.error("Error fetching products:", error);
+    }
+  };
 
   useEffect(() => {
     if (statusFilter === "all") {
@@ -157,21 +186,115 @@ const OrdersManagement = () => {
     }
   };
 
+  // فتح نافذة التعديل
+  const openEditDialog = async (order: Order) => {
+    setEditingOrder({ ...order });
+    await fetchOrderItems(order.id);
+    setEditingItems([...orderItems]);
+    setEditDialogOpen(true);
+  };
+
+  // تحديث عنصر في الطلب
+  const updateEditingItem = (index: number, field: keyof OrderItem, value: any) => {
+    const newItems = [...editingItems];
+    newItems[index] = { ...newItems[index], [field]: value };
+    setEditingItems(newItems);
+  };
+
+  // حذف عنصر من الطلب
+  const removeEditingItem = (index: number) => {
+    setEditingItems(editingItems.filter((_, i) => i !== index));
+  };
+
+  // إضافة منتج جديد للطلب
+  const addProductToOrder = (productId: string) => {
+    const product = products.find(p => p.id === productId);
+    if (!product) return;
+    
+    const newItem: OrderItem = {
+      id: `new-${Date.now()}`,
+      product_name: product.name_ar,
+      quantity: 1,
+      price: product.price,
+      color_name: null,
+      size_name: null,
+    };
+    setEditingItems([...editingItems, newItem]);
+  };
+
+  // حفظ التعديلات
+  const saveOrderChanges = async () => {
+    if (!editingOrder) return;
+    
+    setSaving(true);
+    try {
+      // حذف العناصر القديمة
+      await supabase
+        .from("order_items")
+        .delete()
+        .eq("order_id", editingOrder.id);
+
+      // إضافة العناصر الجديدة
+      const itemsToInsert = editingItems.map(item => ({
+        order_id: editingOrder.id,
+        product_name: item.product_name,
+        quantity: item.quantity,
+        price: item.price,
+        color_name: item.color_name,
+        size_name: item.size_name,
+      }));
+
+      if (itemsToInsert.length > 0) {
+        const { error: itemsError } = await supabase
+          .from("order_items")
+          .insert(itemsToInsert);
+        if (itemsError) throw itemsError;
+      }
+
+      // حساب المجموع الجديد
+      const newSubtotal = editingItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+      const newTotal = newSubtotal + (editingOrder.shipping_cost || 0) - (editingOrder.discount || 0);
+
+      // تحديث الطلب
+      const { error: orderError } = await supabase
+        .from("orders")
+        .update({
+          customer_name: editingOrder.customer_name,
+          customer_phone: editingOrder.customer_phone,
+          customer_address: editingOrder.customer_address,
+          customer_city: editingOrder.customer_city,
+          customer_notes: editingOrder.customer_notes,
+          subtotal: newSubtotal,
+          total: newTotal,
+        })
+        .eq("id", editingOrder.id);
+
+      if (orderError) throw orderError;
+
+      toast.success("تم حفظ التعديلات بنجاح");
+      setEditDialogOpen(false);
+      fetchOrders();
+    } catch (error) {
+      console.error("Error saving changes:", error);
+      toast.error("فشل في حفظ التعديلات");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     const statusColors: Record<string, string> = {
       pending: "bg-orange-100 text-orange-800",
-      processing: "bg-blue-100 text-blue-800",
+      confirmed: "bg-blue-100 text-blue-800",
       shipped: "bg-purple-100 text-purple-800",
-      delivered: "bg-green-100 text-green-800",
       cancelled: "bg-red-100 text-red-800",
       transferred: "bg-cyan-100 text-cyan-800",
     };
 
     const statusLabels: Record<string, string> = {
       pending: "قيد الانتظار",
-      processing: "قيد التنفيذ",
-      shipped: "تم الشحن",
-      delivered: "تم التوصيل",
+      confirmed: "تم التأكيد",
+      shipped: "تعديل",
       cancelled: "ملغي",
       transferred: "تم النقل للسيستم",
     };
@@ -187,9 +310,8 @@ const OrdersManagement = () => {
     const counts: Record<string, number> = {
       all: orders.length,
       pending: 0,
-      processing: 0,
+      confirmed: 0,
       shipped: 0,
-      delivered: 0,
       cancelled: 0,
       transferred: 0,
     };
@@ -225,9 +347,8 @@ const OrdersManagement = () => {
               <SelectContent>
                 <SelectItem value="all">الكل ({statusCounts.all})</SelectItem>
                 <SelectItem value="pending">قيد الانتظار ({statusCounts.pending})</SelectItem>
-                <SelectItem value="processing">قيد التنفيذ ({statusCounts.processing})</SelectItem>
-                <SelectItem value="shipped">تم الشحن ({statusCounts.shipped})</SelectItem>
-                <SelectItem value="delivered">تم التوصيل ({statusCounts.delivered})</SelectItem>
+                <SelectItem value="confirmed">تم التأكيد ({statusCounts.confirmed})</SelectItem>
+                <SelectItem value="shipped">تعديل ({statusCounts.shipped})</SelectItem>
                 <SelectItem value="cancelled">ملغي ({statusCounts.cancelled})</SelectItem>
                 <SelectItem value="transferred">تم النقل للسيستم ({statusCounts.transferred})</SelectItem>
               </SelectContent>
@@ -281,6 +402,13 @@ const OrdersManagement = () => {
                       onClick={() => viewOrder(order)}
                     >
                       <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => openEditDialog(order)}
+                    >
+                      <Edit className="h-4 w-4" />
                     </Button>
                     <Button
                       size="sm"
@@ -357,9 +485,8 @@ const OrdersManagement = () => {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="pending">قيد الانتظار</SelectItem>
-                        <SelectItem value="processing">قيد التنفيذ</SelectItem>
-                        <SelectItem value="shipped">تم الشحن</SelectItem>
-                        <SelectItem value="delivered">تم التوصيل</SelectItem>
+                        <SelectItem value="confirmed">تم التأكيد</SelectItem>
+                        <SelectItem value="shipped">تعديل</SelectItem>
                         <SelectItem value="cancelled">ملغي</SelectItem>
                         <SelectItem value="transferred">تم النقل للسيستم</SelectItem>
                       </SelectContent>
@@ -394,6 +521,191 @@ const OrdersManagement = () => {
                   ))}
                 </div>
               </Card>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* نافذة التعديل */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-xl">تعديل الطلب #{editingOrder?.order_number}</DialogTitle>
+          </DialogHeader>
+          {editingOrder && (
+            <div className="space-y-6">
+              {/* معلومات العميل */}
+              <Card className="p-4">
+                <h3 className="font-semibold mb-4">معلومات العميل</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>الاسم</Label>
+                    <Input
+                      value={editingOrder.customer_name}
+                      onChange={(e) => setEditingOrder({ ...editingOrder, customer_name: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label>الهاتف</Label>
+                    <Input
+                      value={editingOrder.customer_phone}
+                      onChange={(e) => setEditingOrder({ ...editingOrder, customer_phone: e.target.value })}
+                      dir="ltr"
+                    />
+                  </div>
+                  <div>
+                    <Label>المدينة</Label>
+                    <Input
+                      value={editingOrder.customer_city}
+                      onChange={(e) => setEditingOrder({ ...editingOrder, customer_city: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label>العنوان</Label>
+                    <Input
+                      value={editingOrder.customer_address}
+                      onChange={(e) => setEditingOrder({ ...editingOrder, customer_address: e.target.value })}
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <Label>ملاحظات</Label>
+                    <Input
+                      value={editingOrder.customer_notes || ""}
+                      onChange={(e) => setEditingOrder({ ...editingOrder, customer_notes: e.target.value })}
+                    />
+                  </div>
+                </div>
+              </Card>
+
+              {/* المنتجات */}
+              <Card className="p-4">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="font-semibold">المنتجات</h3>
+                  <Select onValueChange={addProductToOrder}>
+                    <SelectTrigger className="w-48">
+                      <SelectValue placeholder="إضافة منتج" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {products.map((p) => (
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.name_ar}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-3">
+                  {editingItems.map((item, index) => (
+                    <div key={item.id} className="flex gap-3 p-3 bg-muted/30 rounded-lg border items-center">
+                      <div className="flex-1">
+                        <p className="font-medium text-sm mb-2">{item.product_name}</p>
+                        <div className="grid grid-cols-4 gap-2">
+                          <div>
+                            <Label className="text-xs">الكمية</Label>
+                            <div className="flex items-center gap-1">
+                              <Button
+                                type="button"
+                                size="icon"
+                                variant="outline"
+                                className="h-7 w-7"
+                                onClick={() => updateEditingItem(index, 'quantity', Math.max(1, item.quantity - 1))}
+                              >
+                                <Minus className="h-3 w-3" />
+                              </Button>
+                              <Input
+                                type="number"
+                                min="1"
+                                value={item.quantity}
+                                onChange={(e) => updateEditingItem(index, 'quantity', parseInt(e.target.value) || 1)}
+                                className="h-7 w-14 text-center"
+                              />
+                              <Button
+                                type="button"
+                                size="icon"
+                                variant="outline"
+                                className="h-7 w-7"
+                                onClick={() => updateEditingItem(index, 'quantity', item.quantity + 1)}
+                              >
+                                <Plus className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </div>
+                          <div>
+                            <Label className="text-xs">السعر</Label>
+                            <Input
+                              type="number"
+                              min="0"
+                              value={item.price}
+                              onChange={(e) => updateEditingItem(index, 'price', parseFloat(e.target.value) || 0)}
+                              className="h-7"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-xs">اللون</Label>
+                            <Input
+                              value={item.color_name || ""}
+                              onChange={(e) => updateEditingItem(index, 'color_name', e.target.value || null)}
+                              className="h-7"
+                              placeholder="اختياري"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-xs">المقاس</Label>
+                            <Input
+                              value={item.size_name || ""}
+                              onChange={(e) => updateEditingItem(index, 'size_name', e.target.value || null)}
+                              className="h-7"
+                              placeholder="اختياري"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-left">
+                        <p className="font-semibold text-sm mb-1">{item.price * item.quantity} جنيه</p>
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="destructive"
+                          className="h-7 w-7"
+                          onClick={() => removeEditingItem(index)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-4 pt-4 border-t">
+                  <div className="flex justify-between text-sm">
+                    <span>المجموع الفرعي:</span>
+                    <span className="font-semibold">
+                      {editingItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)} جنيه
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>الشحن:</span>
+                    <span className="font-semibold">{editingOrder.shipping_cost} جنيه</span>
+                  </div>
+                  <div className="flex justify-between text-lg font-bold pt-2 border-t mt-2">
+                    <span>الإجمالي:</span>
+                    <span className="text-primary">
+                      {editingItems.reduce((sum, item) => sum + (item.price * item.quantity), 0) + (editingOrder.shipping_cost || 0) - (editingOrder.discount || 0)} جنيه
+                    </span>
+                  </div>
+                </div>
+              </Card>
+
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+                  إلغاء
+                </Button>
+                <Button onClick={saveOrderChanges} disabled={saving}>
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin ml-2" /> : <Save className="h-4 w-4 ml-2" />}
+                  حفظ التعديلات
+                </Button>
+              </div>
             </div>
           )}
         </DialogContent>

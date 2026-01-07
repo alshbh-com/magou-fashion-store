@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Trash2, Edit, Plus, Loader2 } from "lucide-react";
+import { Trash2, Edit, Plus, Loader2, AlertTriangle } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -655,7 +656,17 @@ const ProductsManagement = () => {
                     <span>{product.price} جنيه</span>
                   )}
                 </TableCell>
-                <TableCell>{product.stock_quantity}</TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <span>{product.stock_quantity}</span>
+                    {product.stock_quantity <= 10 && (
+                      <Badge variant="destructive" className="flex items-center gap-1">
+                        <AlertTriangle className="h-3 w-3" />
+                        {product.stock_quantity === 0 ? "نفذ" : "قليل"}
+                      </Badge>
+                    )}
+                  </div>
+                </TableCell>
                 <TableCell>
                   <div className="flex flex-col gap-1">
                     {product.is_featured && (
