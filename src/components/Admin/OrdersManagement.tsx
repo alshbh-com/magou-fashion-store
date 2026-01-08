@@ -74,6 +74,7 @@ const OrdersManagement = () => {
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [saving, setSaving] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     fetchOrders();
@@ -94,12 +95,25 @@ const OrdersManagement = () => {
   };
 
   useEffect(() => {
-    if (statusFilter === "all") {
-      setFilteredOrders(orders);
-    } else {
-      setFilteredOrders(orders.filter(o => o.status === statusFilter));
+    let result = orders;
+    
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.trim().toLowerCase();
+      result = result.filter(o => 
+        o.order_number.toString().includes(query) ||
+        o.customer_name.toLowerCase().includes(query) ||
+        o.customer_phone.includes(query)
+      );
     }
-  }, [statusFilter, orders]);
+    
+    // Apply status filter
+    if (statusFilter !== "all") {
+      result = result.filter(o => o.status === statusFilter);
+    }
+    
+    setFilteredOrders(result);
+  }, [statusFilter, orders, searchQuery]);
 
   const fetchOrders = async () => {
     try {
@@ -335,28 +349,45 @@ const OrdersManagement = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <h2 className="text-2xl font-bold">إدارة الطلبات</h2>
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-muted-foreground" />
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="فلتر الحالة" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">الكل ({statusCounts.all})</SelectItem>
-                <SelectItem value="pending">قيد الانتظار ({statusCounts.pending})</SelectItem>
-                <SelectItem value="confirmed">تم التأكيد ({statusCounts.confirmed})</SelectItem>
-                <SelectItem value="shipped">تعديل ({statusCounts.shipped})</SelectItem>
-                <SelectItem value="cancelled">ملغي ({statusCounts.cancelled})</SelectItem>
-                <SelectItem value="transferred">تم النقل للسيستم ({statusCounts.transferred})</SelectItem>
-              </SelectContent>
-            </Select>
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <h2 className="text-2xl font-bold">إدارة الطلبات</h2>
+          <div className="flex items-center gap-4 flex-wrap">
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-muted-foreground" />
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="فلتر الحالة" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">الكل ({statusCounts.all})</SelectItem>
+                  <SelectItem value="pending">قيد الانتظار ({statusCounts.pending})</SelectItem>
+                  <SelectItem value="confirmed">تم التأكيد ({statusCounts.confirmed})</SelectItem>
+                  <SelectItem value="shipped">تعديل ({statusCounts.shipped})</SelectItem>
+                  <SelectItem value="cancelled">ملغي ({statusCounts.cancelled})</SelectItem>
+                  <SelectItem value="transferred">تم النقل للسيستم ({statusCounts.transferred})</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Badge variant="outline" className="text-lg">
+              عرض: {filteredOrders.length}
+            </Badge>
           </div>
-          <Badge variant="outline" className="text-lg">
-            عرض: {filteredOrders.length}
-          </Badge>
+        </div>
+        
+        {/* Search Box */}
+        <div className="flex gap-2 items-center">
+          <Input
+            placeholder="ابحث برقم الطلب أو اسم العميل أو رقم الهاتف..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="max-w-md"
+          />
+          {searchQuery && (
+            <Button variant="ghost" size="sm" onClick={() => setSearchQuery("")}>
+              <X className="h-4 w-4" />
+            </Button>
+          )}
         </div>
       </div>
 
