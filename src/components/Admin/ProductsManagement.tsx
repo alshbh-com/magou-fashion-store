@@ -146,19 +146,30 @@ const ProductsManagement = () => {
         // Upload all new files first
         for (let i = 0; i < imageFiles.length && i < 3; i++) {
           const file = imageFiles[i];
-          const fileExt = file.name.split('.').pop();
+          const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
           const fileName = `${Date.now()}-${i}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+          
+          // Determine content type
+          const contentType = file.type || `image/${fileExt === 'jpg' ? 'jpeg' : fileExt}`;
 
-          const { error: uploadError } = await supabase.storage
+          const { data: uploadData, error: uploadError } = await supabase.storage
             .from('products')
-            .upload(fileName, file);
+            .upload(fileName, file, {
+              cacheControl: '3600',
+              upsert: true,
+              contentType: contentType
+            });
 
-          if (uploadError) throw uploadError;
+          if (uploadError) {
+            console.error('Upload error:', uploadError);
+            throw uploadError;
+          }
 
           const { data: { publicUrl } } = supabase.storage
             .from('products')
             .getPublicUrl(fileName);
 
+          console.log('Uploaded image:', publicUrl);
           uploadedUrls.push(publicUrl);
         }
         
