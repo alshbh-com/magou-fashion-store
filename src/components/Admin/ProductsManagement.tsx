@@ -139,26 +139,15 @@ const ProductsManagement = () => {
       let imageUrl2 = editingProduct?.image_url_2 || null;
       let imageUrl3 = editingProduct?.image_url_3 || null;
 
-      // Upload new images - fill empty slots first, then replace from beginning
+      // Upload new images - assign sequentially to empty slots
       if (imageFiles.length > 0) {
-        const currentImages = [mainImageUrl, imageUrl2, imageUrl3];
-        const uploadedUrls: (string | null)[] = [...currentImages];
+        const uploadedUrls: string[] = [];
         
-        // Find empty slots first
-        const emptySlots: number[] = [];
-        const filledSlots: number[] = [];
-        currentImages.forEach((img, idx) => {
-          if (!img) emptySlots.push(idx);
-          else filledSlots.push(idx);
-        });
-        
-        // Assign new images: first fill empty slots, then replace from beginning
-        const slotsToFill = [...emptySlots, ...filledSlots].slice(0, imageFiles.length);
-        
+        // Upload all new files first
         for (let i = 0; i < imageFiles.length && i < 3; i++) {
           const file = imageFiles[i];
           const fileExt = file.name.split('.').pop();
-          const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+          const fileName = `${Date.now()}-${i}-${Math.random().toString(36).substring(7)}.${fileExt}`;
 
           const { error: uploadError } = await supabase.storage
             .from('products')
@@ -170,12 +159,37 @@ const ProductsManagement = () => {
             .from('products')
             .getPublicUrl(fileName);
 
-          uploadedUrls[slotsToFill[i]] = publicUrl;
+          uploadedUrls.push(publicUrl);
         }
         
-        mainImageUrl = uploadedUrls[0];
-        imageUrl2 = uploadedUrls[1];
-        imageUrl3 = uploadedUrls[2];
+        // For new products: assign uploaded images to slots 1, 2, 3
+        // For editing: fill empty slots first, then replace from first slot
+        if (!editingProduct) {
+          // New product - simply assign in order
+          mainImageUrl = uploadedUrls[0] || null;
+          imageUrl2 = uploadedUrls[1] || null;
+          imageUrl3 = uploadedUrls[2] || null;
+        } else {
+          // Editing - fill empty slots first
+          const currentSlots = [mainImageUrl, imageUrl2, imageUrl3];
+          let uploadIndex = 0;
+          
+          // First pass: fill empty slots
+          for (let i = 0; i < 3 && uploadIndex < uploadedUrls.length; i++) {
+            if (!currentSlots[i]) {
+              currentSlots[i] = uploadedUrls[uploadIndex++];
+            }
+          }
+          
+          // Second pass: if still have uploads, replace from beginning
+          for (let i = 0; i < 3 && uploadIndex < uploadedUrls.length; i++) {
+            currentSlots[i] = uploadedUrls[uploadIndex++];
+          }
+          
+          mainImageUrl = currentSlots[0];
+          imageUrl2 = currentSlots[1];
+          imageUrl3 = currentSlots[2];
+        }
       }
 
       const productData = {
