@@ -70,6 +70,7 @@ const ProductDetails = () => {
   const [selectedColors, setSelectedColors] = useState<Record<string, number>>({});
   const [selectedSize, setSelectedSize] = useState("");
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true });
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [cartMode, setCartMode] = useState<CartMode>('normal');
   // Map of package id -> count (how many times the package is selected)
   const [selectedPackageCounts, setSelectedPackageCounts] = useState<Record<string, number>>({});
@@ -505,7 +506,7 @@ const ProductDetails = () => {
       </Button>
 
       <div className="grid md:grid-cols-2 gap-8">
-        <div className="space-y-2">
+        <div className="space-y-3">
           {/* Main carousel */}
           <Card className="overflow-hidden border-2 border-primary/20 relative">
             <div className="overflow-hidden" ref={emblaRef}>
@@ -547,7 +548,10 @@ const ProductDetails = () => {
                   variant="ghost"
                   size="icon"
                   className="absolute left-2 top-1/2 -translate-y-1/2 bg-background/80 hover:bg-background shadow-lg"
-                  onClick={() => emblaApi?.scrollPrev()}
+                  onClick={() => {
+                    emblaApi?.scrollPrev();
+                    setSelectedImageIndex(prev => prev === 0 ? productImages.length - 1 : prev - 1);
+                  }}
                 >
                   <ChevronLeft className="h-6 w-6" />
                 </Button>
@@ -555,13 +559,46 @@ const ProductDetails = () => {
                   variant="ghost"
                   size="icon"
                   className="absolute right-2 top-1/2 -translate-y-1/2 bg-background/80 hover:bg-background shadow-lg"
-                  onClick={() => emblaApi?.scrollNext()}
+                  onClick={() => {
+                    emblaApi?.scrollNext();
+                    setSelectedImageIndex(prev => prev === productImages.length - 1 ? 0 : prev + 1);
+                  }}
                 >
                   <ChevronRight className="h-6 w-6" />
                 </Button>
               </>
             )}
           </Card>
+          
+          {/* Thumbnails */}
+          {productImages.length > 1 && (
+            <div className="flex gap-2 justify-center">
+              {productImages.map((img, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => {
+                    emblaApi?.scrollTo(idx);
+                    setSelectedImageIndex(idx);
+                  }}
+                  className={`w-16 h-16 rounded-lg overflow-hidden border-2 transition-all ${
+                    selectedImageIndex === idx 
+                      ? 'border-primary ring-2 ring-primary/30' 
+                      : 'border-muted hover:border-primary/50'
+                  }`}
+                >
+                  <img
+                    src={img}
+                    alt={`صورة ${idx + 1}`}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = "/placeholder.svg";
+                    }}
+                  />
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="space-y-4">
