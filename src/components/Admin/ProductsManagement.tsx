@@ -143,25 +143,25 @@ const ProductsManagement = () => {
       if (imageFiles.length > 0) {
         const uploadedUrls: string[] = [];
         
-        // Upload all new files first
-        for (let i = 0; i < imageFiles.length && i < 3; i++) {
-          const file = imageFiles[i];
-          const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
-          const fileName = `${Date.now()}-${i}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-          
-          // Determine content type
-          const contentType = file.type || `image/${fileExt === 'jpg' ? 'jpeg' : fileExt}`;
-          
-          // Convert file to ArrayBuffer for proper upload
-          const arrayBuffer = await file.arrayBuffer();
-          const uint8Array = new Uint8Array(arrayBuffer);
-
+        // Read all files first before uploading
+        const filesToUpload = await Promise.all(
+          imageFiles.slice(0, 3).map(async (file, i) => {
+            const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+            const fileName = `${Date.now()}-${i}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+            const contentType = file.type || `image/${fileExt === 'jpg' ? 'jpeg' : fileExt}`;
+            const arrayBuffer = await file.arrayBuffer();
+            return { fileName, contentType, data: arrayBuffer };
+          })
+        );
+        
+        // Upload files sequentially after reading all of them
+        for (const fileData of filesToUpload) {
           const { data: uploadData, error: uploadError } = await supabase.storage
             .from('products')
-            .upload(fileName, uint8Array, {
+            .upload(fileData.fileName, fileData.data, {
               cacheControl: '3600',
               upsert: true,
-              contentType: contentType
+              contentType: fileData.contentType
             });
 
           if (uploadError) {
@@ -171,7 +171,7 @@ const ProductsManagement = () => {
 
           const { data: { publicUrl } } = supabase.storage
             .from('products')
-            .getPublicUrl(fileName);
+            .getPublicUrl(fileData.fileName);
 
           console.log('Uploaded image:', publicUrl);
           uploadedUrls.push(publicUrl);
