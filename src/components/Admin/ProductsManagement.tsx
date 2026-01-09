@@ -73,8 +73,10 @@ const ProductsManagement = () => {
     is_offer: false,
     offer_price: 0,
     category_id: "",
+    image_url_2: "",
+    image_url_3: "",
   });
-  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [mainImageFile, setMainImageFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [quantityOffers, setQuantityOffers] = useState<ProductOffer[]>([]);
   const [existingImages, setExistingImages] = useState<string[]>([]);
@@ -136,69 +138,36 @@ const ProductsManagement = () => {
     try {
       setUploading(true);
       let mainImageUrl = editingProduct?.image_url || null;
-      let imageUrl2 = editingProduct?.image_url_2 || null;
-      let imageUrl3 = editingProduct?.image_url_3 || null;
+      
+      // Upload main image from device
+      if (mainImageFile) {
+        const fileExt = mainImageFile.name.split('.').pop()?.toLowerCase() || 'jpg';
+        const timestamp = Date.now();
+        const fileName = `${timestamp}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
 
-      // Upload new images - assign sequentially to empty slots
-      if (imageFiles.length > 0) {
-        const uploadedUrls: string[] = [];
-        
-        // Upload files one by one using the File object directly
-        for (let i = 0; i < Math.min(imageFiles.length, 3); i++) {
-          const file = imageFiles[i];
-          const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
-          const timestamp = Date.now() + i; // Ensure unique timestamps
-          const fileName = `${timestamp}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('products')
+          .upload(fileName, mainImageFile, {
+            cacheControl: '3600',
+            upsert: false
+          });
 
-          const { data: uploadData, error: uploadError } = await supabase.storage
-            .from('products')
-            .upload(fileName, file, {
-              cacheControl: '3600',
-              upsert: false
-            });
-
-          if (uploadError) {
-            console.error('Upload error for file', i, ':', uploadError);
-            throw uploadError;
-          }
-
-          const { data: { publicUrl } } = supabase.storage
-            .from('products')
-            .getPublicUrl(fileName);
-
-          console.log('Successfully uploaded image', i + 1, ':', publicUrl);
-          uploadedUrls.push(publicUrl);
+        if (uploadError) {
+          console.error('Upload error:', uploadError);
+          throw uploadError;
         }
-        
-        // For new products: assign uploaded images to slots 1, 2, 3
-        // For editing: fill empty slots first, then replace from first slot
-        if (!editingProduct) {
-          // New product - simply assign in order
-          mainImageUrl = uploadedUrls[0] || null;
-          imageUrl2 = uploadedUrls[1] || null;
-          imageUrl3 = uploadedUrls[2] || null;
-        } else {
-          // Editing - fill empty slots first
-          const currentSlots = [mainImageUrl, imageUrl2, imageUrl3];
-          let uploadIndex = 0;
-          
-          // First pass: fill empty slots
-          for (let i = 0; i < 3 && uploadIndex < uploadedUrls.length; i++) {
-            if (!currentSlots[i]) {
-              currentSlots[i] = uploadedUrls[uploadIndex++];
-            }
-          }
-          
-          // Second pass: if still have uploads, replace from beginning
-          for (let i = 0; i < 3 && uploadIndex < uploadedUrls.length; i++) {
-            currentSlots[i] = uploadedUrls[uploadIndex++];
-          }
-          
-          mainImageUrl = currentSlots[0];
-          imageUrl2 = currentSlots[1];
-          imageUrl3 = currentSlots[2];
-        }
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('products')
+          .getPublicUrl(fileName);
+
+        console.log('Successfully uploaded main image:', publicUrl);
+        mainImageUrl = publicUrl;
       }
+      
+      // Additional images from URL fields (optional)
+      const imageUrl2 = formData.image_url_2.trim() || null;
+      const imageUrl3 = formData.image_url_3.trim() || null;
 
       const productData = {
         name: formData.name_ar,
@@ -340,8 +309,10 @@ const ProductsManagement = () => {
       is_offer: product.is_offer,
       offer_price: product.offer_price || 0,
       category_id: product.category_id || "",
+      image_url_2: product.image_url_2 || "",
+      image_url_3: product.image_url_3 || "",
     });
-    setImageFiles([]);
+    setMainImageFile(null);
     
     // Get existing additional images from product table directly
     const additionalImages: string[] = [];
@@ -363,8 +334,10 @@ const ProductsManagement = () => {
       is_offer: false,
       offer_price: 0,
       category_id: "",
+      image_url_2: "",
+      image_url_3: "",
     });
-    setImageFiles([]);
+    setMainImageFile(null);
     setExistingImages([]);
     setQuantityOffers([]);
     setEditingProduct(null);
@@ -493,24 +466,23 @@ const ProductsManagement = () => {
                 </div>
               </div>
 
+              {/* Main Image - Upload from device */}
               <div>
-                <Label htmlFor="images">صور المنتج (حتى 3 صور)</Label>
-                <p className="text-xs text-muted-foreground mb-2">الصورة الأولى هي الصورة الرئيسية - اختر الصور اللي عايز تضيفها أو تستبدلها</p>
+                <Label htmlFor="main_image">الصورة الرئيسية (رفع من الجهاز)</Label>
                 <Input
-                  id="images"
+                  id="main_image"
                   type="file"
                   accept="image/*"
-                  multiple
                   onChange={(e) => {
-                    const files = Array.from(e.target.files || []).slice(0, 3);
-                    setImageFiles(files);
+                    const file = e.target.files?.[0] || null;
+                    setMainImageFile(file);
                   }}
                 />
                 <div className="flex gap-2 mt-2 flex-wrap">
                   {editingProduct?.image_url && (
                     <div className="text-center relative group">
                       <img src={editingProduct.image_url} alt="الصورة الرئيسية" className="h-20 w-20 object-cover rounded border-2 border-primary" />
-                      <span className="text-xs block">رئيسية</span>
+                      <span className="text-xs block">الحالية</span>
                       <button
                         type="button"
                         onClick={async () => {
@@ -530,58 +502,65 @@ const ProductsManagement = () => {
                       </button>
                     </div>
                   )}
-                  {editingProduct?.image_url_2 && (
-                    <div className="text-center relative group">
-                      <img src={editingProduct.image_url_2} alt="صورة 2" className="h-20 w-20 object-cover rounded border" />
-                      <span className="text-xs block">صورة 2</span>
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          if (!confirm("هل تريد حذف الصورة 2؟")) return;
-                          const { error } = await supabase
-                            .from("products")
-                            .update({ image_url_2: null })
-                            .eq("id", editingProduct.id);
-                          if (!error) {
-                            setEditingProduct({ ...editingProduct, image_url_2: null });
-                            toast.success("تم حذف الصورة");
-                          }
-                        }}
-                        className="absolute top-0 right-0 bg-destructive text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </button>
+                  {mainImageFile && (
+                    <div className="text-center">
+                      <img src={URL.createObjectURL(mainImageFile)} alt="صورة جديدة" className="h-20 w-20 object-cover rounded border-2 border-green-500" />
+                      <span className="text-xs block text-green-600">جديدة</span>
                     </div>
                   )}
-                  {editingProduct?.image_url_3 && (
-                    <div className="text-center relative group">
-                      <img src={editingProduct.image_url_3} alt="صورة 3" className="h-20 w-20 object-cover rounded border" />
-                      <span className="text-xs block">صورة 3</span>
+                </div>
+              </div>
+
+              {/* Additional Images - URL Links (Optional) */}
+              <div className="space-y-3">
+                <Label>الصور الإضافية (روابط URL - اختياري)</Label>
+                <p className="text-xs text-muted-foreground">أضف روابط صور من الإنترنت</p>
+                
+                <div>
+                  <Label htmlFor="image_url_2" className="text-xs">رابط الصورة 2</Label>
+                  <Input
+                    id="image_url_2"
+                    type="url"
+                    placeholder="https://example.com/image2.jpg"
+                    value={formData.image_url_2}
+                    onChange={(e) => setFormData({ ...formData, image_url_2: e.target.value })}
+                  />
+                  {formData.image_url_2 && (
+                    <div className="mt-1 flex items-center gap-2">
+                      <img src={formData.image_url_2} alt="صورة 2" className="h-16 w-16 object-cover rounded border" onError={(e) => (e.currentTarget.style.display = 'none')} />
                       <button
                         type="button"
-                        onClick={async () => {
-                          if (!confirm("هل تريد حذف الصورة 3؟")) return;
-                          const { error } = await supabase
-                            .from("products")
-                            .update({ image_url_3: null })
-                            .eq("id", editingProduct.id);
-                          if (!error) {
-                            setEditingProduct({ ...editingProduct, image_url_3: null });
-                            toast.success("تم حذف الصورة");
-                          }
-                        }}
-                        className="absolute top-0 right-0 bg-destructive text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => setFormData({ ...formData, image_url_2: "" })}
+                        className="text-destructive hover:text-destructive/80"
                       >
-                        <Trash2 className="h-3 w-3" />
+                        <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
                   )}
                 </div>
-                {imageFiles.length > 0 && (
-                  <div className="mt-2">
-                    <span className="text-xs text-green-600">سيتم رفع {imageFiles.length} صورة جديدة</span>
-                  </div>
-                )}
+
+                <div>
+                  <Label htmlFor="image_url_3" className="text-xs">رابط الصورة 3</Label>
+                  <Input
+                    id="image_url_3"
+                    type="url"
+                    placeholder="https://example.com/image3.jpg"
+                    value={formData.image_url_3}
+                    onChange={(e) => setFormData({ ...formData, image_url_3: e.target.value })}
+                  />
+                  {formData.image_url_3 && (
+                    <div className="mt-1 flex items-center gap-2">
+                      <img src={formData.image_url_3} alt="صورة 3" className="h-16 w-16 object-cover rounded border" onError={(e) => (e.currentTarget.style.display = 'none')} />
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, image_url_3: "" })}
+                        className="text-destructive hover:text-destructive/80"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="flex items-center gap-6">
