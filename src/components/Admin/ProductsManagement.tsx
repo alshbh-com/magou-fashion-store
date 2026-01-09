@@ -143,37 +143,30 @@ const ProductsManagement = () => {
       if (imageFiles.length > 0) {
         const uploadedUrls: string[] = [];
         
-        // Read all files first before uploading
-        const filesToUpload = await Promise.all(
-          imageFiles.slice(0, 3).map(async (file, i) => {
-            const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
-            const fileName = `${Date.now()}-${i}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-            const contentType = file.type || `image/${fileExt === 'jpg' ? 'jpeg' : fileExt}`;
-            const arrayBuffer = await file.arrayBuffer();
-            return { fileName, contentType, data: arrayBuffer };
-          })
-        );
-        
-        // Upload files sequentially after reading all of them
-        for (const fileData of filesToUpload) {
+        // Upload files one by one using the File object directly
+        for (let i = 0; i < Math.min(imageFiles.length, 3); i++) {
+          const file = imageFiles[i];
+          const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+          const timestamp = Date.now() + i; // Ensure unique timestamps
+          const fileName = `${timestamp}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
+
           const { data: uploadData, error: uploadError } = await supabase.storage
             .from('products')
-            .upload(fileData.fileName, fileData.data, {
+            .upload(fileName, file, {
               cacheControl: '3600',
-              upsert: true,
-              contentType: fileData.contentType
+              upsert: false
             });
 
           if (uploadError) {
-            console.error('Upload error:', uploadError);
+            console.error('Upload error for file', i, ':', uploadError);
             throw uploadError;
           }
 
           const { data: { publicUrl } } = supabase.storage
             .from('products')
-            .getPublicUrl(fileData.fileName);
+            .getPublicUrl(fileName);
 
-          console.log('Uploaded image:', publicUrl);
+          console.log('Successfully uploaded image', i + 1, ':', publicUrl);
           uploadedUrls.push(publicUrl);
         }
         
