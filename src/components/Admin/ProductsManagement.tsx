@@ -151,10 +151,14 @@ const ProductsManagement = () => {
           
           // Determine content type
           const contentType = file.type || `image/${fileExt === 'jpg' ? 'jpeg' : fileExt}`;
+          
+          // Convert file to ArrayBuffer for proper upload
+          const arrayBuffer = await file.arrayBuffer();
+          const uint8Array = new Uint8Array(arrayBuffer);
 
           const { data: uploadData, error: uploadError } = await supabase.storage
             .from('products')
-            .upload(fileName, file, {
+            .upload(fileName, uint8Array, {
               cacheControl: '3600',
               upsert: true,
               contentType: contentType
