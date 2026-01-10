@@ -95,28 +95,47 @@ const ProductDetails = () => {
     }
   };
 
-  useEffect(() => {
-    if (product) {
-      // Get images directly from product table
-      const allImages: string[] = [];
-      
-      if (product.image_url && product.image_url.trim() && isValidImageUrl(product.image_url)) {
-        allImages.push(product.image_url);
-      }
-      if (product.image_url_2 && product.image_url_2.trim() && isValidImageUrl(product.image_url_2)) {
-        allImages.push(product.image_url_2);
-      }
-      if (product.image_url_3 && product.image_url_3.trim() && isValidImageUrl(product.image_url_3)) {
-        allImages.push(product.image_url_3);
-      }
-      
-      if (allImages.length === 0) {
-        allImages.push("/placeholder.svg");
-      }
-      
-      setProductImages(allImages);
+  const fetchAdditionalImages = async () => {
+    if (!id) return;
+    try {
+      const { data, error } = await supabase
+        .from("product_images")
+        .select("image_url")
+        .eq("product_id", id)
+        .order("display_order");
+
+      if (error) throw error;
+      return data?.map(img => img.image_url) || [];
+    } catch (error) {
+      console.error("Error fetching additional images:", error);
+      return [];
     }
-  }, [product]);
+  };
+
+  useEffect(() => {
+    const loadImages = async () => {
+      if (product) {
+        const allImages: string[] = [];
+        
+        // Add main image
+        if (product.image_url && product.image_url.trim() && isValidImageUrl(product.image_url)) {
+          allImages.push(product.image_url);
+        }
+        
+        // Fetch additional images from product_images table
+        const additionalImages = await fetchAdditionalImages();
+        allImages.push(...additionalImages.filter(url => isValidImageUrl(url)));
+        
+        if (allImages.length === 0) {
+          allImages.push("/placeholder.svg");
+        }
+        
+        setProductImages(allImages);
+      }
+    };
+    
+    loadImages();
+  }, [product, id]);
 
   const fetchProduct = async () => {
     try {
