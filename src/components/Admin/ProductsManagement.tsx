@@ -145,9 +145,14 @@ const ProductsManagement = () => {
         const timestamp = Date.now();
         const fileName = `${timestamp}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
 
+        // Read file as ArrayBuffer to ensure proper upload
+        const arrayBuffer = await mainImageFile.arrayBuffer();
+        const uint8Array = new Uint8Array(arrayBuffer);
+
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('products')
-          .upload(fileName, mainImageFile, {
+          .upload(fileName, uint8Array, {
+            contentType: mainImageFile.type || 'image/jpeg',
             cacheControl: '3600',
             upsert: false
           });
