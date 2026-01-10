@@ -75,9 +75,10 @@ const ProductsManagement = () => {
     category_id: "",
   });
   const [mainImageFile, setMainImageFile] = useState<File | null>(null);
+  const [additionalImageFiles, setAdditionalImageFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
   const [quantityOffers, setQuantityOffers] = useState<ProductOffer[]>([]);
-  const [existingImages, setExistingImages] = useState<string[]>([]);
+  const [existingAdditionalImages, setExistingAdditionalImages] = useState<{id: string, image_url: string}[]>([]);
 
   useEffect(() => {
     fetchProducts();
@@ -127,6 +128,21 @@ const ProductsManagement = () => {
       setCategories(data || []);
     } catch (error) {
       console.error("Error fetching categories:", error);
+    }
+  };
+
+  const fetchExistingImages = async (productId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("product_images")
+        .select("id, image_url")
+        .eq("product_id", productId)
+        .order("display_order");
+
+      if (error) throw error;
+      setExistingAdditionalImages(data || []);
+    } catch (error) {
+      console.error("Error fetching existing images:", error);
     }
   };
 
@@ -231,7 +247,43 @@ const ProductsManagement = () => {
         }
       }
 
-      // Images are now stored directly in products table (image_url, image_url_2, image_url_3)
+      // Upload additional images to product_images table
+      if (additionalImageFiles.length > 0) {
+        for (let i = 0; i < additionalImageFiles.length; i++) {
+          const file = additionalImageFiles[i];
+          const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+          const timestamp = Date.now();
+          const fileName = `${productId}-${timestamp}-${i}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
+
+          const arrayBuffer = await file.arrayBuffer();
+          const uint8Array = new Uint8Array(arrayBuffer);
+
+          const { error: uploadError } = await supabase.storage
+            .from('products')
+            .upload(fileName, uint8Array, {
+              contentType: file.type || 'image/jpeg',
+              cacheControl: '3600',
+              upsert: false
+            });
+
+          if (uploadError) {
+            console.error('Upload error for additional image:', uploadError);
+            continue;
+          }
+
+          const { data: { publicUrl } } = supabase.storage
+            .from('products')
+            .getPublicUrl(fileName);
+
+          await supabase
+            .from("product_images")
+            .insert({
+              product_id: productId,
+              image_url: publicUrl,
+              display_order: i + 1
+            });
+        }
+      }
 
       setDialogOpen(false);
       setEditingProduct(null);
@@ -308,8 +360,10 @@ const ProductsManagement = () => {
       category_id: product.category_id || "",
     });
     setMainImageFile(null);
-    setExistingImages([]);
+    setAdditionalImageFiles([]);
     
+    // Fetch existing additional images
+    await fetchExistingImages(product.id);
     await fetchProductOffers(product.id);
     setDialogOpen(true);
   };
@@ -326,7 +380,8 @@ const ProductsManagement = () => {
       category_id: "",
     });
     setMainImageFile(null);
-    setExistingImages([]);
+    setAdditionalImageFiles([]);
+    setExistingAdditionalImages([]);
     setQuantityOffers([]);
     setEditingProduct(null);
   };
@@ -499,6 +554,65 @@ const ProductsManagement = () => {
                 </div>
               </div>
 
+              {/* Additional Images - Upload multiple */}
+              <div>
+                <Label htmlFor="additional_images">صور إضافية (اختياري)</Label>
+                <Input
+                  id="additional_images"
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={(e) => {
+                    const files = Array.from(e.target.files || []);
+                    setAdditionalImageFiles(prev => [...prev, ...files]);
+                  }}
+                />
+                <p className="text-xs text-muted-foreground mt-1">يمكنك اختيار أكثر من صورة</p>
+                
+                <div className="flex gap-2 mt-2 flex-wrap">
+                  {/* Existing additional images from database */}
+                  {existingAdditionalImages.map((img, index) => (
+                    <div key={img.id} className="text-center relative group">
+                      <img src={img.image_url} alt={`صورة ${index + 1}`} className="h-20 w-20 object-cover rounded border" />
+                      <span className="text-xs block">صورة {index + 1}</span>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          if (!confirm("هل تريد حذف هذه الصورة؟")) return;
+                          const { error } = await supabase
+                            .from("product_images")
+                            .delete()
+                            .eq("id", img.id);
+                          if (!error) {
+                            setExistingAdditionalImages(prev => prev.filter(i => i.id !== img.id));
+                            toast.success("تم حذف الصورة");
+                          }
+                        }}
+                        className="absolute top-0 right-0 bg-destructive text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                  
+                  {/* New additional images to upload */}
+                  {additionalImageFiles.map((file, index) => (
+                    <div key={index} className="text-center relative group">
+                      <img src={URL.createObjectURL(file)} alt={`صورة جديدة ${index + 1}`} className="h-20 w-20 object-cover rounded border-2 border-green-500" />
+                      <span className="text-xs block text-green-600">جديدة</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAdditionalImageFiles(prev => prev.filter((_, i) => i !== index));
+                        }}
+                        className="absolute top-0 right-0 bg-destructive text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
 
               <div className="flex items-center gap-6">
                 <div className="flex items-center gap-2">
