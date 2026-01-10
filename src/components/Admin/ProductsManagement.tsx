@@ -73,8 +73,6 @@ const ProductsManagement = () => {
     is_offer: false,
     offer_price: 0,
     category_id: "",
-    image_url_2: "",
-    image_url_3: "",
   });
   const [mainImageFile, setMainImageFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -170,10 +168,6 @@ const ProductsManagement = () => {
         mainImageUrl = publicUrl;
       }
       
-      // Additional images from URL fields (optional)
-      const imageUrl2 = formData.image_url_2.trim() || null;
-      const imageUrl3 = formData.image_url_3.trim() || null;
-
       const productData = {
         name: formData.name_ar,
         name_ar: formData.name_ar,
@@ -185,8 +179,6 @@ const ProductsManagement = () => {
         is_offer: formData.is_offer,
         offer_price: formData.is_offer ? formData.offer_price : null,
         image_url: mainImageUrl,
-        image_url_2: imageUrl2,
-        image_url_3: imageUrl3,
         category_id: formData.category_id || null,
       };
 
@@ -314,16 +306,9 @@ const ProductsManagement = () => {
       is_offer: product.is_offer,
       offer_price: product.offer_price || 0,
       category_id: product.category_id || "",
-      image_url_2: product.image_url_2 || "",
-      image_url_3: product.image_url_3 || "",
     });
     setMainImageFile(null);
-    
-    // Get existing additional images from product table directly
-    const additionalImages: string[] = [];
-    if (product.image_url_2) additionalImages.push(product.image_url_2);
-    if (product.image_url_3) additionalImages.push(product.image_url_3);
-    setExistingImages(additionalImages);
+    setExistingImages([]);
     
     await fetchProductOffers(product.id);
     setDialogOpen(true);
@@ -339,8 +324,6 @@ const ProductsManagement = () => {
       is_offer: false,
       offer_price: 0,
       category_id: "",
-      image_url_2: "",
-      image_url_3: "",
     });
     setMainImageFile(null);
     setExistingImages([]);
@@ -516,57 +499,6 @@ const ProductsManagement = () => {
                 </div>
               </div>
 
-              {/* Additional Images - URL Links (Optional) */}
-              <div className="space-y-3">
-                <Label>الصور الإضافية (روابط URL - اختياري)</Label>
-                <p className="text-xs text-muted-foreground">أضف روابط صور من الإنترنت</p>
-                
-                <div>
-                  <Label htmlFor="image_url_2" className="text-xs">رابط الصورة 2</Label>
-                  <Input
-                    id="image_url_2"
-                    type="url"
-                    placeholder="https://example.com/image2.jpg"
-                    value={formData.image_url_2}
-                    onChange={(e) => setFormData({ ...formData, image_url_2: e.target.value })}
-                  />
-                  {formData.image_url_2 && (
-                    <div className="mt-1 flex items-center gap-2">
-                      <img src={formData.image_url_2} alt="صورة 2" className="h-16 w-16 object-cover rounded border" onError={(e) => (e.currentTarget.style.display = 'none')} />
-                      <button
-                        type="button"
-                        onClick={() => setFormData({ ...formData, image_url_2: "" })}
-                        className="text-destructive hover:text-destructive/80"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-                <div>
-                  <Label htmlFor="image_url_3" className="text-xs">رابط الصورة 3</Label>
-                  <Input
-                    id="image_url_3"
-                    type="url"
-                    placeholder="https://example.com/image3.jpg"
-                    value={formData.image_url_3}
-                    onChange={(e) => setFormData({ ...formData, image_url_3: e.target.value })}
-                  />
-                  {formData.image_url_3 && (
-                    <div className="mt-1 flex items-center gap-2">
-                      <img src={formData.image_url_3} alt="صورة 3" className="h-16 w-16 object-cover rounded border" onError={(e) => (e.currentTarget.style.display = 'none')} />
-                      <button
-                        type="button"
-                        onClick={() => setFormData({ ...formData, image_url_3: "" })}
-                        className="text-destructive hover:text-destructive/80"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
 
               <div className="flex items-center gap-6">
                 <div className="flex items-center gap-2">
