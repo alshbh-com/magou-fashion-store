@@ -6,8 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { ArrowRight, ShoppingCart, Minus, Plus, ChevronLeft, ChevronRight } from "lucide-react";
-import useEmblaCarousel from "embla-carousel-react";
+import { ArrowRight, ShoppingCart, Minus, Plus } from "lucide-react";
 
 interface Product {
   id: string;
@@ -69,8 +68,7 @@ const ProductDetails = () => {
   const [quantity, setQuantity] = useState(1);
   const [selectedColors, setSelectedColors] = useState<Record<string, number>>({});
   const [selectedSize, setSelectedSize] = useState("");
-  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true });
-  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [selectedAdditionalImage, setSelectedAdditionalImage] = useState<string | null>(null);
   const [cartMode, setCartMode] = useState<CartMode>('normal');
   // Map of package id -> count (how many times the package is selected)
   const [selectedPackageCounts, setSelectedPackageCounts] = useState<Record<string, number>>({});
@@ -526,88 +524,68 @@ const ProductDetails = () => {
 
       <div className="grid md:grid-cols-2 gap-8">
         <div className="space-y-3">
-          {/* Main carousel */}
-          <Card className="overflow-hidden border-2 border-primary/20 relative">
-            <div className="overflow-hidden" ref={emblaRef}>
-              <div className="flex">
-                {productImages.length > 0 ? (
-                  productImages.map((img, idx) => (
-                    <div key={idx} className="flex-[0_0_100%] min-w-0">
-                      <img
-                        src={img}
-                        alt={`${product.name} ${idx + 1}`}
-                        className="w-full object-contain aspect-square bg-muted"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.src = "/placeholder.svg";
-                        }}
-                      />
-                    </div>
-                  ))
-                ) : (
-                  <div className="flex-[0_0_100%] min-w-0">
-                    <img
-                      src={product.image_url || "/placeholder.svg"}
-                      alt={product.name}
-                      className="w-full object-contain aspect-square bg-muted"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.src = "/placeholder.svg";
-                      }}
-                    />
-                  </div>
-                )}
-              </div>
-            </div>
+          {/* Main image display with optional additional image side by side */}
+          <div className={`flex gap-3 ${selectedAdditionalImage ? 'items-start' : ''}`}>
+            {/* Main/Primary Image */}
+            <Card className={`overflow-hidden border-2 border-primary/20 relative ${selectedAdditionalImage ? 'flex-1' : 'w-full'}`}>
+              <img
+                src={productImages[0] || product.image_url || "/placeholder.svg"}
+                alt={product.name}
+                className="w-full object-contain aspect-square bg-muted"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.src = "/placeholder.svg";
+                }}
+              />
+            </Card>
             
-            {/* Navigation buttons */}
-            {productImages.length > 1 && (
-              <>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="absolute left-2 top-1/2 -translate-y-1/2 bg-background/80 hover:bg-background shadow-lg"
-                  onClick={() => {
-                    emblaApi?.scrollPrev();
-                    setSelectedImageIndex(prev => prev === 0 ? productImages.length - 1 : prev - 1);
+            {/* Selected Additional Image (appears when thumbnail is clicked) */}
+            {selectedAdditionalImage && (
+              <Card className="flex-1 overflow-hidden border-2 border-secondary/40 relative">
+                <img
+                  src={selectedAdditionalImage}
+                  alt="صورة إضافية"
+                  className="w-full object-contain aspect-square bg-muted"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.src = "/placeholder.svg";
                   }}
-                >
-                  <ChevronLeft className="h-6 w-6" />
-                </Button>
+                />
+                {/* Close button to remove the additional image view */}
                 <Button
-                  variant="ghost"
+                  variant="destructive"
                   size="icon"
-                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-background/80 hover:bg-background shadow-lg"
-                  onClick={() => {
-                    emblaApi?.scrollNext();
-                    setSelectedImageIndex(prev => prev === productImages.length - 1 ? 0 : prev + 1);
-                  }}
+                  className="absolute top-2 right-2 h-8 w-8 rounded-full"
+                  onClick={() => setSelectedAdditionalImage(null)}
                 >
-                  <ChevronRight className="h-6 w-6" />
+                  <Minus className="h-4 w-4" />
                 </Button>
-              </>
+              </Card>
             )}
-          </Card>
+          </div>
           
-          {/* Thumbnails */}
+          {/* Thumbnails for additional images (skip the main image at index 0) */}
           {productImages.length > 1 && (
-            <div className="flex gap-2 justify-center">
-              {productImages.map((img, idx) => (
+            <div className="flex gap-2 justify-center flex-wrap">
+              {productImages.slice(1).map((img, idx) => (
                 <button
                   key={idx}
                   onClick={() => {
-                    emblaApi?.scrollTo(idx);
-                    setSelectedImageIndex(idx);
+                    if (selectedAdditionalImage === img) {
+                      setSelectedAdditionalImage(null);
+                    } else {
+                      setSelectedAdditionalImage(img);
+                    }
                   }}
                   className={`w-16 h-16 rounded-lg overflow-hidden border-2 transition-all ${
-                    selectedImageIndex === idx 
+                    selectedAdditionalImage === img 
                       ? 'border-primary ring-2 ring-primary/30' 
                       : 'border-muted hover:border-primary/50'
                   }`}
                 >
                   <img
                     src={img}
-                    alt={`صورة ${idx + 1}`}
+                    alt={`صورة ${idx + 2}`}
                     className="w-full h-full object-cover"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
