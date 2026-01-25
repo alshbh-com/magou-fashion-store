@@ -557,6 +557,63 @@ export type Database = {
           },
         ]
       }
+      themes: {
+        Row: {
+          accent_color: string
+          background_color: string
+          border_color: string
+          card_color: string
+          created_at: string | null
+          decoration_url: string | null
+          foreground_color: string
+          id: string
+          is_active: boolean | null
+          muted_color: string
+          name: string
+          name_ar: string
+          primary_color: string
+          primary_foreground: string
+          secondary_color: string
+          slug: string
+        }
+        Insert: {
+          accent_color: string
+          background_color: string
+          border_color: string
+          card_color: string
+          created_at?: string | null
+          decoration_url?: string | null
+          foreground_color: string
+          id?: string
+          is_active?: boolean | null
+          muted_color: string
+          name: string
+          name_ar: string
+          primary_color: string
+          primary_foreground: string
+          secondary_color: string
+          slug: string
+        }
+        Update: {
+          accent_color?: string
+          background_color?: string
+          border_color?: string
+          card_color?: string
+          created_at?: string | null
+          decoration_url?: string | null
+          foreground_color?: string
+          id?: string
+          is_active?: boolean | null
+          muted_color?: string
+          name?: string
+          name_ar?: string
+          primary_color?: string
+          primary_foreground?: string
+          secondary_color?: string
+          slug?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
