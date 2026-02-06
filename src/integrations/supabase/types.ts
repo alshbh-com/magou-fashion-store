@@ -53,6 +53,75 @@ export type Database = {
         }
         Relationships: []
       }
+      cart_items: {
+        Row: {
+          cart_id: string
+          color_name: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          product_id: string
+          quantity: number
+          size_name: string | null
+        }
+        Insert: {
+          cart_id: string
+          color_name?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          product_id: string
+          quantity?: number
+          size_name?: string | null
+        }
+        Update: {
+          cart_id?: string
+          color_name?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          product_id?: string
+          quantity?: number
+          size_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cart_items_cart_id_fkey"
+            columns: ["cart_id"]
+            isOneToOne: false
+            referencedRelation: "carts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cart_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      carts: {
+        Row: {
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           created_at: string | null
