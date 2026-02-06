@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Package, ShoppingBag, MapPin, Tag, LayoutGrid, Image, Palette, FolderTree, LogOut, Paintbrush } from "lucide-react";
+import { Package, ShoppingBag, MapPin, Tag, LayoutGrid, Image, Palette, FolderTree, LogOut, Paintbrush, Code } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
@@ -13,6 +13,7 @@ import BannerManagement from "@/components/Admin/BannerManagement";
 import ColorSizeManagement from "@/components/Admin/ColorSizeManagement";
 import CategoriesManagement from "@/components/Admin/CategoriesManagement";
 import ThemeManagement from "@/components/Admin/ThemeManagement";
+import ApiDocumentation from "@/components/Admin/ApiDocumentation";
 
 const Admin = () => {
   const navigate = useNavigate();
@@ -55,7 +56,7 @@ const Admin = () => {
 
       <div className="container mx-auto px-4 py-8">
         <Tabs defaultValue="products" className="w-full" dir="rtl">
-          <TabsList className="grid w-full grid-cols-4 lg:grid-cols-9 gap-2 h-auto p-2 bg-muted/50">
+          <TabsList className="grid w-full grid-cols-4 lg:grid-cols-10 gap-2 h-auto p-2 bg-muted/50">
             <TabsTrigger value="products" className="flex flex-col items-center gap-1.5 py-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <ShoppingBag className="h-5 w-5" />
               <span className="text-xs">المنتجات</span>
@@ -91,6 +92,10 @@ const Admin = () => {
             <TabsTrigger value="themes" className="flex flex-col items-center gap-1.5 py-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <Paintbrush className="h-5 w-5" />
               <span className="text-xs">الثيمات</span>
+            </TabsTrigger>
+            <TabsTrigger value="api" className="flex flex-col items-center gap-1.5 py-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <Code className="h-5 w-5" />
+              <span className="text-xs">API</span>
             </TabsTrigger>
           </TabsList>
 
@@ -129,6 +134,10 @@ const Admin = () => {
 
             <TabsContent value="themes" className="mt-0">
               <ThemeManagement />
+            </TabsContent>
+
+            <TabsContent value="api" className="mt-0">
+              <ApiDocumentation />
             </TabsContent>
           </div>
         </Tabs>
