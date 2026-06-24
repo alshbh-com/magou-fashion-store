@@ -17,22 +17,39 @@
 
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Màgou Fashion - متجر الأزياء الفاخرة</title>
-    <meta name="description" content="متجر Màgou Fashion - أفضل وأحدث صيحات الموضة العالمية بأسعار مناسبة. تسوق الآن واستمتع بأناقة لا تُضاهى وجودة عالية." />
-    <meta name="author" content="Màgou Fashion" />
-    <meta name="keywords" content="ملابس, موضة, أزياء, تسوق, متجر إلكتروني, ملابس راقية" />
+    <title>Magou Group - متجر الأزياء والإكسسوارات</title>
+    <meta name="description" content="Magou Group - تسوق أحدث صيحات الموضة والإكسسوارات بأسعار مناسبة وجودة عالية. توصيل سريع لكل المحافظات." />
+    <meta name="author" content="Magou Group" />
+    <meta name="keywords" content="Magou Group, ماجو جروب, ملابس, موضة, أزياء, تسوق, متجر إلكتروني" />
 
-    <meta property="og:title" content="Màgou Fashion - متجر الأزياء الفاخرة" />
-    <meta property="og:description" content="أفضل وأحدث صيحات الموضة العالمية بأسعار مناسبة" />
+    <link rel="canonical" href="https://magou-fashion-store.lovable.app/" />
+
+    <meta property="og:title" content="Magou Group - متجر الأزياء والإكسسوارات" />
+    <meta property="og:description" content="تسوق أحدث صيحات الموضة من Magou Group بأسعار مناسبة وجودة عالية." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://magou-fashion-store.lovable.app/" />
+    <meta property="og:site_name" content="Magou Group" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Magou Group" />
+    <meta name="twitter:description" content="تسوق أحدث صيحات الموضة من Magou Group" />
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
-    <meta property="og:type" content="website" />
-    <meta property="og:image" content="https://i.ibb.co/N2ycmKdT/FB-IMG-1760754189883.jpg" />
 
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@alshbh" />
-    <meta name="twitter:image" content="https://i.ibb.co/N2ycmKdT/FB-IMG-1760754189883.jpg" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "Magou Group",
+        "url": "https://magou-fashion-store.lovable.app",
+        "sameAs": [
+          "https://www.instagram.com/ma_g0u",
+          "https://www.tiktok.com/@mag0u_fashion"
+        ]
+      }
+    </script>
 
     <!-- Meta Pixel Code -->
     <script>
@@ -70,21 +87,5 @@
 
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
-
-    <!-- Purchase Event - Meta Pixel (دعم أي عدد منتجات) -->
-    <script>
-      // مثال لمصفوفة الأسعار في السلة (استبدلها بمتغيرات موقعك)
-      var cart = [120, 250, 80]; // أسعار كل المنتجات في السلة
-      var TOTAL_PRICE = 0;
-
-      for(var i = 0; i < cart.length; i++){
-        TOTAL_PRICE += cart[i];
-      }
-
-      fbq('track', 'Purchase', {
-        value: TOTAL_PRICE,
-        currency: 'EGP'
-      });
-    </script>
   </body>
 </html>
