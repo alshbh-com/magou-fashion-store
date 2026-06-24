@@ -446,6 +446,12 @@ const OrdersManagement = () => {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-10">
+                <Checkbox
+                  checked={selectedIds.size === filteredOrders.length && filteredOrders.length > 0}
+                  onCheckedChange={toggleSelectAll}
+                />
+              </TableHead>
               <TableHead className="text-right">رقم الطلب</TableHead>
               <TableHead className="text-right">العميل</TableHead>
               <TableHead className="text-right">الهاتف</TableHead>
@@ -459,7 +465,13 @@ const OrdersManagement = () => {
           </TableHeader>
           <TableBody>
             {filteredOrders.map((order) => (
-              <TableRow key={order.id}>
+              <TableRow key={order.id} data-state={selectedIds.has(order.id) ? "selected" : undefined}>
+                <TableCell>
+                  <Checkbox
+                    checked={selectedIds.has(order.id)}
+                    onCheckedChange={() => toggleSelected(order.id)}
+                  />
+                </TableCell>
                 <TableCell className="font-medium">#{order.order_number}</TableCell>
                 <TableCell>{order.customer_name}</TableCell>
                 <TableCell dir="ltr">{order.customer_phone}</TableCell>
