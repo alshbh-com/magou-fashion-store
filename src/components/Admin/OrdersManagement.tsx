@@ -411,6 +411,18 @@ const OrdersManagement = () => {
             <Badge variant="outline" className="text-lg">
               عرض: {filteredOrders.length}
             </Badge>
+            {selectedIds.size > 0 && (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={bulkDelete}
+                disabled={bulkDeleting}
+                className="gap-2"
+              >
+                {bulkDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                حذف المحدد ({selectedIds.size})
+              </Button>
+            )}
           </div>
         </div>
         
