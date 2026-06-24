@@ -479,7 +479,11 @@ const Checkout = () => {
               {selectedGovernorate && (
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">الشحن ({selectedGovernorate.name})</span>
-                  <span className="font-semibold">{selectedGovernorate.shipping_cost.toFixed(2)} جنيه</span>
+                  {hasFreeShipping ? (
+                    <span className="font-semibold text-green-600">مجاني</span>
+                  ) : (
+                    <span className="font-semibold">{selectedGovernorate.shipping_cost.toFixed(2)} جنيه</span>
+                  )}
                 </div>
               )}
               <div className="border-t border-border pt-3">
