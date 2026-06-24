@@ -198,6 +198,7 @@ const Home = () => {
                       <img
                         src={product.image_url || "/placeholder.svg"}
                         alt={product.name}
+                        loading="lazy"
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                       />
                       <div className="absolute top-4 right-4 flex gap-2">
@@ -225,7 +226,7 @@ const Home = () => {
                     
                     <CardContent className="p-4">
                       <h3 className="font-bold text-lg mb-2 line-clamp-1 text-card-foreground">{product.name}</h3>
-                      <p className="text-muted-foreground text-sm mb-3 line-clamp-2">
+                      <p className="text-muted-foreground text-sm mb-3 line-clamp-2 whitespace-pre-wrap">
                         {product.description || "منتج عالي الجودة"}
                       </p>
                       <div className="flex items-center gap-2 mb-2">

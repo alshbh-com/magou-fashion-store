@@ -22,6 +22,7 @@ const Checkout = () => {
   const { items, totalPrice, clearCart } = useCart();
   const [governorates, setGovernorates] = useState<Governorate[]>([]);
   const [loading, setLoading] = useState(false);
+  const [hasFreeShipping, setHasFreeShipping] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
@@ -36,8 +37,10 @@ const Checkout = () => {
   useEffect(() => {
     if (items.length === 0) {
       navigate("/cart");
+      return;
     }
     fetchGovernorates();
+    checkFreeShipping();
     
     // تجميع الملاحظات من المنتجات
     const combinedNotes = items
@@ -49,6 +52,20 @@ const Checkout = () => {
       setFormData(prev => ({ ...prev, notes: combinedNotes }));
     }
   }, [items, navigate]);
+
+  const checkFreeShipping = async () => {
+    if (items.length === 0) return;
+    const ids = [...new Set(items.map((i) => i.id))];
+    const { data } = await supabase
+      .from("products")
+      .select("id, free_shipping")
+      .in("id", ids);
+    if (data && data.length === ids.length) {
+      setHasFreeShipping(data.every((p: any) => p.free_shipping === true));
+    } else {
+      setHasFreeShipping(false);
+    }
+  };
 
   const fetchGovernorates = async () => {
     try {
@@ -189,7 +206,7 @@ const Checkout = () => {
       }
 
       // 2. Create order
-      const shippingCost = selectedGovernorate.shipping_cost;
+      const shippingCost = hasFreeShipping ? 0 : selectedGovernorate.shipping_cost;
       const orderData = {
         customer_name: formData.name,
         customer_phone: formData.phone,
@@ -304,13 +321,18 @@ const Checkout = () => {
     }
   };
 
-  const finalTotal = totalPrice + (selectedGovernorate?.shipping_cost || 0);
+  const finalTotal = totalPrice + (hasFreeShipping ? 0 : (selectedGovernorate?.shipping_cost || 0));
 
   return (
     <div className="container mx-auto px-4 py-12 animate-fade-in">
-      <h1 className="text-4xl md:text-5xl font-display font-bold text-center mb-12 text-gradient-gold">
+      <h1 className="text-4xl md:text-5xl font-display font-bold text-center mb-4 text-gradient-gold">
         إتمام الطلب
       </h1>
+      {hasFreeShipping && (
+        <p className="text-center mb-8 text-green-600 font-bold text-lg">
+          🎉 شحن مجاني على طلبك
+        </p>
+      )}
 
       <div className="max-w-6xl mx-auto grid lg:grid-cols-3 gap-8">
         {/* Checkout Form */}
@@ -457,7 +479,11 @@ const Checkout = () => {
               {selectedGovernorate && (
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">الشحن ({selectedGovernorate.name})</span>
-                  <span className="font-semibold">{selectedGovernorate.shipping_cost.toFixed(2)} جنيه</span>
+                  {hasFreeShipping ? (
+                    <span className="font-semibold text-green-600">مجاني</span>
+                  ) : (
+                    <span className="font-semibold">{selectedGovernorate.shipping_cost.toFixed(2)} جنيه</span>
+                  )}
                 </div>
               )}
               <div className="border-t border-border pt-3">

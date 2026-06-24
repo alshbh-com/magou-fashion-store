@@ -5,7 +5,7 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Heart, ShoppingCart, Search, Star, Eye } from "lucide-react";
+import { Heart, ShoppingCart, Search, Star, Eye, X } from "lucide-react";
 import { toast } from "sonner";
 import { useCart } from "@/contexts/CartContext";
 import ProductQuickView from "@/components/ProductQuickView";
@@ -172,19 +172,31 @@ const { data, error } = await supabase
             className="pr-10"
           />
         </div>
-        <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-          <SelectTrigger className="w-full md:w-[200px]">
-            <SelectValue placeholder="القسم" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">جميع الأقسام</SelectItem>
-            {categories.map((category) => (
-              <SelectItem key={category.id} value={category.id}>
-                {category.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex gap-2 w-full md:w-auto">
+          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+            <SelectTrigger className="w-full md:w-[200px]">
+              <SelectValue placeholder="القسم" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">جميع الأقسام</SelectItem>
+              {categories.map((category) => (
+                <SelectItem key={category.id} value={category.id}>
+                  {category.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {selectedCategory !== "all" && (
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setSelectedCategory("all")}
+              title="مسح فلتر الأقسام"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
         <Select value={sortBy} onValueChange={setSortBy}>
           <SelectTrigger className="w-full md:w-[200px]">
             <SelectValue placeholder="ترتيب حسب" />
@@ -222,6 +234,7 @@ const { data, error } = await supabase
                 <img
                   src={product.image_url || "/placeholder.svg"}
                   alt={product.name}
+                  loading="lazy"
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
@@ -257,7 +270,7 @@ const { data, error } = await supabase
               
               <CardContent className="p-4">
                 <h3 className="font-semibold text-lg mb-2 line-clamp-1">{product.name}</h3>
-                <p className="text-muted-foreground text-sm mb-3 line-clamp-2">
+                <p className="text-muted-foreground text-sm mb-3 line-clamp-2 whitespace-pre-wrap">
                   {product.description || "منتج عالي الجودة"}
                 </p>
                 <div className="flex items-center gap-2 mb-2">

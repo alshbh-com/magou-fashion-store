@@ -6,7 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Trash2, Eye, Loader2, Filter, Mail, Edit, Plus, Minus, X, Save } from "lucide-react";
+import { Trash2, Eye, Loader2, Filter, Mail, Edit, Plus, Minus, X, Save, CheckSquare } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
   TableBody,
@@ -75,6 +76,8 @@ const OrdersManagement = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [saving, setSaving] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   useEffect(() => {
     fetchOrders();
@@ -197,6 +200,42 @@ const OrdersManagement = () => {
     } catch (error) {
       console.error("Error deleting order:", error);
       toast.error("فشل في حذف الطلب");
+    }
+  };
+
+  const toggleSelected = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filteredOrders.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredOrders.map((o) => o.id)));
+    }
+  };
+
+  const bulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    if (!confirm(`هل أنت متأكد من حذف ${selectedIds.size} طلب؟`)) return;
+    setBulkDeleting(true);
+    try {
+      const ids = Array.from(selectedIds);
+      await supabase.from("order_items").delete().in("order_id", ids);
+      const { error } = await supabase.from("orders").delete().in("id", ids);
+      if (error) throw error;
+      setOrders((prev) => prev.filter((o) => !selectedIds.has(o.id)));
+      setSelectedIds(new Set());
+      toast.success(`تم حذف ${ids.length} طلب`);
+    } catch (err) {
+      console.error(err);
+      toast.error("فشل الحذف الجماعي");
+    } finally {
+      setBulkDeleting(false);
     }
   };
 
@@ -372,6 +411,18 @@ const OrdersManagement = () => {
             <Badge variant="outline" className="text-lg">
               عرض: {filteredOrders.length}
             </Badge>
+            {selectedIds.size > 0 && (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={bulkDelete}
+                disabled={bulkDeleting}
+                className="gap-2"
+              >
+                {bulkDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                حذف المحدد ({selectedIds.size})
+              </Button>
+            )}
           </div>
         </div>
         
@@ -395,6 +446,12 @@ const OrdersManagement = () => {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-10">
+                <Checkbox
+                  checked={selectedIds.size === filteredOrders.length && filteredOrders.length > 0}
+                  onCheckedChange={toggleSelectAll}
+                />
+              </TableHead>
               <TableHead className="text-right">رقم الطلب</TableHead>
               <TableHead className="text-right">العميل</TableHead>
               <TableHead className="text-right">الهاتف</TableHead>
@@ -408,7 +465,13 @@ const OrdersManagement = () => {
           </TableHeader>
           <TableBody>
             {filteredOrders.map((order) => (
-              <TableRow key={order.id}>
+              <TableRow key={order.id} data-state={selectedIds.has(order.id) ? "selected" : undefined}>
+                <TableCell>
+                  <Checkbox
+                    checked={selectedIds.has(order.id)}
+                    onCheckedChange={() => toggleSelected(order.id)}
+                  />
+                </TableCell>
                 <TableCell className="font-medium">#{order.order_number}</TableCell>
                 <TableCell>{order.customer_name}</TableCell>
                 <TableCell dir="ltr">{order.customer_phone}</TableCell>

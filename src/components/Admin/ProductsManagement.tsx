@@ -31,6 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { uploadImageToImgbb } from "@/lib/imgbbUpload";
 
 interface Product {
   id: string;
@@ -45,6 +46,9 @@ interface Product {
   image_url_2: string | null;
   image_url_3: string | null;
   category_id: string | null;
+  show_in_offers?: boolean;
+  show_in_new_arrivals?: boolean;
+  free_shipping?: boolean;
 }
 
 interface Category {
@@ -73,6 +77,9 @@ const ProductsManagement = () => {
     is_offer: false,
     offer_price: 0,
     category_id: "",
+    show_in_offers: false,
+    show_in_new_arrivals: false,
+    free_shipping: false,
   });
   const [mainImageFile, setMainImageFile] = useState<File | null>(null);
   const [additionalImageFiles, setAdditionalImageFiles] = useState<File[]>([]);
@@ -153,35 +160,15 @@ const ProductsManagement = () => {
       setUploading(true);
       let mainImageUrl = editingProduct?.image_url || null;
       
-      // Upload main image from device
+      // Upload main image via ImgBB
       if (mainImageFile) {
-        const fileExt = mainImageFile.name.split('.').pop()?.toLowerCase() || 'jpg';
-        const timestamp = Date.now();
-        const fileName = `${timestamp}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
-
-        // Read file as ArrayBuffer to ensure proper upload
-        const arrayBuffer = await mainImageFile.arrayBuffer();
-        const uint8Array = new Uint8Array(arrayBuffer);
-
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('products')
-          .upload(fileName, uint8Array, {
-            contentType: mainImageFile.type || 'image/jpeg',
-            cacheControl: '3600',
-            upsert: false
-          });
-
-        if (uploadError) {
-          console.error('Upload error:', uploadError);
-          throw uploadError;
+        try {
+          mainImageUrl = await uploadImageToImgbb(mainImageFile);
+          console.log('ImgBB main image uploaded:', mainImageUrl);
+        } catch (err) {
+          console.error('ImgBB upload error:', err);
+          throw err;
         }
-
-        const { data: { publicUrl } } = supabase.storage
-          .from('products')
-          .getPublicUrl(fileName);
-
-        console.log('Successfully uploaded main image:', publicUrl);
-        mainImageUrl = publicUrl;
       }
       
       const productData = {
@@ -196,6 +183,9 @@ const ProductsManagement = () => {
         offer_price: formData.is_offer ? formData.offer_price : null,
         image_url: mainImageUrl,
         category_id: formData.category_id || null,
+        show_in_offers: formData.show_in_offers,
+        show_in_new_arrivals: formData.show_in_new_arrivals,
+        free_shipping: formData.free_shipping,
       };
 
       let productId: string;
@@ -247,41 +237,22 @@ const ProductsManagement = () => {
         }
       }
 
-      // Upload additional images to product_images table
+      // Upload additional images via ImgBB
       if (additionalImageFiles.length > 0) {
         for (let i = 0; i < additionalImageFiles.length; i++) {
           const file = additionalImageFiles[i];
-          const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
-          const timestamp = Date.now();
-          const fileName = `${productId}-${timestamp}-${i}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
-
-          const arrayBuffer = await file.arrayBuffer();
-          const uint8Array = new Uint8Array(arrayBuffer);
-
-          const { error: uploadError } = await supabase.storage
-            .from('products')
-            .upload(fileName, uint8Array, {
-              contentType: file.type || 'image/jpeg',
-              cacheControl: '3600',
-              upsert: false
-            });
-
-          if (uploadError) {
-            console.error('Upload error for additional image:', uploadError);
-            continue;
+          try {
+            const url = await uploadImageToImgbb(file);
+            await supabase
+              .from("product_images")
+              .insert({
+                product_id: productId,
+                image_url: url,
+                display_order: i + 1
+              });
+          } catch (err) {
+            console.error('ImgBB additional image error:', err);
           }
-
-          const { data: { publicUrl } } = supabase.storage
-            .from('products')
-            .getPublicUrl(fileName);
-
-          await supabase
-            .from("product_images")
-            .insert({
-              product_id: productId,
-              image_url: publicUrl,
-              display_order: i + 1
-            });
         }
       }
 
@@ -358,6 +329,9 @@ const ProductsManagement = () => {
       is_offer: product.is_offer,
       offer_price: product.offer_price || 0,
       category_id: product.category_id || "",
+      show_in_offers: !!product.show_in_offers,
+      show_in_new_arrivals: !!product.show_in_new_arrivals,
+      free_shipping: !!product.free_shipping,
     });
     setMainImageFile(null);
     setAdditionalImageFiles([]);
@@ -378,6 +352,9 @@ const ProductsManagement = () => {
       is_offer: false,
       offer_price: 0,
       category_id: "",
+      show_in_offers: false,
+      show_in_new_arrivals: false,
+      free_shipping: false,
     });
     setMainImageFile(null);
     setAdditionalImageFiles([]);
@@ -631,6 +608,36 @@ const ProductsManagement = () => {
                     onCheckedChange={(checked) => setFormData({ ...formData, is_offer: checked })}
                   />
                   <Label htmlFor="is_offer">عرض خاص</Label>
+                </div>
+              </div>
+
+              <div className="border-t pt-4 space-y-3">
+                <Label className="text-sm font-semibold">الأقسام التي يظهر فيها المنتج</Label>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      id="show_in_offers"
+                      checked={formData.show_in_offers}
+                      onCheckedChange={(checked) => setFormData({ ...formData, show_in_offers: checked })}
+                    />
+                    <Label htmlFor="show_in_offers">يظهر في العروض</Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      id="show_in_new_arrivals"
+                      checked={formData.show_in_new_arrivals}
+                      onCheckedChange={(checked) => setFormData({ ...formData, show_in_new_arrivals: checked })}
+                    />
+                    <Label htmlFor="show_in_new_arrivals">وصل حديثاً</Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      id="free_shipping"
+                      checked={formData.free_shipping}
+                      onCheckedChange={(checked) => setFormData({ ...formData, free_shipping: checked })}
+                    />
+                    <Label htmlFor="free_shipping">شحن مجاني</Label>
+                  </div>
                 </div>
               </div>
 

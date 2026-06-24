@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { ArrowRight, ShoppingCart, Minus, Plus } from "lucide-react";
+import SimilarProducts from "@/components/SimilarProducts";
 
 interface Product {
   id: string;
@@ -21,6 +22,7 @@ interface Product {
   image_url_3: string | null;
   size_pricing: any;
   stock_quantity: number;
+  category_id: string | null;
 }
 
 interface ProductColor {
@@ -601,7 +603,7 @@ const ProductDetails = () => {
         <div className="space-y-4">
           <div>
             <h1 className="text-2xl font-bold mb-2">{product.name}</h1>
-            <p className="text-sm text-muted-foreground">{product.description}</p>
+            <p className="text-sm text-muted-foreground whitespace-pre-wrap">{product.description}</p>
           </div>
 
           <div className="flex items-center gap-4">
@@ -834,13 +836,16 @@ const ProductDetails = () => {
           {product.details && (
             <Card className="p-4 mt-4">
               <h3 className="font-semibold mb-2">تفاصيل المنتج</h3>
-              <p className="text-sm text-muted-foreground whitespace-pre-line">
+              <p className="text-sm text-muted-foreground whitespace-pre-wrap">
                 {product.details}
               </p>
             </Card>
           )}
         </div>
       </div>
+
+      {/* Similar Products */}
+      <SimilarProducts categoryId={product.category_id} currentProductId={product.id} />
     </div>
   );
 };

@@ -17,7 +17,7 @@ const Footer = () => {
           {/* Brand */}
           <div className="space-y-4">
             <h3 className="text-2xl font-display font-bold text-gradient-gold">
-              Màgou Fashion
+              Magou Group
             </h3>
             <p className="text-muted-foreground">
               متجرك الأول للأزياء العصرية والراقية
@@ -80,6 +80,12 @@ const Footer = () => {
             <nav className="flex flex-col gap-2">
               <Link to="/products" className="text-muted-foreground hover:text-primary transition-colors">
                 المنتجات
+              </Link>
+              <Link to="/reviews" className="text-muted-foreground hover:text-primary transition-colors">
+                آراء العملاء
+              </Link>
+              <Link to="/return-policy" className="text-muted-foreground hover:text-primary transition-colors">
+                سياسة الاستبدال والاسترجاع
               </Link>
               <Link to="/about" className="text-muted-foreground hover:text-primary transition-colors">
                 من نحن
@@ -148,7 +154,7 @@ const Footer = () => {
 
         <div className="mt-8 pt-8 border-t border-border text-center">
           <p className="text-muted-foreground text-sm">
-            © 2025 Màgou Fashion. جميع الحقوق محفوظة.
+            © 2026 Magou Group. جميع الحقوق محفوظة.
           </p>
         </div>
       </div>

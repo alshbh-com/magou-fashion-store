@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { Loader2, Trash2, Upload } from "lucide-react";
+import { uploadImageToImgbb } from "@/lib/imgbbUpload";
 
 interface Banner {
   id: string;
@@ -61,21 +62,7 @@ const BannerManagement = () => {
   };
 
   const uploadImage = async (file: File): Promise<string> => {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Math.random()}.${fileExt}`;
-    const filePath = fileName;
-
-    const { error: uploadError } = await supabase.storage
-      .from('products')
-      .upload(filePath, file);
-
-    if (uploadError) throw uploadError;
-
-    const { data } = supabase.storage
-      .from('products')
-      .getPublicUrl(filePath);
-
-    return data.publicUrl;
+    return await uploadImageToImgbb(file);
   };
 
   const addBanner = async () => {

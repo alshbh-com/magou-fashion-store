@@ -19,8 +19,17 @@ import Auth from "./pages/Auth";
 import UserAuth from "./pages/UserAuth";
 import Account from "./pages/Account";
 import NotFound from "./pages/NotFound";
+import ReturnPolicy from "./pages/ReturnPolicy";
+import Reviews from "./pages/Reviews";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -44,6 +53,8 @@ const App = () => (
               <Route path="/auth" element={<Auth />} />
           <Route path="/user-auth" element={<UserAuth />} />
           <Route path="/account" element={<Account />} />
+          <Route path="/return-policy" element={<ReturnPolicy />} />
+          <Route path="/reviews" element={<Reviews />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
