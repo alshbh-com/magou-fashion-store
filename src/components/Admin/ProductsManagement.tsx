@@ -611,6 +611,36 @@ const ProductsManagement = () => {
                 </div>
               </div>
 
+              <div className="border-t pt-4 space-y-3">
+                <Label className="text-sm font-semibold">الأقسام التي يظهر فيها المنتج</Label>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      id="show_in_offers"
+                      checked={formData.show_in_offers}
+                      onCheckedChange={(checked) => setFormData({ ...formData, show_in_offers: checked })}
+                    />
+                    <Label htmlFor="show_in_offers">يظهر في العروض</Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      id="show_in_new_arrivals"
+                      checked={formData.show_in_new_arrivals}
+                      onCheckedChange={(checked) => setFormData({ ...formData, show_in_new_arrivals: checked })}
+                    />
+                    <Label htmlFor="show_in_new_arrivals">وصل حديثاً</Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      id="free_shipping"
+                      checked={formData.free_shipping}
+                      onCheckedChange={(checked) => setFormData({ ...formData, free_shipping: checked })}
+                    />
+                    <Label htmlFor="free_shipping">شحن مجاني</Label>
+                  </div>
+                </div>
+              </div>
+
               {formData.is_offer && (
                 <div>
                   <Label htmlFor="offer_price">سعر العرض (جنيه)</Label>
