@@ -206,7 +206,7 @@ const Checkout = () => {
       }
 
       // 2. Create order
-      const shippingCost = selectedGovernorate.shipping_cost;
+      const shippingCost = hasFreeShipping ? 0 : selectedGovernorate.shipping_cost;
       const orderData = {
         customer_name: formData.name,
         customer_phone: formData.phone,
@@ -321,13 +321,18 @@ const Checkout = () => {
     }
   };
 
-  const finalTotal = totalPrice + (selectedGovernorate?.shipping_cost || 0);
+  const finalTotal = totalPrice + (hasFreeShipping ? 0 : (selectedGovernorate?.shipping_cost || 0));
 
   return (
     <div className="container mx-auto px-4 py-12 animate-fade-in">
-      <h1 className="text-4xl md:text-5xl font-display font-bold text-center mb-12 text-gradient-gold">
+      <h1 className="text-4xl md:text-5xl font-display font-bold text-center mb-4 text-gradient-gold">
         إتمام الطلب
       </h1>
+      {hasFreeShipping && (
+        <p className="text-center mb-8 text-green-600 font-bold text-lg">
+          🎉 شحن مجاني على طلبك
+        </p>
+      )}
 
       <div className="max-w-6xl mx-auto grid lg:grid-cols-3 gap-8">
         {/* Checkout Form */}
