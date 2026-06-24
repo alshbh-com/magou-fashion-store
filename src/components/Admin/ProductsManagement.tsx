@@ -237,41 +237,22 @@ const ProductsManagement = () => {
         }
       }
 
-      // Upload additional images to product_images table
+      // Upload additional images via ImgBB
       if (additionalImageFiles.length > 0) {
         for (let i = 0; i < additionalImageFiles.length; i++) {
           const file = additionalImageFiles[i];
-          const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
-          const timestamp = Date.now();
-          const fileName = `${productId}-${timestamp}-${i}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
-
-          const arrayBuffer = await file.arrayBuffer();
-          const uint8Array = new Uint8Array(arrayBuffer);
-
-          const { error: uploadError } = await supabase.storage
-            .from('products')
-            .upload(fileName, uint8Array, {
-              contentType: file.type || 'image/jpeg',
-              cacheControl: '3600',
-              upsert: false
-            });
-
-          if (uploadError) {
-            console.error('Upload error for additional image:', uploadError);
-            continue;
+          try {
+            const url = await uploadImageToImgbb(file);
+            await supabase
+              .from("product_images")
+              .insert({
+                product_id: productId,
+                image_url: url,
+                display_order: i + 1
+              });
+          } catch (err) {
+            console.error('ImgBB additional image error:', err);
           }
-
-          const { data: { publicUrl } } = supabase.storage
-            .from('products')
-            .getPublicUrl(fileName);
-
-          await supabase
-            .from("product_images")
-            .insert({
-              product_id: productId,
-              image_url: publicUrl,
-              display_order: i + 1
-            });
         }
       }
 
@@ -348,6 +329,9 @@ const ProductsManagement = () => {
       is_offer: product.is_offer,
       offer_price: product.offer_price || 0,
       category_id: product.category_id || "",
+      show_in_offers: !!product.show_in_offers,
+      show_in_new_arrivals: !!product.show_in_new_arrivals,
+      free_shipping: !!product.free_shipping,
     });
     setMainImageFile(null);
     setAdditionalImageFiles([]);
@@ -368,6 +352,9 @@ const ProductsManagement = () => {
       is_offer: false,
       offer_price: 0,
       category_id: "",
+      show_in_offers: false,
+      show_in_new_arrivals: false,
+      free_shipping: false,
     });
     setMainImageFile(null);
     setAdditionalImageFiles([]);
