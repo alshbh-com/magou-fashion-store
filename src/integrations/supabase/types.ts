@@ -556,6 +556,7 @@ export type Database = {
           description: string | null
           description_ar: string | null
           details: string | null
+          free_shipping: boolean
           id: string
           image_url: string | null
           image_url_2: string | null
@@ -568,6 +569,8 @@ export type Database = {
           offer_price: number | null
           price: number
           rating: number | null
+          show_in_new_arrivals: boolean
+          show_in_offers: boolean
           size_pricing: Json | null
           stock_quantity: number | null
           updated_at: string | null
@@ -578,6 +581,7 @@ export type Database = {
           description?: string | null
           description_ar?: string | null
           details?: string | null
+          free_shipping?: boolean
           id?: string
           image_url?: string | null
           image_url_2?: string | null
@@ -590,6 +594,8 @@ export type Database = {
           offer_price?: number | null
           price?: number
           rating?: number | null
+          show_in_new_arrivals?: boolean
+          show_in_offers?: boolean
           size_pricing?: Json | null
           stock_quantity?: number | null
           updated_at?: string | null
@@ -600,6 +606,7 @@ export type Database = {
           description?: string | null
           description_ar?: string | null
           details?: string | null
+          free_shipping?: boolean
           id?: string
           image_url?: string | null
           image_url_2?: string | null
@@ -612,6 +619,8 @@ export type Database = {
           offer_price?: number | null
           price?: number
           rating?: number | null
+          show_in_new_arrivals?: boolean
+          show_in_offers?: boolean
           size_pricing?: Json | null
           stock_quantity?: number | null
           updated_at?: string | null
@@ -625,6 +634,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      reviews: {
+        Row: {
+          comment: string | null
+          created_at: string
+          customer_name: string | null
+          id: string
+          image_url: string
+          is_approved: boolean
+          rating: number | null
+          source: string
+          updated_at: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          customer_name?: string | null
+          id?: string
+          image_url: string
+          is_approved?: boolean
+          rating?: number | null
+          source?: string
+          updated_at?: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          customer_name?: string | null
+          id?: string
+          image_url?: string
+          is_approved?: boolean
+          rating?: number | null
+          source?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       themes: {
         Row: {
