@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Package, ShoppingBag, MapPin, Tag, LayoutGrid, Image, Palette, FolderTree, LogOut, Paintbrush, Code } from "lucide-react";
+import { Package, ShoppingBag, MapPin, Tag, LayoutGrid, Image, Palette, FolderTree, LogOut, Paintbrush, Code, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
@@ -14,6 +14,7 @@ import ColorSizeManagement from "@/components/Admin/ColorSizeManagement";
 import CategoriesManagement from "@/components/Admin/CategoriesManagement";
 import ThemeManagement from "@/components/Admin/ThemeManagement";
 import ApiDocumentation from "@/components/Admin/ApiDocumentation";
+import ReviewsManagement from "@/components/Admin/ReviewsManagement";
 
 const Admin = () => {
   const navigate = useNavigate();
@@ -56,7 +57,7 @@ const Admin = () => {
 
       <div className="container mx-auto px-4 py-8">
         <Tabs defaultValue="products" className="w-full" dir="rtl">
-          <TabsList className="grid w-full grid-cols-4 lg:grid-cols-10 gap-2 h-auto p-2 bg-muted/50">
+          <TabsList className="grid w-full grid-cols-4 lg:grid-cols-11 gap-2 h-auto p-2 bg-muted/50">
             <TabsTrigger value="products" className="flex flex-col items-center gap-1.5 py-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <ShoppingBag className="h-5 w-5" />
               <span className="text-xs">المنتجات</span>
@@ -92,6 +93,10 @@ const Admin = () => {
             <TabsTrigger value="themes" className="flex flex-col items-center gap-1.5 py-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <Paintbrush className="h-5 w-5" />
               <span className="text-xs">الثيمات</span>
+            </TabsTrigger>
+            <TabsTrigger value="reviews" className="flex flex-col items-center gap-1.5 py-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <Star className="h-5 w-5" />
+              <span className="text-xs">التقييمات</span>
             </TabsTrigger>
             <TabsTrigger value="api" className="flex flex-col items-center gap-1.5 py-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <Code className="h-5 w-5" />
@@ -134,6 +139,10 @@ const Admin = () => {
 
             <TabsContent value="themes" className="mt-0">
               <ThemeManagement />
+            </TabsContent>
+
+            <TabsContent value="reviews" className="mt-0">
+              <ReviewsManagement />
             </TabsContent>
 
             <TabsContent value="api" className="mt-0">
