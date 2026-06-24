@@ -22,6 +22,7 @@ const Checkout = () => {
   const { items, totalPrice, clearCart } = useCart();
   const [governorates, setGovernorates] = useState<Governorate[]>([]);
   const [loading, setLoading] = useState(false);
+  const [hasFreeShipping, setHasFreeShipping] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
@@ -36,8 +37,10 @@ const Checkout = () => {
   useEffect(() => {
     if (items.length === 0) {
       navigate("/cart");
+      return;
     }
     fetchGovernorates();
+    checkFreeShipping();
     
     // تجميع الملاحظات من المنتجات
     const combinedNotes = items
@@ -49,6 +52,20 @@ const Checkout = () => {
       setFormData(prev => ({ ...prev, notes: combinedNotes }));
     }
   }, [items, navigate]);
+
+  const checkFreeShipping = async () => {
+    if (items.length === 0) return;
+    const ids = [...new Set(items.map((i) => i.id))];
+    const { data } = await supabase
+      .from("products")
+      .select("id, free_shipping")
+      .in("id", ids);
+    if (data && data.length === ids.length) {
+      setHasFreeShipping(data.every((p: any) => p.free_shipping === true));
+    } else {
+      setHasFreeShipping(false);
+    }
+  };
 
   const fetchGovernorates = async () => {
     try {
