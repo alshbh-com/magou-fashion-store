@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { ArrowLeft, Star, Truck, CreditCard, HeadphonesIcon, Heart, Eye } from "lucide-react";
+import { ArrowLeft, Star, Truck, CreditCard, HeadphonesIcon, Heart, Eye, X } from "lucide-react";
 import { toast } from "sonner";
 import { useCart } from "@/contexts/CartContext";
 import BannersSection from "@/components/BannersSection";
@@ -35,6 +35,9 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [quickViewOpen, setQuickViewOpen] = useState(false);
+  const [categoriesHidden, setCategoriesHidden] = useState<boolean>(
+    typeof window !== "undefined" && sessionStorage.getItem("categoriesHidden") === "1"
+  );
   const { addToCart } = useCart();
 
   useEffect(() => {
@@ -138,16 +141,30 @@ const Home = () => {
         <BannersSection />
 
         {/* Categories Section */}
-        {categories.length > 0 && (
+        {categories.length > 0 && !categoriesHidden && (
           <section className="py-12 bg-muted/50">
             <div className="container mx-auto px-4">
+              <div className="flex justify-end mb-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => {
+                    setCategoriesHidden(true);
+                    sessionStorage.setItem("categoriesHidden", "1");
+                  }}
+                  title="إخفاء الأقسام"
+                  aria-label="إخفاء الأقسام"
+                >
+                  <X className="h-5 w-5" />
+                </Button>
+              </div>
               <h2 className="text-3xl md:text-4xl font-display font-bold text-center mb-8 text-gradient-gold">
                 الأقسام
               </h2>
               <div className="flex flex-wrap justify-center gap-3">
                 {categories.map((category) => (
-                  <Link 
-                    key={category.id} 
+                  <Link
+                    key={category.id}
                     to={`/products?category=${category.id}`}
                   >
                     <Button
