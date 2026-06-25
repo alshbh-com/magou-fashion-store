@@ -44,6 +44,7 @@ interface ProductOffer {
   min_quantity: number;
   max_quantity: number | null;
   offer_price: number;
+  free_shipping?: boolean;
 }
 
 interface ProductPackage {
@@ -231,16 +232,12 @@ const ProductDetails = () => {
     }
   };
 
-  const getOfferPrice = (qty: number) => {
+  const getApplicableOffer = (qty: number): ProductOffer | null => {
     if (!offers || offers.length === 0) return null;
-    
-    for (const offer of offers) {
-      if (qty >= offer.min_quantity && (!offer.max_quantity || qty <= offer.max_quantity)) {
-        // Return the discount amount, not the final price
-        return offer.offer_price;
-      }
-    }
-    return null;
+    const matches = offers
+      .filter(o => qty >= o.min_quantity && (!o.max_quantity || qty <= o.max_quantity))
+      .sort((a, b) => b.min_quantity - a.min_quantity);
+    return matches[0] || null;
   };
 
   const getCurrentPrice = () => {
@@ -261,22 +258,21 @@ const ProductDetails = () => {
       ? selectedSizeData.price 
       : product.price;
     
-    // Calculate subtotal
     const subtotal = basePrice * quantity;
     
-    // Check for quantity offers first (discount amount)
-    const offerDiscount = getOfferPrice(quantity);
-    if (offerDiscount) {
-      // Subtract discount from subtotal
-      return subtotal - offerDiscount;
+    const applicableOffer = getApplicableOffer(quantity);
+    if (applicableOffer) {
+      if (applicableOffer.free_shipping) {
+        // Free shipping tier — no quantity discount, keep base price × qty
+        return subtotal;
+      }
+      return subtotal - applicableOffer.offer_price;
     }
     
-    // Check for regular offer
     if (product.is_offer && product.offer_price) {
       return product.offer_price * quantity;
     }
     
-    // Return base price * quantity
     return subtotal;
   };
 
@@ -458,11 +454,16 @@ const ProductDetails = () => {
     
     let unitPrice = basePrice;
     const subtotal = basePrice * quantity;
-    const offerDiscount = getOfferPrice(quantity);
+    const applicableOffer = getApplicableOffer(quantity);
     
-    if (offerDiscount) {
-      const finalTotal = subtotal - offerDiscount;
-      unitPrice = finalTotal / quantity;
+    if (applicableOffer) {
+      if (applicableOffer.free_shipping) {
+        // Free shipping tier — keep base price, no qty discount
+        unitPrice = basePrice;
+      } else {
+        const finalTotal = subtotal - applicableOffer.offer_price;
+        unitPrice = finalTotal / quantity;
+      }
     } else if (product.is_offer && product.offer_price) {
       unitPrice = product.offer_price;
     }
@@ -484,6 +485,8 @@ const ProductDetails = () => {
 
     if (savings > 0) {
       toast.success(`تم إضافة ${product.name} إلى السلة مع توفير ${savings.toFixed(2)} جنيه! 🎉`);
+    } else if (applicableOffer?.free_shipping) {
+      toast.success(`تم إضافة ${product.name} إلى السلة — شحن مجاني! 🚚`);
     }
 
     setQuantity(1);
