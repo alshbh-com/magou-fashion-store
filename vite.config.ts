@@ -4,26 +4,27 @@ import path from "path";
 import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode }) => ({
-  server: {
-    host: "::",
-    port: 8080,
-  },
+export default defineConfig(({ mode }) => {
+  const plugins = [react()];
 
-  plugins: [
-    react(),
-    mode === "development" && componentTagger()
-  ].filter(Boolean),
+  if (mode === "development") {
+    plugins.push(componentTagger());
+  }
 
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
+  return {
+    server: {
+      host: "::",
+      port: 8080,
     },
-  },
-
-  base: "/",   // مهم جدًا لـ Cloudflare Pages
-
-  build: {
-    outDir: "dist",
-  },
-}));
+    plugins,
+    resolve: {
+      alias: {
+        "@": path.resolve(__dirname, "./src"),
+      },
+    },
+    base: "/",
+    build: {
+      outDir: "dist",
+    },
+  };
+});
