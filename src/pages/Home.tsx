@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { ArrowLeft, Star, Truck, CreditCard, HeadphonesIcon, Heart, Eye, X } from "lucide-react";
+import { ArrowLeft, Star, Truck, CreditCard, HeadphonesIcon, Heart, Eye } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { useCart } from "@/contexts/CartContext";
 import BannersSection from "@/components/BannersSection";
@@ -35,9 +36,7 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [quickViewOpen, setQuickViewOpen] = useState(false);
-  const [categoriesHidden, setCategoriesHidden] = useState<boolean>(
-    typeof window !== "undefined" && sessionStorage.getItem("categoriesHidden") === "1"
-  );
+  const navigate = useNavigate();
   const { addToCart } = useCart();
 
   useEffect(() => {
@@ -140,42 +139,25 @@ const Home = () => {
         {/* Banners Section */}
         <BannersSection />
 
-        {/* Categories Section */}
-        {categories.length > 0 && !categoriesHidden && (
-          <section className="py-12 bg-muted/50">
-            <div className="container mx-auto px-4">
-              <div className="flex justify-end mb-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => {
-                    setCategoriesHidden(true);
-                    sessionStorage.setItem("categoriesHidden", "1");
-                  }}
-                  title="إخفاء الأقسام"
-                  aria-label="إخفاء الأقسام"
-                >
-                  <X className="h-5 w-5" />
-                </Button>
-              </div>
-              <h2 className="text-3xl md:text-4xl font-display font-bold text-center mb-8 text-gradient-gold">
+        {/* Categories Section - Dropdown */}
+        {categories.length > 0 && (
+          <section className="py-10 bg-muted/50">
+            <div className="container mx-auto px-4 max-w-md">
+              <h2 className="text-2xl md:text-3xl font-display font-bold text-center mb-5 text-gradient-gold">
                 الأقسام
               </h2>
-              <div className="flex flex-wrap justify-center gap-3">
-                {categories.map((category) => (
-                  <Link
-                    key={category.id}
-                    to={`/products?category=${category.id}`}
-                  >
-                    <Button
-                      variant="outline"
-                      className="h-12 px-6 text-base font-semibold border-2 border-primary/30 hover:border-primary hover:bg-primary hover:text-primary-foreground transition-all duration-300"
-                    >
+              <Select onValueChange={(value) => navigate(`/products?category=${value}`)}>
+                <SelectTrigger className="h-12 text-base border-2 border-primary/30 bg-background">
+                  <SelectValue placeholder="اختر القسم" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((category) => (
+                    <SelectItem key={category.id} value={category.id} className="text-base">
                       {category.name_ar}
-                    </Button>
-                  </Link>
-                ))}
-              </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </section>
         )}

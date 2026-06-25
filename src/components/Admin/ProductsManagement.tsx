@@ -60,6 +60,7 @@ interface ProductOffer {
   min_quantity: number;
   max_quantity: number | null;
   offer_price: number;
+  free_shipping?: boolean;
 }
 
 const ProductsManagement = () => {
@@ -225,6 +226,7 @@ const ProductsManagement = () => {
           min_quantity: offer.min_quantity,
           max_quantity: offer.max_quantity,
           offer_price: offer.offer_price,
+          free_shipping: !!offer.free_shipping,
         }));
 
         const { error: offersError } = await supabase
@@ -378,6 +380,7 @@ const ProductsManagement = () => {
         min_quantity: nextMin,
         max_quantity: nextMin === 24 ? null : nextMin,
         offer_price: formData.price,
+        free_shipping: false,
       },
     ]);
   };
@@ -718,10 +721,26 @@ const ProductsManagement = () => {
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
+                    <div className="flex items-center gap-2 mt-3 p-2 bg-green-50 dark:bg-green-900/20 rounded">
+                      <Switch
+                        id={`free_shipping_${index}`}
+                        checked={!!offer.free_shipping}
+                        onCheckedChange={(checked) => {
+                          const newOffers = [...quantityOffers];
+                          newOffers[index] = { ...newOffers[index], free_shipping: checked };
+                          setQuantityOffers(newOffers);
+                        }}
+                      />
+                      <Label htmlFor={`free_shipping_${index}`} className="text-sm cursor-pointer">
+                        🚚 شحن مجاني عند هذه الكمية (سيتم إلغاء خصم الكمية واستخدام السعر الأصلي × الكمية)
+                      </Label>
+                    </div>
                     <p className="text-xs text-muted-foreground mt-2">
-                      {offer.max_quantity 
-                        ? `من ${offer.min_quantity} إلى ${offer.max_quantity} قطعة: ${offer.offer_price} جنيه للقطعة`
-                        : `${offer.min_quantity}+ قطعة: ${offer.offer_price} جنيه للقطعة`
+                      {offer.free_shipping
+                        ? `${offer.min_quantity}${offer.max_quantity ? `-${offer.max_quantity}` : '+'} قطعة: السعر الأصلي × الكمية + شحن مجاني 🎁`
+                        : offer.max_quantity 
+                          ? `من ${offer.min_quantity} إلى ${offer.max_quantity} قطعة: خصم ${offer.offer_price} جنيه`
+                          : `${offer.min_quantity}+ قطعة: خصم ${offer.offer_price} جنيه`
                       }
                     </p>
                   </Card>

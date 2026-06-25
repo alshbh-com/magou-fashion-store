@@ -149,10 +149,15 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
                 .sort((a, b) => b.min_quantity - a.min_quantity)[0];
               
               if (applicableOffer) {
-                // offer_price is a discount amount to subtract from total
-                const subtotal = basePrice * quantity;
-                const finalTotal = subtotal - applicableOffer.offer_price;
-                unitPrice = finalTotal / quantity;
+                // If this tier grants free shipping, skip the quantity discount — keep base price
+                if ((applicableOffer as any).free_shipping) {
+                  unitPrice = basePrice;
+                } else {
+                  // offer_price is a discount amount to subtract from total
+                  const subtotal = basePrice * quantity;
+                  const finalTotal = subtotal - applicableOffer.offer_price;
+                  unitPrice = finalTotal / quantity;
+                }
               }
             }
             
