@@ -141,16 +141,30 @@ const Home = () => {
         <BannersSection />
 
         {/* Categories Section */}
-        {categories.length > 0 && (
+        {categories.length > 0 && !categoriesHidden && (
           <section className="py-12 bg-muted/50">
             <div className="container mx-auto px-4">
+              <div className="flex justify-end mb-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => {
+                    setCategoriesHidden(true);
+                    sessionStorage.setItem("categoriesHidden", "1");
+                  }}
+                  title="إخفاء الأقسام"
+                  aria-label="إخفاء الأقسام"
+                >
+                  <X className="h-5 w-5" />
+                </Button>
+              </div>
               <h2 className="text-3xl md:text-4xl font-display font-bold text-center mb-8 text-gradient-gold">
                 الأقسام
               </h2>
               <div className="flex flex-wrap justify-center gap-3">
                 {categories.map((category) => (
-                  <Link 
-                    key={category.id} 
+                  <Link
+                    key={category.id}
                     to={`/products?category=${category.id}`}
                   >
                     <Button
