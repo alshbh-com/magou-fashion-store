@@ -482,6 +482,7 @@ export type Database = {
       product_offers: {
         Row: {
           created_at: string | null
+          free_shipping: boolean
           id: string
           max_quantity: number | null
           min_quantity: number
@@ -490,6 +491,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          free_shipping?: boolean
           id?: string
           max_quantity?: number | null
           min_quantity: number
@@ -498,6 +500,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          free_shipping?: boolean
           id?: string
           max_quantity?: number | null
           min_quantity?: number
