@@ -35,6 +35,9 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [quickViewOpen, setQuickViewOpen] = useState(false);
+  const [categoriesHidden, setCategoriesHidden] = useState<boolean>(
+    typeof window !== "undefined" && sessionStorage.getItem("categoriesHidden") === "1"
+  );
   const { addToCart } = useCart();
 
   useEffect(() => {
