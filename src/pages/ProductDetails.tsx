@@ -631,10 +631,10 @@ const ProductDetails = () => {
               <h3 className="font-semibold text-sm mb-2 text-primary">🎁 عروض الكمية</h3>
               <div className="space-y-1">
                 {offers.map((offer) => {
-                  const basePrice = product.price;
-                  const subtotal = basePrice * offer.min_quantity;
-                  const finalPrice = subtotal - offer.offer_price;
-                  const discountPercent = ((offer.offer_price / subtotal) * 100).toFixed(0);
+                  const basePriceVal = product.price;
+                  const subtotal = basePriceVal * offer.min_quantity;
+                  const isFreeShip = !!offer.free_shipping;
+                  const finalPrice = isFreeShip ? subtotal : subtotal - offer.offer_price;
                   return (
                     <div key={offer.id} className="flex justify-between items-center text-xs">
                       <span className="font-medium">
@@ -642,7 +642,11 @@ const ProductDetails = () => {
                       </span>
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-primary">{finalPrice.toFixed(2)} ج.م</span>
-                        <span className="text-green-600 font-semibold">(خصم {offer.offer_price} ج)</span>
+                        {isFreeShip ? (
+                          <span className="text-green-600 font-semibold">🚚 شحن مجاني</span>
+                        ) : (
+                          <span className="text-green-600 font-semibold">(خصم {offer.offer_price} ج)</span>
+                        )}
                       </div>
                     </div>
                   );

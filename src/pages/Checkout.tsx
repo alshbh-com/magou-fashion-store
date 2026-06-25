@@ -54,17 +54,42 @@ const Checkout = () => {
   }, [items, navigate]);
 
   const checkFreeShipping = async () => {
-    if (items.length === 0) return;
+    if (items.length === 0) {
+      setHasFreeShipping(false);
+      return;
+    }
     const ids = [...new Set(items.map((i) => i.id))];
-    const { data } = await supabase
+
+    // Product-level free shipping: ALL items must be flagged
+    const { data: products } = await supabase
       .from("products")
       .select("id, free_shipping")
       .in("id", ids);
-    if (data && data.length === ids.length) {
-      setHasFreeShipping(data.every((p: any) => p.free_shipping === true));
-    } else {
-      setHasFreeShipping(false);
+    const productFree = !!products
+      && products.length === ids.length
+      && products.every((p: any) => p.free_shipping === true);
+
+    if (productFree) {
+      setHasFreeShipping(true);
+      return;
     }
+
+    // Tier-level free shipping: if ANY item's quantity falls in a free-shipping offer tier
+    const { data: offers } = await supabase
+      .from("product_offers")
+      .select("product_id, min_quantity, max_quantity, free_shipping")
+      .in("product_id", ids);
+
+    const tierFree = items.some((item) => {
+      const itemOffers = (offers || []).filter((o: any) => o.product_id === item.id);
+      return itemOffers.some((o: any) =>
+        o.free_shipping === true
+        && item.quantity >= o.min_quantity
+        && (!o.max_quantity || item.quantity <= o.max_quantity)
+      );
+    });
+
+    setHasFreeShipping(tierFree);
   };
 
   const fetchGovernorates = async () => {
