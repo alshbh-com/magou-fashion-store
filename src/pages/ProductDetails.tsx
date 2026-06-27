@@ -252,25 +252,24 @@ const ProductDetails = () => {
       }, 0);
     }
     
-    // Get the base price (either from selected size or product)
+    // Get the base price (either from selected size or product's discounted price)
     const selectedSizeData = sizes.find(s => s.size_name === selectedSize);
+    const productEffectivePrice = product.is_offer && product.offer_price
+      ? product.offer_price
+      : product.price;
     const basePrice = selectedSizeData && selectedSizeData.price > 0 
       ? selectedSizeData.price 
-      : product.price;
+      : productEffectivePrice;
     
     const subtotal = basePrice * quantity;
     
     const applicableOffer = getApplicableOffer(quantity);
     if (applicableOffer) {
       if (applicableOffer.free_shipping) {
-        // Free shipping tier — no quantity discount, keep base price × qty
+        // Free shipping tier — no quantity discount, keep discounted base × qty
         return subtotal;
       }
       return subtotal - applicableOffer.offer_price;
-    }
-    
-    if (product.is_offer && product.offer_price) {
-      return product.offer_price * quantity;
     }
     
     return subtotal;
@@ -448,9 +447,12 @@ const ProductDetails = () => {
 
     // Normal mode
     const selectedSizeData = sizes.find(s => s.size_name === selectedSize);
+    const productEffectivePrice = product.is_offer && product.offer_price
+      ? product.offer_price
+      : product.price;
     const basePrice = selectedSizeData && selectedSizeData.price > 0 
       ? selectedSizeData.price 
-      : product.price;
+      : productEffectivePrice;
     
     let unitPrice = basePrice;
     const subtotal = basePrice * quantity;
@@ -458,14 +460,12 @@ const ProductDetails = () => {
     
     if (applicableOffer) {
       if (applicableOffer.free_shipping) {
-        // Free shipping tier — keep base price, no qty discount
+        // Free shipping tier — keep discounted base, no qty discount
         unitPrice = basePrice;
       } else {
         const finalTotal = subtotal - applicableOffer.offer_price;
         unitPrice = finalTotal / quantity;
       }
-    } else if (product.is_offer && product.offer_price) {
-      unitPrice = product.offer_price;
     }
 
     const regularTotal = basePrice * quantity;
@@ -631,7 +631,7 @@ const ProductDetails = () => {
               <h3 className="font-semibold text-sm mb-2 text-primary">🎁 عروض الكمية</h3>
               <div className="space-y-1">
                 {offers.map((offer) => {
-                  const basePriceVal = product.price;
+                  const basePriceVal = product.is_offer && product.offer_price ? product.offer_price : product.price;
                   const subtotal = basePriceVal * offer.min_quantity;
                   const isFreeShip = !!offer.free_shipping;
                   const finalPrice = isFreeShip ? subtotal : subtotal - offer.offer_price;
