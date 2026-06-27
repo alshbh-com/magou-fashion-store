@@ -135,7 +135,7 @@ const { data, error } = await supabase
         });
         break;
       case "offers":
-        filtered = filtered.filter((p) => p.is_offer);
+        filtered = filtered.filter((p: any) => p.is_offer || p.show_in_offers);
         break;
     }
 

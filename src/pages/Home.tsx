@@ -69,6 +69,7 @@ const Home = () => {
       const { data, error } = await supabase
         .from("products")
         .select("*")
+        .eq("is_featured", true)
         .order("created_at", { ascending: false })
         .limit(8);
 

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Loader2, Plus, X } from "lucide-react";
+import { Loader2, Plus, X, Pencil, Check } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 interface Product {
@@ -17,6 +17,8 @@ interface Product {
 }
 
 const SizePricingManagement = () => {
+  const [editingSize, setEditingSize] = useState<string | null>(null);
+  const [editValues, setEditValues] = useState<{ size: string; price: string }>({ size: "", price: "" });
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
