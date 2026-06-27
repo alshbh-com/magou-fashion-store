@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Loader2, Plus, X } from "lucide-react";
+import { Loader2, Plus, X, Pencil, Check } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 interface Product {
@@ -17,6 +17,8 @@ interface Product {
 }
 
 const SizePricingManagement = () => {
+  const [editingSize, setEditingSize] = useState<string | null>(null);
+  const [editValues, setEditValues] = useState<{ size: string; price: string }>({ size: "", price: "" });
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -179,25 +181,94 @@ const SizePricingManagement = () => {
               <Label>أسعار المقاسات الحالية</Label>
               <div className="space-y-2 mt-2">
                 {selectedProduct.size_pricing && selectedProduct.size_pricing.length > 0 ? (
-                  selectedProduct.size_pricing.map((sp) => (
-                    <div
-                      key={sp.size}
-                      className="flex items-center justify-between p-3 bg-muted rounded-lg"
-                    >
-                      <div className="flex items-center gap-2">
-                        <Badge variant="secondary">{sp.size}</Badge>
-                        <span className="font-bold text-primary">{sp.price} جنيه</span>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeSizePrice(sp.size)}
-                        disabled={saving}
+                  selectedProduct.size_pricing.map((sp) => {
+                    const isEditing = editingSize === sp.size;
+                    return (
+                      <div
+                        key={sp.size}
+                        className="flex items-center justify-between p-3 bg-muted rounded-lg gap-2"
                       >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))
+                        {isEditing ? (
+                          <div className="flex flex-1 items-center gap-2">
+                            <Input
+                              className="w-24"
+                              value={editValues.size}
+                              onChange={(e) => setEditValues({ ...editValues, size: e.target.value.toUpperCase() })}
+                            />
+                            <Input
+                              type="number"
+                              className="flex-1"
+                              value={editValues.price}
+                              onChange={(e) => setEditValues({ ...editValues, price: e.target.value })}
+                            />
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              disabled={saving || !editValues.size || !editValues.price}
+                              onClick={async () => {
+                                if (!selectedProduct) return;
+                                setSaving(true);
+                                try {
+                                  const updated = (selectedProduct.size_pricing || []).map((p) =>
+                                    p.size === sp.size
+                                      ? { size: editValues.size, price: parseFloat(editValues.price) }
+                                      : p
+                                  );
+                                  const { error } = await supabase
+                                    .from("products")
+                                    .update({ size_pricing: updated })
+                                    .eq("id", selectedProduct.id);
+                                  if (error) throw error;
+                                  setSelectedProduct({ ...selectedProduct, size_pricing: updated });
+                                  setProducts(products.map(p => p.id === selectedProduct.id ? { ...p, size_pricing: updated } : p));
+                                  setEditingSize(null);
+                                  toast.success("تم تحديث المقاس");
+                                } catch (e) {
+                                  console.error(e);
+                                  toast.error("حدث خطأ في التحديث");
+                                } finally {
+                                  setSaving(false);
+                                }
+                              }}
+                            >
+                              <Check className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={() => setEditingSize(null)}>
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="flex items-center gap-2">
+                              <Badge variant="secondary">{sp.size}</Badge>
+                              <span className="font-bold text-primary">{sp.price} جنيه</span>
+                            </div>
+                            <div className="flex gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setEditingSize(sp.size);
+                                  setEditValues({ size: sp.size, price: String(sp.price) });
+                                }}
+                                disabled={saving}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => removeSizePrice(sp.size)}
+                                disabled={saving}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    );
+                  })
                 ) : (
                   <p className="text-sm text-muted-foreground">لا توجد أسعار محددة للمقاسات</p>
                 )}

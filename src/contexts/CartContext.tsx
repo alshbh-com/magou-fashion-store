@@ -129,7 +129,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
           .order("min_quantity", { ascending: true }),
         supabase
           .from("products")
-          .select("price")
+          .select("price, offer_price, is_offer")
           .eq("id", targetItem.id)
           .single()
       ]);
@@ -137,10 +137,16 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       setItems((prev) =>
         prev.map((item) => {
           if (item.cartItemId === cartItemId) {
-            // Get base price (original price before any offers)
-            const basePrice = item.original_price || productRes.data?.price || item.price;
-            
-            let unitPrice = basePrice;
+            // Original list price (kept for showing strikethrough / discount math reference)
+            const originalPrice = item.original_price || productRes.data?.price || item.price;
+            // Effective unit price after the product-level offer (if any) — this is what
+            // free-shipping tiers must use, not the pre-discount list price.
+            const productPrice = productRes.data?.price ?? originalPrice;
+            const effectiveBase = (productRes.data?.is_offer && productRes.data?.offer_price)
+              ? productRes.data.offer_price
+              : productPrice;
+
+            let unitPrice = effectiveBase;
             
             // Find applicable offer based on quantity
             if (offersRes.data && offersRes.data.length > 0) {
@@ -149,12 +155,12 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
                 .sort((a, b) => b.min_quantity - a.min_quantity)[0];
               
               if (applicableOffer) {
-                // If this tier grants free shipping, skip the quantity discount — keep base price
+                // If this tier grants free shipping, skip the quantity discount — keep effective (discounted) price
                 if ((applicableOffer as any).free_shipping) {
-                  unitPrice = basePrice;
+                  unitPrice = effectiveBase;
                 } else {
-                  // offer_price is a discount amount to subtract from total
-                  const subtotal = basePrice * quantity;
+                  // offer_price is a discount amount to subtract from total (applied on the effective base)
+                  const subtotal = effectiveBase * quantity;
                   const finalTotal = subtotal - applicableOffer.offer_price;
                   unitPrice = finalTotal / quantity;
                 }
@@ -165,7 +171,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
               ...item, 
               quantity, 
               price: unitPrice,
-              original_price: basePrice 
+              original_price: originalPrice 
             };
           }
           return item;
