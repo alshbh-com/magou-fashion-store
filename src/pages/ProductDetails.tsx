@@ -447,9 +447,12 @@ const ProductDetails = () => {
 
     // Normal mode
     const selectedSizeData = sizes.find(s => s.size_name === selectedSize);
+    const productEffectivePrice = product.is_offer && product.offer_price
+      ? product.offer_price
+      : product.price;
     const basePrice = selectedSizeData && selectedSizeData.price > 0 
       ? selectedSizeData.price 
-      : product.price;
+      : productEffectivePrice;
     
     let unitPrice = basePrice;
     const subtotal = basePrice * quantity;
@@ -457,14 +460,12 @@ const ProductDetails = () => {
     
     if (applicableOffer) {
       if (applicableOffer.free_shipping) {
-        // Free shipping tier — keep base price, no qty discount
+        // Free shipping tier — keep discounted base, no qty discount
         unitPrice = basePrice;
       } else {
         const finalTotal = subtotal - applicableOffer.offer_price;
         unitPrice = finalTotal / quantity;
       }
-    } else if (product.is_offer && product.offer_price) {
-      unitPrice = product.offer_price;
     }
 
     const regularTotal = basePrice * quantity;
