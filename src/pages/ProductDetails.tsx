@@ -631,7 +631,7 @@ const ProductDetails = () => {
               <h3 className="font-semibold text-sm mb-2 text-primary">🎁 عروض الكمية</h3>
               <div className="space-y-1">
                 {offers.map((offer) => {
-                  const basePriceVal = product.price;
+                  const basePriceVal = product.is_offer && product.offer_price ? product.offer_price : product.price;
                   const subtotal = basePriceVal * offer.min_quantity;
                   const isFreeShip = !!offer.free_shipping;
                   const finalPrice = isFreeShip ? subtotal : subtotal - offer.offer_price;
