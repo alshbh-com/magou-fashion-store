@@ -252,25 +252,24 @@ const ProductDetails = () => {
       }, 0);
     }
     
-    // Get the base price (either from selected size or product)
+    // Get the base price (either from selected size or product's discounted price)
     const selectedSizeData = sizes.find(s => s.size_name === selectedSize);
+    const productEffectivePrice = product.is_offer && product.offer_price
+      ? product.offer_price
+      : product.price;
     const basePrice = selectedSizeData && selectedSizeData.price > 0 
       ? selectedSizeData.price 
-      : product.price;
+      : productEffectivePrice;
     
     const subtotal = basePrice * quantity;
     
     const applicableOffer = getApplicableOffer(quantity);
     if (applicableOffer) {
       if (applicableOffer.free_shipping) {
-        // Free shipping tier — no quantity discount, keep base price × qty
+        // Free shipping tier — no quantity discount, keep discounted base × qty
         return subtotal;
       }
       return subtotal - applicableOffer.offer_price;
-    }
-    
-    if (product.is_offer && product.offer_price) {
-      return product.offer_price * quantity;
     }
     
     return subtotal;
