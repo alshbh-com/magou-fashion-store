@@ -19,8 +19,12 @@ const Footer = () => {
             <h3 className="text-2xl font-display font-bold text-gradient-gold">
               Magou Group
             </h3>
-            <p className="text-muted-foreground">
-              متجرك الأول للأزياء العصرية والراقية
+            <p className="text-muted-foreground leading-relaxed">
+              مول متكامل في صفحة واحدة! ✨
+              <br />
+              نوفر لك (أزياء 👗 | إلكترونيات 📱 | أدوات منزلية 🏠 | والمزيد...)
+              <br />
+              بأفضل الأسعار وأعلى جودة. 🚚 التوصيل لحد باب بيتك!
             </p>
           </div>
 
