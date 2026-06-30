@@ -354,22 +354,46 @@ const ColorSizeManagement = () => {
                 <TableBody>
                   {colors.map((color) => (
                     <TableRow key={color.id}>
-                      <TableCell>
-                        <div
-                          className="w-8 h-8 rounded border"
-                          style={{ backgroundColor: color.color_code || "#000" }}
-                        />
-                      </TableCell>
-                      <TableCell>{color.color_name_ar}</TableCell>
-                      <TableCell>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => deleteColor(color.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
+                      {editingColorId === color.id ? (
+                        <>
+                          <TableCell>
+                            <Input
+                              type="color"
+                              value={editColorForm.color_code}
+                              onChange={(e) => setEditColorForm({ ...editColorForm, color_code: e.target.value })}
+                              className="w-12 h-10 p-1"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              value={editColorForm.color_name_ar}
+                              onChange={(e) => setEditColorForm({ ...editColorForm, color_name_ar: e.target.value })}
+                            />
+                          </TableCell>
+                          <TableCell className="flex gap-2">
+                            <Button size="sm" onClick={saveEditColor}><Check className="h-4 w-4" /></Button>
+                            <Button size="sm" variant="outline" onClick={() => setEditingColorId(null)}><X className="h-4 w-4" /></Button>
+                          </TableCell>
+                        </>
+                      ) : (
+                        <>
+                          <TableCell>
+                            <div
+                              className="w-8 h-8 rounded border"
+                              style={{ backgroundColor: color.color_code || "#000" }}
+                            />
+                          </TableCell>
+                          <TableCell>{color.color_name_ar}</TableCell>
+                          <TableCell className="flex gap-2">
+                            <Button size="sm" variant="outline" onClick={() => startEditColor(color)}>
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button size="sm" variant="destructive" onClick={() => deleteColor(color.id)}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </>
+                      )}
                     </TableRow>
                   ))}
                 </TableBody>
