@@ -63,6 +63,63 @@ const ColorSizeManagement = () => {
     stock_quantity: 0,
   });
 
+  const [editingColorId, setEditingColorId] = useState<string | null>(null);
+  const [editColorForm, setEditColorForm] = useState({ color_name_ar: "", color_code: "#000000" });
+  const [editingSizeId, setEditingSizeId] = useState<string | null>(null);
+  const [editSizeForm, setEditSizeForm] = useState({ size_name: "", price: 0, stock_quantity: 0 });
+
+  const startEditColor = (c: ProductColor) => {
+    setEditingColorId(c.id);
+    setEditColorForm({ color_name_ar: c.color_name_ar, color_code: c.color_code || "#000000" });
+  };
+
+  const saveEditColor = async () => {
+    if (!editingColorId) return;
+    try {
+      const { error } = await supabase
+        .from("product_colors")
+        .update({
+          color_name: editColorForm.color_name_ar,
+          color_name_ar: editColorForm.color_name_ar,
+          color_code: editColorForm.color_code,
+        })
+        .eq("id", editingColorId);
+      if (error) throw error;
+      toast.success("تم تحديث اللون");
+      setEditingColorId(null);
+      fetchProductColors();
+    } catch (e) {
+      console.error(e);
+      toast.error("فشل تحديث اللون");
+    }
+  };
+
+  const startEditSize = (s: ProductSize) => {
+    setEditingSizeId(s.id);
+    setEditSizeForm({ size_name: s.size_name, price: s.price, stock_quantity: s.stock_quantity || 0 });
+  };
+
+  const saveEditSize = async () => {
+    if (!editingSizeId) return;
+    try {
+      const { error } = await supabase
+        .from("product_sizes")
+        .update({
+          size_name: editSizeForm.size_name,
+          price: editSizeForm.price,
+          stock_quantity: editSizeForm.stock_quantity,
+        })
+        .eq("id", editingSizeId);
+      if (error) throw error;
+      toast.success("تم تحديث المقاس");
+      setEditingSizeId(null);
+      fetchProductSizes();
+    } catch (e) {
+      console.error(e);
+      toast.error("فشل تحديث المقاس");
+    }
+  };
+
   useEffect(() => {
     fetchProducts();
   }, []);
