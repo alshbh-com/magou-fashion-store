@@ -455,18 +455,48 @@ const ColorSizeManagement = () => {
                 <TableBody>
                   {sizes.map((size) => (
                     <TableRow key={size.id}>
-                      <TableCell>{size.size_name}</TableCell>
-                      <TableCell>{size.price} جنيه</TableCell>
-                      <TableCell>{size.stock_quantity || 0}</TableCell>
-                      <TableCell>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => deleteSize(size.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
+                      {editingSizeId === size.id ? (
+                        <>
+                          <TableCell>
+                            <Input
+                              value={editSizeForm.size_name}
+                              onChange={(e) => setEditSizeForm({ ...editSizeForm, size_name: e.target.value })}
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              type="number"
+                              value={editSizeForm.price}
+                              onChange={(e) => setEditSizeForm({ ...editSizeForm, price: parseFloat(e.target.value) || 0 })}
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              type="number"
+                              value={editSizeForm.stock_quantity}
+                              onChange={(e) => setEditSizeForm({ ...editSizeForm, stock_quantity: parseInt(e.target.value) || 0 })}
+                            />
+                          </TableCell>
+                          <TableCell className="flex gap-2">
+                            <Button size="sm" onClick={saveEditSize}><Check className="h-4 w-4" /></Button>
+                            <Button size="sm" variant="outline" onClick={() => setEditingSizeId(null)}><X className="h-4 w-4" /></Button>
+                          </TableCell>
+                        </>
+                      ) : (
+                        <>
+                          <TableCell>{size.size_name}</TableCell>
+                          <TableCell>{size.price} جنيه</TableCell>
+                          <TableCell>{size.stock_quantity || 0}</TableCell>
+                          <TableCell className="flex gap-2">
+                            <Button size="sm" variant="outline" onClick={() => startEditSize(size)}>
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button size="sm" variant="destructive" onClick={() => deleteSize(size.id)}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </>
+                      )}
                     </TableRow>
                   ))}
                 </TableBody>
