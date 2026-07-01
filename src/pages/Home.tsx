@@ -70,7 +70,8 @@ const Home = () => {
         .from("products")
         .select("*")
         .eq("is_featured", true)
-        .order("created_at", { ascending: false })
+        .order("updated_at", { ascending: false, nullsFirst: false })
+        .order("created_at", { ascending: false, nullsFirst: false })
         .limit(8);
 
       if (error) throw error;
