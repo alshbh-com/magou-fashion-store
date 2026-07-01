@@ -641,7 +641,8 @@ const ProductDetails = () => {
                   const basePriceVal = product.is_offer && product.offer_price ? product.offer_price : product.price;
                   const subtotal = basePriceVal * offer.min_quantity;
                   const isFreeShip = !!offer.free_shipping;
-                  const finalPrice = isFreeShip ? subtotal : subtotal - offer.offer_price;
+                  const discount = offer.offer_price > 0 ? offer.offer_price : 0;
+                  const finalPrice = subtotal - discount;
                   return (
                     <div key={offer.id} className="flex justify-between items-center text-xs">
                       <span className="font-medium">
@@ -650,9 +651,11 @@ const ProductDetails = () => {
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-primary">{finalPrice.toFixed(2)} ج.م</span>
                         {isFreeShip ? (
-                          <span className="text-green-600 font-semibold">🚚 شحن مجاني</span>
+                          <span className="text-green-600 font-semibold">
+                            🚚 شحن مجاني{discount > 0 ? ` + خصم ${discount} ج` : ''}
+                          </span>
                         ) : (
-                          <span className="text-green-600 font-semibold">(خصم {offer.offer_price} ج)</span>
+                          <span className="text-green-600 font-semibold">(خصم {discount} ج)</span>
                         )}
                       </div>
                     </div>

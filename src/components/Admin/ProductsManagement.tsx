@@ -187,6 +187,7 @@ const ProductsManagement = () => {
         show_in_offers: formData.show_in_offers,
         show_in_new_arrivals: formData.show_in_new_arrivals,
         free_shipping: formData.free_shipping,
+        updated_at: new Date().toISOString(),
       };
 
       let productId: string;
@@ -225,7 +226,7 @@ const ProductsManagement = () => {
           product_id: productId,
           min_quantity: offer.min_quantity,
           max_quantity: offer.max_quantity,
-          offer_price: offer.offer_price,
+          offer_price: Number.isFinite(offer.offer_price) ? offer.offer_price : 0,
           free_shipping: !!offer.free_shipping,
         }));
 
@@ -379,7 +380,7 @@ const ProductsManagement = () => {
       {
         min_quantity: nextMin,
         max_quantity: nextMin === 24 ? null : nextMin,
-        offer_price: formData.price,
+        offer_price: 0,
         free_shipping: false,
       },
     ]);
@@ -673,7 +674,7 @@ const ProductsManagement = () => {
                   </Button>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  أضف أسعار خاصة حسب الكمية (مثال: قطعة واحدة 200 جنيه، 2-3 قطع 150 جنيه للقطعة)
+                  أضف خصم حسب الكمية. لو تركت الخصم 0 لن يتم خصم أي مبلغ، والشحن المجاني يظل يعمل عند الكمية المحددة.
                 </p>
                 
                 {quantityOffers.map((offer, index) => (
@@ -702,13 +703,13 @@ const ProductsManagement = () => {
                           />
                         </div>
                         <div>
-                          <Label className="text-xs">السعر (جنيه)</Label>
+                          <Label className="text-xs">الخصم (جنيه)</Label>
                           <Input
                             type="number"
                             min="0"
                             step="0.01"
                             value={offer.offer_price}
-                            onChange={(e) => updateQuantityOffer(index, "offer_price", parseFloat(e.target.value))}
+                            onChange={(e) => updateQuantityOffer(index, "offer_price", e.target.value ? parseFloat(e.target.value) : 0)}
                           />
                         </div>
                       </div>
@@ -732,12 +733,12 @@ const ProductsManagement = () => {
                         }}
                       />
                       <Label htmlFor={`free_shipping_${index}`} className="text-sm cursor-pointer">
-                        🚚 شحن مجاني عند هذه الكمية (سيتم إلغاء خصم الكمية واستخدام السعر الأصلي × الكمية)
+                        🚚 شحن مجاني عند هذه الكمية (ولو كتبت خصم هنا سيتخصم، ولو 0 لن يتخصم شيء)
                       </Label>
                     </div>
                     <p className="text-xs text-muted-foreground mt-2">
                       {offer.free_shipping
-                        ? `${offer.min_quantity}${offer.max_quantity ? `-${offer.max_quantity}` : '+'} قطعة: السعر الأصلي × الكمية + شحن مجاني 🎁`
+                        ? `${offer.min_quantity}${offer.max_quantity ? `-${offer.max_quantity}` : '+'} قطعة: ${offer.offer_price > 0 ? `خصم ${offer.offer_price} جنيه + ` : ''}شحن مجاني 🎁`
                         : offer.max_quantity 
                           ? `من ${offer.min_quantity} إلى ${offer.max_quantity} قطعة: خصم ${offer.offer_price} جنيه`
                           : `${offer.min_quantity}+ قطعة: خصم ${offer.offer_price} جنيه`
