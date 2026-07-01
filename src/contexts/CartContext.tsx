@@ -155,8 +155,8 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
                 .sort((a, b) => b.min_quantity - a.min_quantity)[0];
               
               if (applicableOffer) {
-                // If this tier grants free shipping, skip the quantity discount — keep effective (discounted) price
-                if ((applicableOffer as any).free_shipping) {
+                // Free-shipping tier: apply quantity discount only if offer_price > 0
+                if ((applicableOffer as any).free_shipping && !applicableOffer.offer_price) {
                   unitPrice = effectiveBase;
                 } else {
                   // offer_price is a discount amount to subtract from total (applied on the effective base)
