@@ -266,8 +266,10 @@ const ProductDetails = () => {
     const applicableOffer = getApplicableOffer(quantity);
     if (applicableOffer) {
       if (applicableOffer.free_shipping) {
-        // Free shipping tier — no quantity discount, keep discounted base × qty
-        return subtotal;
+        // Free shipping tier — apply discount only if offer_price > 0
+        return applicableOffer.offer_price > 0
+          ? subtotal - applicableOffer.offer_price
+          : subtotal;
       }
       return subtotal - applicableOffer.offer_price;
     }
@@ -460,8 +462,13 @@ const ProductDetails = () => {
     
     if (applicableOffer) {
       if (applicableOffer.free_shipping) {
-        // Free shipping tier — keep discounted base, no qty discount
-        unitPrice = basePrice;
+        // Free shipping tier — apply discount only if offer_price > 0
+        if (applicableOffer.offer_price > 0) {
+          const finalTotal = subtotal - applicableOffer.offer_price;
+          unitPrice = finalTotal / quantity;
+        } else {
+          unitPrice = basePrice;
+        }
       } else {
         const finalTotal = subtotal - applicableOffer.offer_price;
         unitPrice = finalTotal / quantity;
