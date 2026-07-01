@@ -16,12 +16,15 @@ interface Product {
   price: number;
   offer_price: number | null;
   is_offer: boolean;
+  is_featured?: boolean | null;
   image_url: string | null;
   description: string | null;
   details: string | null;
   stock_quantity: number;
   size_pricing: any;
   category_id: string | null;
+  show_in_offers?: boolean;
+  show_in_new_arrivals?: boolean;
 }
 
 interface Category {
@@ -91,6 +94,8 @@ const { data, error } = await supabase
       const { data, error } = await supabase
         .from("products")
         .select("*")
+        .order("is_featured", { ascending: false, nullsFirst: false })
+        .order("updated_at", { ascending: false, nullsFirst: false })
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -120,6 +125,9 @@ const { data, error } = await supabase
 
     // Sort
     switch (sortBy) {
+      case "default":
+        filtered.sort((a, b) => Number(!!b.is_featured) - Number(!!a.is_featured));
+        break;
       case "price-asc":
         filtered.sort((a, b) => {
           const priceA = a.is_offer && a.offer_price ? a.offer_price : a.price;
@@ -135,7 +143,7 @@ const { data, error } = await supabase
         });
         break;
       case "offers":
-        filtered = filtered.filter((p: any) => p.is_offer || p.show_in_offers);
+        filtered = filtered.filter((p) => p.is_offer || p.show_in_offers);
         break;
     }
 
