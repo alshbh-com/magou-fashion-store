@@ -57,8 +57,7 @@ const About = () => {
         <Card className="p-8 bg-gradient-to-br from-primary/10 to-accent/10 border-primary/30">
           <h2 className="text-2xl font-display font-bold mb-4 text-gradient-gold">رؤيتنا</h2>
           <p className="text-lg text-foreground/90 leading-relaxed">
-            أن نكون الوجهة الأولى لكل من يبحث عن الأناقة والجودة في عالم الموضة، 
-            مع الحفاظ على أعلى معايير الخدمة ورضا العملاء.
+            أن نصبح الوجهة الأولى للتسوق الإلكتروني، من خلال توفير تجربة تسوق متكاملة تجمع بين تنوع المنتجات، وجودتها، وأسعارها التنافسية، مع الالتزام بتقديم أفضل خدمة ممكنة لضمان رضا عملائنا.
           </p>
         </Card>
 
