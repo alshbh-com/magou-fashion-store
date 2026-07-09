@@ -16,7 +16,7 @@ interface Review {
   id: string;
   customer_name: string | null;
   comment: string | null;
-  image_url: string;
+  image_url: string | null;
   rating: number;
   is_approved: boolean;
   source: string;
@@ -51,10 +51,15 @@ const ReviewsManagement = () => {
 
   const addReview = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!file) return toast.error("اختر صورة");
+    if (!file && !comment && !name) {
+      return toast.error("أضف صورة أو تعليقاً");
+    }
     setUploading(true);
     try {
-      const url = await uploadImageToImgbb(file);
+      let url: string | null = null;
+      if (file) {
+        url = await uploadImageToImgbb(file);
+      }
       const { error } = await supabase.from("reviews").insert({
         customer_name: name || null,
         comment: comment || null,
