@@ -646,6 +646,7 @@ export type Database = {
           id: string
           image_url: string | null
           is_approved: boolean
+          product_id: string | null
           rating: number | null
           source: string
           updated_at: string
@@ -657,6 +658,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_approved?: boolean
+          product_id?: string | null
           rating?: number | null
           source?: string
           updated_at?: string
@@ -668,11 +670,20 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_approved?: boolean
+          product_id?: string | null
           rating?: number | null
           source?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "reviews_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       themes: {
         Row: {
