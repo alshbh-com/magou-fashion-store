@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { ArrowRight, ShoppingCart, Minus, Plus } from "lucide-react";
 import SimilarProducts from "@/components/SimilarProducts";
+import ProductReviews from "@/components/ProductReviews";
 
 interface Product {
   id: string;
@@ -860,6 +861,9 @@ const ProductDetails = () => {
           )}
         </div>
       </div>
+
+      {/* Reviews */}
+      <ProductReviews productId={product.id} />
 
       {/* Similar Products */}
       <SimilarProducts categoryId={product.category_id} currentProductId={product.id} />
