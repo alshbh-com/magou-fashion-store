@@ -8,8 +8,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Loader2, Trash2, Upload, Eye, Check, X } from "lucide-react";
+import { Loader2, Trash2, Upload, Eye, Check, X, Star } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { uploadImageToImgbb } from "@/lib/imgbbUpload";
 
 interface Review {
@@ -21,6 +22,13 @@ interface Review {
   is_approved: boolean;
   source: string;
   created_at: string;
+  product_id: string | null;
+  products?: { name: string } | null;
+}
+
+interface ProductOption {
+  id: string;
+  name: string;
 }
 
 const ReviewsManagement = () => {
@@ -30,21 +38,37 @@ const ReviewsManagement = () => {
   const [openImage, setOpenImage] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [comment, setComment] = useState("");
+const ReviewsManagement = () => {
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [products, setProducts] = useState<ProductOption[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [openImage, setOpenImage] = useState<string | null>(null);
+  const [name, setName] = useState("");
+  const [comment, setComment] = useState("");
   const [file, setFile] = useState<File | null>(null);
+  const [productId, setProductId] = useState<string>("");
+  const [rating, setRating] = useState(5);
 
   useEffect(() => {
     fetchReviews();
+    fetchProducts();
   }, []);
+
+  const fetchProducts = async () => {
+    const { data } = await supabase.from("products").select("id, name").order("name");
+    setProducts(data || []);
+  };
 
   const fetchReviews = async () => {
     const { data, error } = await supabase
       .from("reviews")
-      .select("*")
+      .select("*, products(name)")
       .order("created_at", { ascending: false });
     if (error) {
       toast.error("فشل التحميل");
     } else {
-      setReviews(data || []);
+      setReviews((data as any) || []);
     }
     setLoading(false);
   };
