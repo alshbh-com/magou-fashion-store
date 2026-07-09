@@ -85,9 +85,11 @@ const ReviewsManagement = () => {
         url = await uploadImageToImgbb(file);
       }
       const { error } = await supabase.from("reviews").insert({
+        product_id: productId || null,
         customer_name: name || null,
         comment: comment || null,
         image_url: url,
+        rating,
         source: "admin",
         is_approved: true,
       });
@@ -96,6 +98,8 @@ const ReviewsManagement = () => {
       setName("");
       setComment("");
       setFile(null);
+      setProductId("");
+      setRating(5);
       fetchReviews();
     } catch (err) {
       console.error(err);
@@ -128,6 +132,42 @@ const ReviewsManagement = () => {
       <Card className="p-6">
         <h2 className="text-xl font-bold mb-4">إضافة إثبات / تقييم</h2>
         <form onSubmit={addReview} className="space-y-3">
+          <div>
+            <Label>المنتج (اختياري)</Label>
+            <Select value={productId} onValueChange={setProductId}>
+              <SelectTrigger>
+                <SelectValue placeholder="اختر المنتج" />
+              </SelectTrigger>
+              <SelectContent>
+                {products.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>التقييم (نجوم)</Label>
+            <div className="flex gap-1 mt-1">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => setRating(i)}
+                  aria-label={`${i} نجوم`}
+                >
+                  <Star
+                    className={`h-6 w-6 ${
+                      i <= rating
+                        ? "fill-primary text-primary"
+                        : "text-muted-foreground"
+                    }`}
+                  />
+                </button>
+              ))}
+            </div>
+          </div>
           <div className="grid md:grid-cols-2 gap-3">
             <div>
               <Label>اسم العميل (اختياري)</Label>
@@ -188,6 +228,23 @@ const ReviewsManagement = () => {
                   </Badge>
                 </div>
                 <div className="p-3 space-y-2">
+                  {r.products?.name && (
+                    <p className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded inline-block">
+                      {r.products.name}
+                    </p>
+                  )}
+                  <div className="flex">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <Star
+                        key={i}
+                        className={`h-3 w-3 ${
+                          i <= (r.rating || 5)
+                            ? "fill-primary text-primary"
+                            : "text-muted-foreground"
+                        }`}
+                      />
+                    ))}
+                  </div>
                   {r.customer_name && <p className="text-sm font-semibold">{r.customer_name}</p>}
                   {r.comment && (
                     <p className="text-xs text-muted-foreground line-clamp-2">{r.comment}</p>
