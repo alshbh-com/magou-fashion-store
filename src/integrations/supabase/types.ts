@@ -644,7 +644,7 @@ export type Database = {
           created_at: string
           customer_name: string | null
           id: string
-          image_url: string
+          image_url: string | null
           is_approved: boolean
           rating: number | null
           source: string
@@ -655,7 +655,7 @@ export type Database = {
           created_at?: string
           customer_name?: string | null
           id?: string
-          image_url: string
+          image_url?: string | null
           is_approved?: boolean
           rating?: number | null
           source?: string
@@ -666,7 +666,7 @@ export type Database = {
           created_at?: string
           customer_name?: string | null
           id?: string
-          image_url?: string
+          image_url?: string | null
           is_approved?: boolean
           rating?: number | null
           source?: string

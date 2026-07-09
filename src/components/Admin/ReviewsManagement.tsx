@@ -16,7 +16,7 @@ interface Review {
   id: string;
   customer_name: string | null;
   comment: string | null;
-  image_url: string;
+  image_url: string | null;
   rating: number;
   is_approved: boolean;
   source: string;
@@ -51,10 +51,15 @@ const ReviewsManagement = () => {
 
   const addReview = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!file) return toast.error("اختر صورة");
+    if (!file && !comment && !name) {
+      return toast.error("أضف صورة أو تعليقاً");
+    }
     setUploading(true);
     try {
-      const url = await uploadImageToImgbb(file);
+      let url: string | null = null;
+      if (file) {
+        url = await uploadImageToImgbb(file);
+      }
       const { error } = await supabase.from("reviews").insert({
         customer_name: name || null,
         comment: comment || null,
@@ -105,12 +110,11 @@ const ReviewsManagement = () => {
               <Input value={name} onChange={(e) => setName(e.target.value)} />
             </div>
             <div>
-              <Label>الصورة *</Label>
+              <Label>الصورة (اختياري)</Label>
               <Input
                 type="file"
                 accept="image/*"
                 onChange={(e) => setFile(e.target.files?.[0] || null)}
-                required
               />
             </div>
           </div>
@@ -138,13 +142,19 @@ const ReviewsManagement = () => {
             {reviews.map((r) => (
               <Card key={r.id} className="overflow-hidden">
                 <div className="relative">
-                  <img
-                    src={r.image_url}
-                    alt=""
-                    className="w-full aspect-square object-cover cursor-pointer"
-                    loading="lazy"
-                    onClick={() => setOpenImage(r.image_url)}
-                  />
+                  {r.image_url ? (
+                    <img
+                      src={r.image_url}
+                      alt=""
+                      className="w-full aspect-square object-cover cursor-pointer"
+                      loading="lazy"
+                      onClick={() => setOpenImage(r.image_url)}
+                    />
+                  ) : (
+                    <div className="w-full aspect-square bg-muted flex items-center justify-center text-xs text-muted-foreground">
+                      بدون صورة
+                    </div>
+                  )}
                   <Badge
                     className={`absolute top-2 right-2 ${
                       r.is_approved ? "bg-green-600" : "bg-orange-500"

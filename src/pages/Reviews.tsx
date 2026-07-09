@@ -14,7 +14,7 @@ interface Review {
   id: string;
   customer_name: string | null;
   comment: string | null;
-  image_url: string;
+  image_url: string | null;
   rating: number;
   created_at: string;
 }
@@ -51,13 +51,16 @@ const Reviews = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!file) {
-      toast.error("يرجى اختيار صورة الإثبات");
+    if (!comment && !file) {
+      toast.error("اكتب تعليقاً أو أرفق صورة");
       return;
     }
     setSubmitting(true);
     try {
-      const imageUrl = await uploadImageToImgbb(file);
+      let imageUrl: string | null = null;
+      if (file) {
+        imageUrl = await uploadImageToImgbb(file);
+      }
       const { error } = await supabase.from("reviews").insert({
         customer_name: name || null,
         comment: comment || null,
@@ -108,12 +111,11 @@ const Reviews = () => {
                 <Textarea value={comment} onChange={(e) => setComment(e.target.value)} rows={3} />
               </div>
               <div>
-                <Label>صورة الإثبات *</Label>
+                <Label>صورة الإثبات (اختياري)</Label>
                 <Input
                   type="file"
                   accept="image/*"
                   onChange={(e) => setFile(e.target.files?.[0] || null)}
-                  required
                 />
               </div>
               <Button type="submit" disabled={submitting} className="w-full">
@@ -147,15 +149,17 @@ const Reviews = () => {
           {reviews.map((r) => (
             <Card
               key={r.id}
-              className="overflow-hidden cursor-pointer hover:shadow-xl transition-all hover-scale"
-              onClick={() => setOpenImage(r.image_url)}
+              className={`overflow-hidden hover:shadow-xl transition-all hover-scale ${r.image_url ? "cursor-pointer" : ""}`}
+              onClick={() => r.image_url && setOpenImage(r.image_url)}
             >
-              <img
-                src={r.image_url}
-                alt={r.customer_name || "إثبات"}
-                className="w-full aspect-square object-cover"
-                loading="lazy"
-              />
+              {r.image_url && (
+                <img
+                  src={r.image_url}
+                  alt={r.customer_name || "إثبات"}
+                  className="w-full aspect-square object-cover"
+                  loading="lazy"
+                />
+              )}
               <div className="p-3 space-y-1">
                 {r.customer_name && (
                   <p className="font-semibold text-sm">{r.customer_name}</p>

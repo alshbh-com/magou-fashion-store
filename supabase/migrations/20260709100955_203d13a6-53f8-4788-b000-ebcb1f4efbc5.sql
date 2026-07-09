@@ -1,0 +1,1 @@
+ALTER TABLE public.reviews ALTER COLUMN image_url DROP NOT NULL;
