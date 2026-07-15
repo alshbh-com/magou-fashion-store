@@ -33,13 +33,6 @@ interface ProductOption {
 
 const ReviewsManagement = () => {
   const [reviews, setReviews] = useState<Review[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [uploading, setUploading] = useState(false);
-  const [openImage, setOpenImage] = useState<string | null>(null);
-  const [name, setName] = useState("");
-  const [comment, setComment] = useState("");
-const ReviewsManagement = () => {
-  const [reviews, setReviews] = useState<Review[]>([]);
   const [products, setProducts] = useState<ProductOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
