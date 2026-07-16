@@ -10,6 +10,7 @@ import { useCart } from "@/contexts/CartContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ShoppingBag, Loader2 } from "lucide-react";
+import { trackInitiateCheckout, trackPurchase } from "@/lib/tiktokPixel";
 
 interface Governorate {
   id: string;
@@ -41,7 +42,18 @@ const Checkout = () => {
     }
     fetchGovernorates();
     checkFreeShipping();
-    
+
+    // TikTok InitiateCheckout
+    trackInitiateCheckout(
+      items.map((it) => ({
+        content_id: it.id,
+        content_name: it.name,
+        quantity: it.quantity,
+        price: it.price,
+      })),
+      totalPrice,
+    );
+
     // تجميع الملاحظات من المنتجات
     const combinedNotes = items
       .filter(item => item.notes)
@@ -316,6 +328,15 @@ const Checkout = () => {
       }
 
       // 5. Show success message
+      trackPurchase(
+        items.map((it) => ({
+          content_id: it.id,
+          content_name: it.name,
+          quantity: it.quantity,
+          price: it.price,
+        })),
+        totalPrice + shippingCost,
+      );
       clearCart();
       
       // Show full-screen success message

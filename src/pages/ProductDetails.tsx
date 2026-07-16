@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { ArrowRight, ShoppingCart, Minus, Plus } from "lucide-react";
 import SimilarProducts from "@/components/SimilarProducts";
 import ProductReviews from "@/components/ProductReviews";
+import { trackViewContent, trackAddToCart } from "@/lib/tiktokPixel";
 
 interface Product {
   id: string;
@@ -149,6 +150,15 @@ const ProductDetails = () => {
 
       if (error) throw error;
       setProduct(data);
+      if (data) {
+        const price = data.is_offer && data.offer_price ? data.offer_price : data.price;
+        trackViewContent({
+          content_id: data.id,
+          content_name: data.name,
+          price,
+          value: price,
+        });
+      }
     } catch (error) {
       console.error("Error fetching product:", error);
     } finally {
@@ -423,6 +433,13 @@ const ProductDetails = () => {
               package_name: pkg.name_ar,
               package_price: pkg.price
             });
+            trackAddToCart({
+              content_id: product.id,
+              content_name: `${product.name} (${pkg.name_ar})`,
+              price: pkg.price,
+              quantity: pkg.quantity,
+              value: pkg.price,
+            });
           }
         }
       });
@@ -489,6 +506,14 @@ const ProductDetails = () => {
       size: selectedSize || undefined,
       color_options: colorOptionsArray,
       original_price: basePrice
+    });
+
+    trackAddToCart({
+      content_id: product.id,
+      content_name: product.name,
+      price: unitPrice,
+      quantity,
+      value: unitPrice * quantity,
     });
 
     if (savings > 0) {
