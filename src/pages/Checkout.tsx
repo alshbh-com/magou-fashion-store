@@ -10,6 +10,7 @@ import { useCart } from "@/contexts/CartContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ShoppingBag, Loader2 } from "lucide-react";
+import { trackInitiateCheckout, trackPurchase } from "@/lib/tiktokPixel";
 
 interface Governorate {
   id: string;
