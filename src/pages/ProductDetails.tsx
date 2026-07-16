@@ -433,6 +433,13 @@ const ProductDetails = () => {
               package_name: pkg.name_ar,
               package_price: pkg.price
             });
+            trackAddToCart({
+              content_id: product.id,
+              content_name: `${product.name} (${pkg.name_ar})`,
+              price: pkg.price,
+              quantity: pkg.quantity,
+              value: pkg.price,
+            });
           }
         }
       });
