@@ -42,7 +42,18 @@ const Checkout = () => {
     }
     fetchGovernorates();
     checkFreeShipping();
-    
+
+    // TikTok InitiateCheckout
+    trackInitiateCheckout(
+      items.map((it) => ({
+        content_id: it.id,
+        content_name: it.name,
+        quantity: it.quantity,
+        price: it.price,
+      })),
+      totalPrice,
+    );
+
     // تجميع الملاحظات من المنتجات
     const combinedNotes = items
       .filter(item => item.notes)
