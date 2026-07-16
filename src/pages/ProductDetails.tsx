@@ -501,6 +501,14 @@ const ProductDetails = () => {
       original_price: basePrice
     });
 
+    trackAddToCart({
+      content_id: product.id,
+      content_name: product.name,
+      price: unitPrice,
+      quantity,
+      value: unitPrice * quantity,
+    });
+
     if (savings > 0) {
       toast.success(`تم إضافة ${product.name} إلى السلة مع توفير ${savings.toFixed(2)} جنيه! 🎉`);
     } else if (applicableOffer?.free_shipping) {
