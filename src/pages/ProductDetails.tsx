@@ -150,6 +150,15 @@ const ProductDetails = () => {
 
       if (error) throw error;
       setProduct(data);
+      if (data) {
+        const price = data.is_offer && data.offer_price ? data.offer_price : data.price;
+        trackViewContent({
+          content_id: data.id,
+          content_name: data.name,
+          price,
+          value: price,
+        });
+      }
     } catch (error) {
       console.error("Error fetching product:", error);
     } finally {
