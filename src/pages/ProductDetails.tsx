@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { ArrowRight, ShoppingCart, Minus, Plus } from "lucide-react";
 import SimilarProducts from "@/components/SimilarProducts";
 import ProductReviews from "@/components/ProductReviews";
+import { trackViewContent, trackAddToCart } from "@/lib/tiktokPixel";
 
 interface Product {
   id: string;
