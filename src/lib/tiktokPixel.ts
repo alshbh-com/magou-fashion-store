@@ -6,8 +6,21 @@ declare global {
       track: (event: string, params?: Record<string, unknown>) => void;
       page: () => void;
     };
+    fbq?: (...args: unknown[]) => void;
   }
 }
+
+const fbTrack = (event: string, params?: Record<string, unknown>) => {
+  try {
+    if (typeof window !== "undefined" && typeof window.fbq === "function") {
+      if (params) window.fbq("track", event, params);
+      else window.fbq("track", event);
+    }
+  } catch (err) {
+    console.error("Meta pixel error:", err);
+  }
+};
+
 
 type Content = {
   content_id: string;
