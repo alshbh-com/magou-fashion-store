@@ -1,0 +1,6 @@
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.orders TO anon, authenticated;
+GRANT ALL ON public.orders TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.order_items TO anon, authenticated;
+GRANT ALL ON public.order_items TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.customers TO anon, authenticated;
+GRANT ALL ON public.customers TO service_role;
