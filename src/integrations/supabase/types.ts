@@ -521,6 +521,7 @@ export type Database = {
           created_at: string | null
           description: string | null
           description_ar: string | null
+          details: string | null
           free_shipping: boolean | null
           id: string
           image_url: string | null
@@ -534,6 +535,7 @@ export type Database = {
           price: number | null
           show_in_new_arrivals: boolean | null
           show_in_offers: boolean | null
+          size_pricing: Json | null
           stock_quantity: number | null
           updated_at: string | null
         }
@@ -542,6 +544,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           description_ar?: string | null
+          details?: string | null
           free_shipping?: boolean | null
           id?: string
           image_url?: string | null
@@ -555,6 +558,7 @@ export type Database = {
           price?: number | null
           show_in_new_arrivals?: boolean | null
           show_in_offers?: boolean | null
+          size_pricing?: Json | null
           stock_quantity?: number | null
           updated_at?: string | null
         }
@@ -563,6 +567,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           description_ar?: string | null
+          details?: string | null
           free_shipping?: boolean | null
           id?: string
           image_url?: string | null
@@ -576,6 +581,7 @@ export type Database = {
           price?: number | null
           show_in_new_arrivals?: boolean | null
           show_in_offers?: boolean | null
+          size_pricing?: Json | null
           stock_quantity?: number | null
           updated_at?: string | null
         }
@@ -591,6 +597,7 @@ export type Database = {
           is_approved: boolean | null
           product_id: string | null
           rating: number | null
+          source: string | null
         }
         Insert: {
           comment?: string | null
@@ -601,6 +608,7 @@ export type Database = {
           is_approved?: boolean | null
           product_id?: string | null
           rating?: number | null
+          source?: string | null
         }
         Update: {
           comment?: string | null
@@ -611,6 +619,7 @@ export type Database = {
           is_approved?: boolean | null
           product_id?: string | null
           rating?: number | null
+          source?: string | null
         }
         Relationships: []
       }
