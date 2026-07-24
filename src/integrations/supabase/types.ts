@@ -245,7 +245,7 @@ export type Database = {
           customer_id: string | null
           customer_name: string | null
           customer_notes: string | null
-          customer_phone: number | null
+          customer_phone: string | null
           discount: number | null
           governorate_id: string | null
           id: string | null
@@ -263,7 +263,7 @@ export type Database = {
           customer_id?: string | null
           customer_name?: string | null
           customer_notes?: string | null
-          customer_phone?: number | null
+          customer_phone?: string | null
           discount?: number | null
           governorate_id?: string | null
           id?: string | null
@@ -281,7 +281,7 @@ export type Database = {
           customer_id?: string | null
           customer_name?: string | null
           customer_notes?: string | null
-          customer_phone?: number | null
+          customer_phone?: string | null
           discount?: number | null
           governorate_id?: string | null
           id?: string | null
@@ -299,18 +299,21 @@ export type Database = {
           id: string
           package_id: string
           product_id: string
+          quantity: number
         }
         Insert: {
           created_at?: string
           id?: string
           package_id: string
           product_id: string
+          quantity?: number
         }
         Update: {
           created_at?: string
           id?: string
           package_id?: string
           product_id?: string
+          quantity?: number
         }
         Relationships: []
       }
@@ -472,7 +475,7 @@ export type Database = {
           low_stock_alert: number | null
           name: string | null
           name_ar: string | null
-          offer_price: string | null
+          offer_price: number | null
           price: number | null
           rating: number | null
           show_in_new_arrivals: boolean | null
@@ -497,7 +500,7 @@ export type Database = {
           low_stock_alert?: number | null
           name?: string | null
           name_ar?: string | null
-          offer_price?: string | null
+          offer_price?: number | null
           price?: number | null
           rating?: number | null
           show_in_new_arrivals?: boolean | null
@@ -522,7 +525,7 @@ export type Database = {
           low_stock_alert?: number | null
           name?: string | null
           name_ar?: string | null
-          offer_price?: string | null
+          offer_price?: number | null
           price?: number | null
           rating?: number | null
           show_in_new_arrivals?: boolean | null
