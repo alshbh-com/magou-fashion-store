@@ -14,6 +14,102 @@ export type Database = {
   }
   public: {
     Tables: {
+      banners: {
+        Row: {
+          created_at: string
+          description: string | null
+          description_ar: string | null
+          display_order: number
+          id: string
+          image_url: string
+          is_active: boolean
+          link_url: string | null
+          title: string | null
+          title_ar: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          description_ar?: string | null
+          display_order?: number
+          id?: string
+          image_url: string
+          is_active?: boolean
+          link_url?: string | null
+          title?: string | null
+          title_ar?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          description_ar?: string | null
+          display_order?: number
+          id?: string
+          image_url?: string
+          is_active?: boolean
+          link_url?: string | null
+          title?: string | null
+          title_ar?: string | null
+        }
+        Relationships: []
+      }
+      cart_items: {
+        Row: {
+          cart_id: string
+          color_name: string | null
+          created_at: string
+          id: string
+          price: number | null
+          product_id: string
+          quantity: number
+          size_name: string | null
+        }
+        Insert: {
+          cart_id: string
+          color_name?: string | null
+          created_at?: string
+          id?: string
+          price?: number | null
+          product_id: string
+          quantity?: number
+          size_name?: string | null
+        }
+        Update: {
+          cart_id?: string
+          color_name?: string | null
+          created_at?: string
+          id?: string
+          price?: number | null
+          product_id?: string
+          quantity?: number
+          size_name?: string | null
+        }
+        Relationships: []
+      }
+      carts: {
+        Row: {
+          created_at: string
+          id: string
+          session_id: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          session_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          session_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           created_at: string | null
@@ -74,6 +170,33 @@ export type Database = {
           id?: string | null
           name?: string | null
           phone?: string | null
+        }
+        Relationships: []
+      }
+      governorates: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          name_ar: string
+          shipping_cost: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          name_ar: string
+          shipping_cost?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          name_ar?: string
+          shipping_cost?: number
         }
         Relationships: []
       }
@@ -170,6 +293,27 @@ export type Database = {
         }
         Relationships: []
       }
+      package_products: {
+        Row: {
+          created_at: string
+          id: string
+          package_id: string
+          product_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          package_id: string
+          product_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          package_id?: string
+          product_id?: string
+        }
+        Relationships: []
+      }
       packages: {
         Row: {
           created_at: string | null
@@ -227,6 +371,30 @@ export type Database = {
           created_at?: string | null
           id?: string | null
           product_id?: string | null
+        }
+        Relationships: []
+      }
+      product_images: {
+        Row: {
+          created_at: string
+          display_order: number
+          id: string
+          image_url: string
+          product_id: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          image_url: string
+          product_id: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          image_url?: string
+          product_id?: string
         }
         Relationships: []
       }
