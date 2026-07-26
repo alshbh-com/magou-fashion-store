@@ -353,10 +353,43 @@ const Cart = () => {
                 <span className="text-muted-foreground">عدد المنتجات</span>
                 <span className="font-semibold">{items.reduce((sum, item) => sum + item.quantity, 0)}</span>
               </div>
+
+              {/* Coupon */}
+              <div className="border-t border-border pt-3">
+                {appliedCoupon ? (
+                  <div className="flex items-center justify-between bg-primary/10 rounded-md p-2">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Ticket className="h-4 w-4 text-primary" />
+                      <span className="font-semibold">{appliedCoupon.code}</span>
+                      <span className="text-primary">-{discount.toFixed(2)} ج</span>
+                    </div>
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={removeCoupon}>
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="كود الخصم"
+                      value={couponCode}
+                      onChange={(e) => setCouponCode(e.target.value)}
+                      className="flex-1"
+                    />
+                    <Button variant="outline" onClick={applyCoupon}>تطبيق</Button>
+                  </div>
+                )}
+              </div>
+
               <div className="border-t border-border pt-4">
+                {discount > 0 && (
+                  <div className="flex justify-between text-sm mb-2">
+                    <span className="text-muted-foreground">الخصم</span>
+                    <span className="text-primary">-{discount.toFixed(2)} جنيه</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-lg font-bold">
                   <span>الإجمالي</span>
-                  <span className="text-primary">{totalPrice.toFixed(2)} جنيه</span>
+                  <span className="text-primary">{finalTotal.toFixed(2)} جنيه</span>
                 </div>
                 <p className="text-sm text-muted-foreground mt-2">
                   * سيتم حساب الشحن في الخطوة التالية
