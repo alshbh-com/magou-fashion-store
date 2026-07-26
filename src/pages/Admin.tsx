@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Package, ShoppingBag, MapPin, Tag, LayoutGrid, Image, Palette, FolderTree, LogOut, Paintbrush, Code, Star } from "lucide-react";
+import { Package, ShoppingBag, MapPin, Tag, LayoutGrid, Image, Palette, FolderTree, LogOut, Paintbrush, Code, Star, Ticket } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
