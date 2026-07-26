@@ -390,7 +390,9 @@ const Checkout = () => {
     }
   };
 
-  const finalTotal = totalPrice + (hasFreeShipping ? 0 : (selectedGovernorate?.shipping_cost || 0));
+  const appliedCouponUI = (() => { try { const s = localStorage.getItem("appliedCoupon"); return s ? JSON.parse(s) : null; } catch { return null; } })();
+  const discountUI = appliedCouponUI ? Math.min(totalPrice, appliedCouponUI.discount_type === "percentage" ? (totalPrice * Number(appliedCouponUI.discount_value)) / 100 : Number(appliedCouponUI.discount_value)) : 0;
+  const finalTotal = Math.max(0, totalPrice - discountUI) + (hasFreeShipping ? 0 : (selectedGovernorate?.shipping_cost || 0));
 
   return (
     <div className="container mx-auto px-4 py-12 animate-fade-in">
