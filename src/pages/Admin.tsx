@@ -58,7 +58,7 @@ const Admin = () => {
 
       <div className="container mx-auto px-4 py-8">
         <Tabs defaultValue="products" className="w-full" dir="rtl">
-          <TabsList className="grid w-full grid-cols-4 lg:grid-cols-11 gap-2 h-auto p-2 bg-muted/50">
+          <TabsList className="grid w-full grid-cols-4 lg:grid-cols-12 gap-2 h-auto p-2 bg-muted/50">
             <TabsTrigger value="products" className="flex flex-col items-center gap-1.5 py-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <ShoppingBag className="h-5 w-5" />
               <span className="text-xs">المنتجات</span>
