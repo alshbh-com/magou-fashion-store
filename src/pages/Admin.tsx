@@ -15,6 +15,7 @@ import CategoriesManagement from "@/components/Admin/CategoriesManagement";
 import ThemeManagement from "@/components/Admin/ThemeManagement";
 import ApiDocumentation from "@/components/Admin/ApiDocumentation";
 import ReviewsManagement from "@/components/Admin/ReviewsManagement";
+import CouponsManagement from "@/components/Admin/CouponsManagement";
 
 const Admin = () => {
   const navigate = useNavigate();
