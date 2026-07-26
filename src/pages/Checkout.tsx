@@ -547,6 +547,12 @@ const Checkout = () => {
                 <span className="text-muted-foreground">المجموع الفرعي</span>
                 <span className="font-semibold">{totalPrice.toFixed(2)} جنيه</span>
               </div>
+              {discountUI > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">خصم الكوبون{appliedCouponUI?.code ? ` (${appliedCouponUI.code})` : ""}</span>
+                  <span className="font-semibold text-primary">-{discountUI.toFixed(2)} جنيه</span>
+                </div>
+              )}
               {selectedGovernorate && (
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">الشحن ({selectedGovernorate.name})</span>
