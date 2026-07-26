@@ -30,6 +30,43 @@ const Cart = () => {
   const [selectedColors, setSelectedColors] = useState<Record<string, number>>({});
   const [selectedSize, setSelectedSize] = useState<string>("");
   const [editingQuantity, setEditingQuantity] = useState<number>(1);
+  const [couponCode, setCouponCode] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<any>(() => {
+    const s = localStorage.getItem("appliedCoupon");
+    return s ? JSON.parse(s) : null;
+  });
+
+  const computeDiscount = (coupon: any, subtotal: number) => {
+    if (!coupon) return 0;
+    const v = Number(coupon.discount_value) || 0;
+    const d = coupon.discount_type === "percentage" ? (subtotal * v) / 100 : v;
+    return Math.min(d, subtotal);
+  };
+
+  const applyCoupon = async () => {
+    const code = couponCode.trim().toUpperCase();
+    if (!code) return toast.error("أدخل كود الكوبون");
+    const { data, error } = await supabase.from("coupons").select("*").eq("code", code).maybeSingle();
+    if (error || !data) return toast.error("الكوبون غير موجود");
+    if (!data.is_active) return toast.error("الكوبون معطّل");
+    if (data.expires_at && new Date(data.expires_at) < new Date()) return toast.error("الكوبون منتهي الصلاحية");
+    if (data.max_uses !== null && data.used_count >= data.max_uses) return toast.error("انتهت مرات استخدام الكوبون");
+    if (data.min_order_amount && totalPrice < Number(data.min_order_amount)) {
+      return toast.error(`الحد الأدنى للطلب ${data.min_order_amount} جنيه`);
+    }
+    localStorage.setItem("appliedCoupon", JSON.stringify(data));
+    setAppliedCoupon(data);
+    toast.success("تم تطبيق الكوبون");
+  };
+
+  const removeCoupon = () => {
+    localStorage.removeItem("appliedCoupon");
+    setAppliedCoupon(null);
+    setCouponCode("");
+  };
+
+  const discount = computeDiscount(appliedCoupon, totalPrice);
+  const finalTotal = Math.max(0, totalPrice - discount);
 
   useEffect(() => {
     items.forEach(item => {
