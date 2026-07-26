@@ -150,6 +150,10 @@ const Admin = () => {
               <ReviewsManagement />
             </TabsContent>
 
+            <TabsContent value="coupons" className="mt-0">
+              <CouponsManagement />
+            </TabsContent>
+
             <TabsContent value="api" className="mt-0">
               <ApiDocumentation />
             </TabsContent>
