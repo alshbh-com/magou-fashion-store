@@ -242,17 +242,8 @@ const Checkout = () => {
         customerId = newCustomer.id;
       }
 
-      // 2. Create order (with coupon if applied)
+      // 2. Create order
       const shippingCost = hasFreeShipping ? 0 : selectedGovernorate.shipping_cost;
-      const appliedCoupon = (() => {
-        try { const s = localStorage.getItem("appliedCoupon"); return s ? JSON.parse(s) : null; } catch { return null; }
-      })();
-      let discountAmount = 0;
-      if (appliedCoupon) {
-        const v = Number(appliedCoupon.discount_value) || 0;
-        discountAmount = appliedCoupon.discount_type === "percentage" ? (totalPrice * v) / 100 : v;
-        discountAmount = Math.min(discountAmount, totalPrice);
-      }
       const orderData = {
         customer_name: formData.name,
         customer_phone: formData.phone,
@@ -264,9 +255,7 @@ const Checkout = () => {
         governorate_id: selectedGovernorate.id,
         subtotal: totalPrice,
         shipping_cost: shippingCost,
-        discount: Math.round(discountAmount),
-        coupon_code: appliedCoupon?.code || null,
-        total: Math.max(0, totalPrice - discountAmount) + shippingCost,
+        total: totalPrice + shippingCost,
         status: "pending" as const,
       };
       
@@ -281,18 +270,6 @@ const Checkout = () => {
       if (orderError) {
         console.error("Order Error:", orderError);
         throw orderError;
-      }
-
-      // Record coupon usage
-      if (appliedCoupon && discountAmount > 0) {
-        await supabase.from("coupon_usages").insert({
-          coupon_id: appliedCoupon.id,
-          order_id: order.id,
-          customer_name: formData.name,
-          customer_phone: formData.phone,
-          discount_amount: discountAmount,
-        });
-        localStorage.removeItem("appliedCoupon");
       }
 
       console.log("Order created successfully:", order);
@@ -390,9 +367,7 @@ const Checkout = () => {
     }
   };
 
-  const appliedCouponUI = (() => { try { const s = localStorage.getItem("appliedCoupon"); return s ? JSON.parse(s) : null; } catch { return null; } })();
-  const discountUI = appliedCouponUI ? Math.min(totalPrice, appliedCouponUI.discount_type === "percentage" ? (totalPrice * Number(appliedCouponUI.discount_value)) / 100 : Number(appliedCouponUI.discount_value)) : 0;
-  const finalTotal = Math.max(0, totalPrice - discountUI) + (hasFreeShipping ? 0 : (selectedGovernorate?.shipping_cost || 0));
+  const finalTotal = totalPrice + (hasFreeShipping ? 0 : (selectedGovernorate?.shipping_cost || 0));
 
   return (
     <div className="container mx-auto px-4 py-12 animate-fade-in">
@@ -547,12 +522,6 @@ const Checkout = () => {
                 <span className="text-muted-foreground">المجموع الفرعي</span>
                 <span className="font-semibold">{totalPrice.toFixed(2)} جنيه</span>
               </div>
-              {discountUI > 0 && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">خصم الكوبون{appliedCouponUI?.code ? ` (${appliedCouponUI.code})` : ""}</span>
-                  <span className="font-semibold text-primary">-{discountUI.toFixed(2)} جنيه</span>
-                </div>
-              )}
               {selectedGovernorate && (
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">الشحن ({selectedGovernorate.name})</span>

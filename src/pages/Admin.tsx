@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Package, ShoppingBag, MapPin, Tag, LayoutGrid, Image, Palette, FolderTree, LogOut, Paintbrush, Code, Star, Ticket } from "lucide-react";
+import { Package, ShoppingBag, MapPin, Tag, LayoutGrid, Image, Palette, FolderTree, LogOut, Paintbrush, Code, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
@@ -15,7 +15,6 @@ import CategoriesManagement from "@/components/Admin/CategoriesManagement";
 import ThemeManagement from "@/components/Admin/ThemeManagement";
 import ApiDocumentation from "@/components/Admin/ApiDocumentation";
 import ReviewsManagement from "@/components/Admin/ReviewsManagement";
-import CouponsManagement from "@/components/Admin/CouponsManagement";
 
 const Admin = () => {
   const navigate = useNavigate();
@@ -58,7 +57,7 @@ const Admin = () => {
 
       <div className="container mx-auto px-4 py-8">
         <Tabs defaultValue="products" className="w-full" dir="rtl">
-          <TabsList className="grid w-full grid-cols-4 lg:grid-cols-12 gap-2 h-auto p-2 bg-muted/50">
+          <TabsList className="grid w-full grid-cols-4 lg:grid-cols-11 gap-2 h-auto p-2 bg-muted/50">
             <TabsTrigger value="products" className="flex flex-col items-center gap-1.5 py-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <ShoppingBag className="h-5 w-5" />
               <span className="text-xs">المنتجات</span>
@@ -98,10 +97,6 @@ const Admin = () => {
             <TabsTrigger value="reviews" className="flex flex-col items-center gap-1.5 py-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <Star className="h-5 w-5" />
               <span className="text-xs">التقييمات</span>
-            </TabsTrigger>
-            <TabsTrigger value="coupons" className="flex flex-col items-center gap-1.5 py-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-              <Ticket className="h-5 w-5" />
-              <span className="text-xs">الكوبونات</span>
             </TabsTrigger>
             <TabsTrigger value="api" className="flex flex-col items-center gap-1.5 py-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <Code className="h-5 w-5" />
@@ -148,10 +143,6 @@ const Admin = () => {
 
             <TabsContent value="reviews" className="mt-0">
               <ReviewsManagement />
-            </TabsContent>
-
-            <TabsContent value="coupons" className="mt-0">
-              <CouponsManagement />
             </TabsContent>
 
             <TabsContent value="api" className="mt-0">
