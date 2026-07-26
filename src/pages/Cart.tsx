@@ -1,8 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ShoppingBag, Trash2, Plus, Minus, Settings2 } from "lucide-react";
+import { ShoppingBag, Trash2, Plus, Minus, Settings2, Ticket, X } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "@/contexts/CartContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,6 +30,43 @@ const Cart = () => {
   const [selectedColors, setSelectedColors] = useState<Record<string, number>>({});
   const [selectedSize, setSelectedSize] = useState<string>("");
   const [editingQuantity, setEditingQuantity] = useState<number>(1);
+  const [couponCode, setCouponCode] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<any>(() => {
+    const s = localStorage.getItem("appliedCoupon");
+    return s ? JSON.parse(s) : null;
+  });
+
+  const computeDiscount = (coupon: any, subtotal: number) => {
+    if (!coupon) return 0;
+    const v = Number(coupon.discount_value) || 0;
+    const d = coupon.discount_type === "percentage" ? (subtotal * v) / 100 : v;
+    return Math.min(d, subtotal);
+  };
+
+  const applyCoupon = async () => {
+    const code = couponCode.trim().toUpperCase();
+    if (!code) return toast.error("أدخل كود الكوبون");
+    const { data, error } = await supabase.from("coupons").select("*").eq("code", code).maybeSingle();
+    if (error || !data) return toast.error("الكوبون غير موجود");
+    if (!data.is_active) return toast.error("الكوبون معطّل");
+    if (data.expires_at && new Date(data.expires_at) < new Date()) return toast.error("الكوبون منتهي الصلاحية");
+    if (data.max_uses !== null && data.used_count >= data.max_uses) return toast.error("انتهت مرات استخدام الكوبون");
+    if (data.min_order_amount && totalPrice < Number(data.min_order_amount)) {
+      return toast.error(`الحد الأدنى للطلب ${data.min_order_amount} جنيه`);
+    }
+    localStorage.setItem("appliedCoupon", JSON.stringify(data));
+    setAppliedCoupon(data);
+    toast.success("تم تطبيق الكوبون");
+  };
+
+  const removeCoupon = () => {
+    localStorage.removeItem("appliedCoupon");
+    setAppliedCoupon(null);
+    setCouponCode("");
+  };
+
+  const discount = computeDiscount(appliedCoupon, totalPrice);
+  const finalTotal = Math.max(0, totalPrice - discount);
 
   useEffect(() => {
     items.forEach(item => {
@@ -315,10 +353,43 @@ const Cart = () => {
                 <span className="text-muted-foreground">عدد المنتجات</span>
                 <span className="font-semibold">{items.reduce((sum, item) => sum + item.quantity, 0)}</span>
               </div>
+
+              {/* Coupon */}
+              <div className="border-t border-border pt-3">
+                {appliedCoupon ? (
+                  <div className="flex items-center justify-between bg-primary/10 rounded-md p-2">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Ticket className="h-4 w-4 text-primary" />
+                      <span className="font-semibold">{appliedCoupon.code}</span>
+                      <span className="text-primary">-{discount.toFixed(2)} ج</span>
+                    </div>
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={removeCoupon}>
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="كود الخصم"
+                      value={couponCode}
+                      onChange={(e) => setCouponCode(e.target.value)}
+                      className="flex-1"
+                    />
+                    <Button variant="outline" onClick={applyCoupon}>تطبيق</Button>
+                  </div>
+                )}
+              </div>
+
               <div className="border-t border-border pt-4">
+                {discount > 0 && (
+                  <div className="flex justify-between text-sm mb-2">
+                    <span className="text-muted-foreground">الخصم</span>
+                    <span className="text-primary">-{discount.toFixed(2)} جنيه</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-lg font-bold">
                   <span>الإجمالي</span>
-                  <span className="text-primary">{totalPrice.toFixed(2)} جنيه</span>
+                  <span className="text-primary">{finalTotal.toFixed(2)} جنيه</span>
                 </div>
                 <p className="text-sm text-muted-foreground mt-2">
                   * سيتم حساب الشحن في الخطوة التالية
