@@ -99,6 +99,10 @@ const Admin = () => {
               <Star className="h-5 w-5" />
               <span className="text-xs">التقييمات</span>
             </TabsTrigger>
+            <TabsTrigger value="coupons" className="flex flex-col items-center gap-1.5 py-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <Ticket className="h-5 w-5" />
+              <span className="text-xs">الكوبونات</span>
+            </TabsTrigger>
             <TabsTrigger value="api" className="flex flex-col items-center gap-1.5 py-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <Code className="h-5 w-5" />
               <span className="text-xs">API</span>
