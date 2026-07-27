@@ -142,13 +142,19 @@ const ProductDetails = () => {
 
   const fetchProduct = async () => {
     try {
+      setLoading(true);
       const { data, error } = await supabase
         .from("products")
         .select("*")
         .eq("id", id)
-        .single();
+        .maybeSingle();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Product fetch error:", error);
+        toast.error("تعذر تحميل المنتج، حاول مرة أخرى");
+        setProduct(null);
+        return;
+      }
       setProduct(data);
       if (data) {
         const price = data.is_offer && data.offer_price ? data.offer_price : data.price;
@@ -538,9 +544,12 @@ const ProductDetails = () => {
 
   if (!product) {
     return (
-      <div className="text-center py-12">
-        <p className="text-lg mb-4">المنتج غير موجود</p>
-        <Button onClick={() => navigate("/products")}>العودة إلى المنتجات</Button>
+      <div className="text-center py-12 space-y-4">
+        <p className="text-lg">المنتج غير موجود أو تعذر تحميله</p>
+        <div className="flex gap-2 justify-center">
+          <Button onClick={fetchProduct} variant="outline">إعادة المحاولة</Button>
+          <Button onClick={() => navigate("/products")}>العودة إلى المنتجات</Button>
+        </div>
       </div>
     );
   }

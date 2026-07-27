@@ -143,6 +143,86 @@ export type Database = {
         }
         Relationships: []
       }
+      coupon_usages: {
+        Row: {
+          coupon_id: string
+          created_at: string
+          customer_name: string | null
+          customer_phone: string | null
+          discount_amount: number
+          id: string
+          order_id: string | null
+        }
+        Insert: {
+          coupon_id: string
+          created_at?: string
+          customer_name?: string | null
+          customer_phone?: string | null
+          discount_amount?: number
+          id?: string
+          order_id?: string | null
+        }
+        Update: {
+          coupon_id?: string
+          created_at?: string
+          customer_name?: string | null
+          customer_phone?: string | null
+          discount_amount?: number
+          id?: string
+          order_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coupon_usages_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: false
+            referencedRelation: "coupons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coupons: {
+        Row: {
+          code: string
+          created_at: string
+          discount_type: string
+          discount_value: number
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          max_uses: number | null
+          min_order_amount: number | null
+          updated_at: string
+          used_count: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          discount_type?: string
+          discount_value?: number
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          min_order_amount?: number | null
+          updated_at?: string
+          used_count?: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          discount_type?: string
+          discount_value?: number
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          min_order_amount?: number | null
+          updated_at?: string
+          used_count?: number
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
           address: string | null
@@ -238,6 +318,7 @@ export type Database = {
       }
       orders: {
         Row: {
+          coupon_code: string | null
           created_at: string | null
           customer_address: string | null
           customer_city: string | null
@@ -256,6 +337,7 @@ export type Database = {
           total: number | null
         }
         Insert: {
+          coupon_code?: string | null
           created_at?: string | null
           customer_address?: string | null
           customer_city?: string | null
@@ -274,6 +356,7 @@ export type Database = {
           total?: number | null
         }
         Update: {
+          coupon_code?: string | null
           created_at?: string | null
           customer_address?: string | null
           customer_city?: string | null
@@ -466,7 +549,7 @@ export type Database = {
           description_ar: string | null
           details: string | null
           free_shipping: boolean | null
-          id: string | null
+          id: string
           image_url: string | null
           image_url_2: string | null
           image_url_3: string | null
@@ -491,7 +574,7 @@ export type Database = {
           description_ar?: string | null
           details?: string | null
           free_shipping?: boolean | null
-          id?: string | null
+          id?: string
           image_url?: string | null
           image_url_2?: string | null
           image_url_3?: string | null
@@ -516,7 +599,7 @@ export type Database = {
           description_ar?: string | null
           details?: string | null
           free_shipping?: boolean | null
-          id?: string | null
+          id?: string
           image_url?: string | null
           image_url_2?: string | null
           image_url_3?: string | null
