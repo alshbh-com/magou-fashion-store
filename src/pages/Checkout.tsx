@@ -9,13 +9,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useCart } from "@/contexts/CartContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ShoppingBag, Loader2 } from "lucide-react";
+import { Loader2, Ticket, Check, X } from "lucide-react";
 import { trackInitiateCheckout, trackPurchase } from "@/lib/tiktokPixel";
 
 interface Governorate {
   id: string;
   name: string;
   shipping_cost: number;
+}
+
+interface AppliedCoupon {
+  id: string;
+  code: string;
+  discount_amount: number;
 }
 
 const Checkout = () => {
@@ -34,6 +40,9 @@ const Checkout = () => {
   });
   const [phoneError, setPhoneError] = useState("");
   const [selectedGovernorate, setSelectedGovernorate] = useState<Governorate | null>(null);
+  const [couponInput, setCouponInput] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
+  const [couponLoading, setCouponLoading] = useState(false);
 
   useEffect(() => {
     if (items.length === 0) {
@@ -43,7 +52,6 @@ const Checkout = () => {
     fetchGovernorates();
     checkFreeShipping();
 
-    // TikTok InitiateCheckout
     trackInitiateCheckout(
       items.map((it) => ({
         content_id: it.id,
@@ -54,74 +62,48 @@ const Checkout = () => {
       totalPrice,
     );
 
-    // تجميع الملاحظات من المنتجات
     const combinedNotes = items
       .filter(item => item.notes)
       .map(item => `${item.name}: ${item.notes}`)
       .join('\n');
-    
     if (combinedNotes) {
       setFormData(prev => ({ ...prev, notes: combinedNotes }));
     }
   }, [items, navigate]);
 
   const checkFreeShipping = async () => {
-    if (items.length === 0) {
-      setHasFreeShipping(false);
-      return;
-    }
+    if (items.length === 0) return setHasFreeShipping(false);
     const ids = [...new Set(items.map((i) => i.id))];
-
-    // Product-level free shipping: ALL items must be flagged
     const { data: products } = await supabase
-      .from("products")
-      .select("id, free_shipping")
-      .in("id", ids);
-    const productFree = !!products
-      && products.length === ids.length
+      .from("products").select("id, free_shipping").in("id", ids);
+    const productFree = !!products && products.length === ids.length
       && products.every((p: any) => p.free_shipping === true);
-
-    if (productFree) {
-      setHasFreeShipping(true);
-      return;
-    }
-
-    // Tier-level free shipping: if ANY item's quantity falls in a free-shipping offer tier
+    if (productFree) return setHasFreeShipping(true);
     const { data: offers } = await supabase
       .from("product_offers")
       .select("product_id, min_quantity, max_quantity, free_shipping")
       .in("product_id", ids);
-
     const tierFree = items.some((item) => {
-      const itemOffers = (offers || []).filter((o: any) => o.product_id === item.id);
-      return itemOffers.some((o: any) =>
+      const io = (offers || []).filter((o: any) => o.product_id === item.id);
+      return io.some((o: any) =>
         o.free_shipping === true
         && item.quantity >= o.min_quantity
         && (!o.max_quantity || item.quantity <= o.max_quantity)
       );
     });
-
     setHasFreeShipping(tierFree);
   };
 
   const fetchGovernorates = async () => {
     try {
       const { data, error } = await supabase
-        .from("governorates")
-        .select("id, name_ar, shipping_cost")
-        .order("name_ar");
-
+        .from("governorates").select("id, name_ar, shipping_cost").order("name_ar");
       if (error) throw error;
-      
-      const formattedData = data?.map(g => ({
-        id: g.id,
-        name: g.name_ar,
-        shipping_cost: g.shipping_cost
-      })) || [];
-      
-      setGovernorates(formattedData);
-    } catch (error) {
-      console.error("Error fetching governorates:", error);
+      setGovernorates((data || []).map(g => ({
+        id: g.id, name: g.name_ar, shipping_cost: g.shipping_cost
+      })));
+    } catch (e) {
+      console.error(e);
       toast.error("فشل في تحميل المحافظات");
     }
   };
@@ -133,117 +115,96 @@ const Checkout = () => {
   };
 
   const validatePhoneNumber = (phone: string) => {
-    // تنظيف الرقم من المسافات والشرطات
     const cleanPhone = phone.replace(/\D/g, '');
-    
-    // التحقق من أن الرقم يحتوي على 11 رقمًا
-    if (cleanPhone.length !== 11) {
-      return "يجب أن يتكون رقم الهاتف من 11 رقمًا";
-    }
-    
-    // التحقق من أن الرقم يبدأ بـ 01 (للهواتف المصرية)
-    if (!cleanPhone.startsWith('01')) {
-      return "يجب أن يبدأ رقم الهاتف بـ 01";
-    }
-    
-    // التحقق من أن الرقم يحتوي على أرقام فقط
-    if (!/^\d+$/.test(cleanPhone)) {
-      return "يجب أن يحتوي رقم الهاتف على أرقام فقط";
-    }
-    
+    if (cleanPhone.length !== 11) return "يجب أن يتكون رقم الهاتف من 11 رقمًا";
+    if (!cleanPhone.startsWith('01')) return "يجب أن يبدأ رقم الهاتف بـ 01";
+    if (!/^\d+$/.test(cleanPhone)) return "يجب أن يحتوي رقم الهاتف على أرقام فقط";
     return "";
   };
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    
-    // السماح فقط بالأرقام
-    const numericValue = value.replace(/\D/g, '');
-    
-    // حفظ الرقم بالصيغة النظيفة
+    const numericValue = e.target.value.replace(/\D/g, '');
     setFormData({ ...formData, phone: numericValue });
-    
-    // التحقق من الصحة في الوقت الفعلي
-    if (numericValue) {
-      const error = validatePhoneNumber(numericValue);
-      setPhoneError(error);
-    } else {
-      setPhoneError("");
-    }
+    setPhoneError(numericValue ? validatePhoneNumber(numericValue) : "");
   };
 
   const handlePhone2Change = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    
-    // السماح فقط بالأرقام للرقم الإضافي أيضًا
-    const numericValue = value.replace(/\D/g, '');
-    setFormData({ ...formData, phone2: numericValue });
+    setFormData({ ...formData, phone2: e.target.value.replace(/\D/g, '') });
   };
 
-  const handleSubmit = async (e: React.FormEvent, sendWhatsApp: boolean = false) => {
+  const applyCoupon = async () => {
+    const code = couponInput.trim().toUpperCase();
+    if (!code) return toast.error("أدخل كود الكوبون");
+    setCouponLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("coupons")
+        .select("*")
+        .eq("code", code)
+        .maybeSingle();
+      if (error || !data) {
+        toast.error("كود الكوبون غير صحيح");
+        return;
+      }
+      if (!data.is_active) return toast.error("هذا الكوبون غير مفعّل");
+      if (data.expires_at && new Date(data.expires_at) < new Date())
+        return toast.error("انتهت صلاحية هذا الكوبون");
+      if (data.max_uses && data.used_count >= data.max_uses)
+        return toast.error("تم استنفاد هذا الكوبون");
+      if (data.min_order_amount && totalPrice < Number(data.min_order_amount))
+        return toast.error(`الحد الأدنى للطلب ${data.min_order_amount} جنيه`);
+
+      let discount = 0;
+      if (data.discount_type === "percent") {
+        discount = (totalPrice * Number(data.discount_value)) / 100;
+      } else {
+        discount = Number(data.discount_value);
+      }
+      discount = Math.min(discount, totalPrice);
+      setAppliedCoupon({ id: data.id, code: data.code, discount_amount: discount });
+      toast.success(`تم تطبيق الكوبون! خصم ${discount.toFixed(2)} جنيه`);
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
+  const removeCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponInput("");
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Validate phone number
     if (!formData.phone) {
       toast.error("الرجاء إدخال رقم الهاتف");
       setPhoneError("رقم الهاتف مطلوب");
       return;
     }
-    
-    const phoneValidationError = validatePhoneNumber(formData.phone);
-    if (phoneValidationError) {
-      toast.error(phoneValidationError);
-      setPhoneError(phoneValidationError);
-      return;
-    }
-    
-    // Validate governorate selection
-    if (!selectedGovernorate) {
-      toast.error("الرجاء اختيار المحافظة");
-      return;
-    }
-    
+    const err = validatePhoneNumber(formData.phone);
+    if (err) { toast.error(err); setPhoneError(err); return; }
+    if (!selectedGovernorate) return toast.error("الرجاء اختيار المحافظة");
+
     setLoading(true);
-
-    console.log("Selected Governorate:", selectedGovernorate);
-    console.log("Form Data:", formData);
-
     try {
-      // Check if user is logged in to get their email
       const { data: { user } } = await supabase.auth.getUser();
       const userEmail = user?.email || null;
 
-      // 1. Create or get customer
       const { data: existingCustomer } = await supabase
-        .from("customers")
-        .select("*")
-        .eq("phone", formData.phone)
-        .maybeSingle();
-
+        .from("customers").select("*").eq("phone", formData.phone).maybeSingle();
       let customerId = existingCustomer?.id;
-
       if (!customerId) {
-        const { data: newCustomer, error: customerError } = await supabase
-          .from("customers")
-          .insert({
-            name: formData.name,
-            phone: formData.phone,
-            address: formData.address,
-            city: selectedGovernorate.name,
-            governorate_id: selectedGovernorate.id,
-          })
-          .select()
-          .single();
-
-        if (customerError) {
-          console.error("Customer Error:", customerError);
-          throw customerError;
-        }
-        customerId = newCustomer.id;
+        const { data: newC, error: cErr } = await supabase.from("customers").insert({
+          name: formData.name, phone: formData.phone, address: formData.address,
+          city: selectedGovernorate.name, governorate_id: selectedGovernorate.id,
+        }).select().single();
+        if (cErr) throw cErr;
+        customerId = newC.id;
       }
 
-      // 2. Create order
       const shippingCost = hasFreeShipping ? 0 : selectedGovernorate.shipping_cost;
+      const discountAmount = appliedCoupon?.discount_amount || 0;
+      const finalTotal = Math.max(0, totalPrice - discountAmount) + shippingCost;
+
       const orderData = {
         customer_name: formData.name,
         customer_phone: formData.phone,
@@ -255,91 +216,73 @@ const Checkout = () => {
         governorate_id: selectedGovernorate.id,
         subtotal: totalPrice,
         shipping_cost: shippingCost,
-        total: totalPrice + shippingCost,
+        discount: discountAmount,
+        coupon_code: appliedCoupon?.code || null,
+        total: finalTotal,
         status: "pending" as const,
       };
-      
-      console.log("Creating order with data:", orderData);
-      
+
       const { data: order, error: orderError } = await supabase
-        .from("orders")
-        .insert([orderData])
-        .select()
-        .single();
+        .from("orders").insert([orderData]).select().single();
+      if (orderError) throw orderError;
 
-      if (orderError) {
-        console.error("Order Error:", orderError);
-        throw orderError;
-      }
-
-      console.log("Order created successfully:", order);
-
-      // 3. Create order items
       const orderItems = items.map((item) => {
-        // Combine color_options into a single string
-        let colorName = null;
+        let colorName: string | null = null;
         if (item.color_options && item.color_options.length > 0) {
-          const colorCounts = item.color_options.reduce((acc, color) => {
-            acc[color] = (acc[color] || 0) + 1;
-            return acc;
+          const counts = item.color_options.reduce((acc, c) => {
+            acc[c] = (acc[c] || 0) + 1; return acc;
           }, {} as Record<string, number>);
-          colorName = Object.entries(colorCounts)
-            .map(([color, count]) => count > 1 ? `${color} (${count})` : color)
-            .join(", ");
-        } else if (item.color) {
-          colorName = item.color;
-        }
-        
+          colorName = Object.entries(counts)
+            .map(([c, n]) => n > 1 ? `${c} (${n})` : c).join(", ");
+        } else if (item.color) colorName = item.color;
         return {
-          order_id: order.id,
-          product_id: item.id,
-          product_name: item.name,
-          quantity: item.quantity,
-          price: item.price,
-          color_name: colorName,
-          size_name: item.size || null,
+          order_id: order.id, product_id: item.id, product_name: item.name,
+          quantity: item.quantity, price: item.price,
+          color_name: colorName, size_name: item.size || null,
         };
       });
+      const { error: itemsErr } = await supabase.from("order_items").insert(orderItems);
+      if (itemsErr) throw itemsErr;
 
-      const { error: itemsError } = await supabase
-        .from("order_items")
-        .insert(orderItems);
-
-      if (itemsError) {
-        console.error("Items Error:", itemsError);
-        throw itemsError;
+      // Record coupon usage
+      if (appliedCoupon) {
+        await supabase.from("coupon_usages").insert({
+          coupon_id: appliedCoupon.id,
+          order_id: order.id,
+          customer_name: formData.name,
+          customer_phone: formData.phone,
+          discount_amount: discountAmount,
+        });
+        // Increment used_count
+        const { data: cur } = await supabase
+          .from("coupons").select("used_count").eq("id", appliedCoupon.id).single();
+        if (cur) {
+          await supabase.from("coupons")
+            .update({ used_count: (cur.used_count || 0) + 1 })
+            .eq("id", appliedCoupon.id);
+        }
       }
 
-      // 4. Update product stock
+      // Update stock
       for (const item of items) {
-        const { data: currentProduct } = await supabase
-          .from("products")
-          .select("stock_quantity")
-          .eq("id", item.id)
-          .single();
-
-        if (currentProduct) {
-          const newStock = Math.max(0, currentProduct.stock_quantity - item.quantity);
-          await supabase
-            .from("products")
-            .update({ stock_quantity: newStock })
+        const { data: p } = await supabase
+          .from("products").select("stock_quantity").eq("id", item.id).single();
+        if (p) {
+          await supabase.from("products")
+            .update({ stock_quantity: Math.max(0, p.stock_quantity - item.quantity) })
             .eq("id", item.id);
         }
       }
 
-      // 5. Show success message
       trackPurchase(
         items.map((it) => ({
-          content_id: it.id,
-          content_name: it.name,
-          quantity: it.quantity,
-          price: it.price,
+          content_id: it.id, content_name: it.name,
+          quantity: it.quantity, price: it.price,
         })),
-        totalPrice + shippingCost,
+        finalTotal,
       );
       clearCart();
-      
-      // Show full-screen success message
+
       const successDiv = document.createElement('div');
       successDiv.className = 'fixed inset-0 z-50 flex items-center justify-center bg-background/95 backdrop-blur-sm animate-in fade-in duration-300';
       successDiv.innerHTML = `
@@ -348,18 +291,13 @@ const Checkout = () => {
           <h2 class="text-3xl font-bold text-primary">تم تأكيد الطلب الخاص بكم</h2>
           <p class="text-xl text-muted-foreground">شكراً على استخدامك متجر ماجو فاشون</p>
           <p class="text-lg">وسيتم التواصل معك قريباً</p>
-        </div>
-      `;
+        </div>`;
       document.body.appendChild(successDiv);
-      
       setTimeout(() => {
         successDiv.classList.add('animate-out', 'fade-out', 'duration-300');
-        setTimeout(() => {
-          document.body.removeChild(successDiv);
-          navigate("/");
-        }, 300);
+        setTimeout(() => { document.body.removeChild(successDiv); navigate("/"); }, 300);
       }, 5000);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating order:", error);
       toast.error("حدث خطأ أثناء إرسال الطلب");
     } finally {
@@ -367,77 +305,59 @@ const Checkout = () => {
     }
   };
 
-  const finalTotal = totalPrice + (hasFreeShipping ? 0 : (selectedGovernorate?.shipping_cost || 0));
+  const discountAmount = appliedCoupon?.discount_amount || 0;
+  const shippingCost = hasFreeShipping ? 0 : (selectedGovernorate?.shipping_cost || 0);
+  const finalTotal = Math.max(0, totalPrice - discountAmount) + shippingCost;
 
   return (
-    <div className="container mx-auto px-4 py-12 animate-fade-in">
-      <h1 className="text-4xl md:text-5xl font-display font-bold text-center mb-4 text-gradient-gold">
+    <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-12 animate-fade-in">
+      <h1 className="text-2xl sm:text-4xl md:text-5xl font-display font-bold text-center mb-3 sm:mb-4 text-gradient-gold">
         إتمام الطلب
       </h1>
       {hasFreeShipping && (
-        <p className="text-center mb-8 text-green-600 font-bold text-lg">
+        <p className="text-center mb-4 sm:mb-8 text-green-600 font-bold text-sm sm:text-lg">
           🎉 شحن مجاني على طلبك
         </p>
       )}
 
-      <div className="max-w-6xl mx-auto grid lg:grid-cols-3 gap-8">
+      <div className="max-w-6xl mx-auto grid lg:grid-cols-3 gap-4 sm:gap-8">
         {/* Checkout Form */}
         <div className="lg:col-span-2">
-          <Card className="p-6">
-            <h2 className="text-2xl font-bold mb-6">بيانات التوصيل</h2>
-            <form onSubmit={handleSubmit} className="space-y-4">
+          <Card className="p-4 sm:p-6">
+            <h2 className="text-lg sm:text-2xl font-bold mb-4 sm:mb-6">بيانات التوصيل</h2>
+            <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
               <div>
-                <Label htmlFor="name">الاسم الكامل *</Label>
-                <Input
-                  id="name"
-                  required
-                  value={formData.name}
+                <Label htmlFor="name" className="text-sm">الاسم الكامل *</Label>
+                <Input id="name" required value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="أدخل اسمك الكامل"
-                />
+                  placeholder="أدخل اسمك الكامل" />
               </div>
 
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
-                  <Label htmlFor="phone">رقم الهاتف *</Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    required
-                    value={formData.phone}
-                    onChange={handlePhoneChange}
-                    placeholder="01xxxxxxxxx (11 رقم)"
-                    className={phoneError ? "border-destructive focus-visible:ring-destructive" : ""}
-                  />
-                  {phoneError && (
-                    <p className="text-sm text-destructive mt-1">{phoneError}</p>
-                  )}
-                  <p className="text-xs text-muted-foreground mt-1">
-                    يجب أن يتكون رقم الهاتف من 11 رقم ويبدأ بـ 01
-                  </p>
+                  <Label htmlFor="phone" className="text-sm">رقم الهاتف *</Label>
+                  <Input id="phone" type="tel" inputMode="numeric" required
+                    value={formData.phone} onChange={handlePhoneChange}
+                    placeholder="01xxxxxxxxx"
+                    className={phoneError ? "border-destructive focus-visible:ring-destructive" : ""} />
+                  {phoneError && <p className="text-xs text-destructive mt-1">{phoneError}</p>}
                 </div>
                 <div>
-                  <Label htmlFor="phone2">رقم هاتف إضافي (اختياري)</Label>
-                  <Input
-                    id="phone2"
-                    type="tel"
-                    value={formData.phone2}
-                    onChange={handlePhone2Change}
-                    placeholder="01xxxxxxxxx (اختياري)"
-                  />
+                  <Label htmlFor="phone2" className="text-sm">رقم إضافي (اختياري)</Label>
+                  <Input id="phone2" type="tel" inputMode="numeric"
+                    value={formData.phone2} onChange={handlePhone2Change}
+                    placeholder="01xxxxxxxxx" />
                 </div>
               </div>
 
               <div>
-                <Label htmlFor="governorate">المحافظة *</Label>
+                <Label htmlFor="governorate" className="text-sm">المحافظة *</Label>
                 <Select required value={formData.governorate} onValueChange={handleGovernorateChange}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="اختر المحافظة" />
-                  </SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="اختر المحافظة" /></SelectTrigger>
                   <SelectContent>
                     {governorates.map((gov) => (
                       <SelectItem key={gov.id} value={gov.id}>
-                        {gov.name} - شحن: {gov.shipping_cost} جنيه
+                        {gov.name} - شحن: {gov.shipping_cost} ج
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -445,97 +365,114 @@ const Checkout = () => {
               </div>
 
               <div>
-                <Label htmlFor="address">العنوان بالتفصيل *</Label>
-                <Textarea
-                  id="address"
-                  required
-                  value={formData.address}
+                <Label htmlFor="address" className="text-sm">العنوان بالتفصيل *</Label>
+                <Textarea id="address" required value={formData.address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  placeholder="المنطقة، الشارع، رقم المبنى، معالم بارزة..."
-                  rows={3}
-                />
+                  placeholder="المنطقة، الشارع، رقم المبنى..."
+                  rows={3} />
               </div>
 
               <div>
-                <Label htmlFor="notes">ملاحظات إضافية</Label>
-                <Textarea
-                  id="notes"
-                  value={formData.notes}
+                <Label htmlFor="notes" className="text-sm">ملاحظات (اختياري)</Label>
+                <Textarea id="notes" value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  placeholder="أي ملاحظات خاصة بالطلب (اختياري)"
-                  rows={2}
-                />
+                  placeholder="أي ملاحظات خاصة بالطلب"
+                  rows={2} />
               </div>
 
-              <div className="space-y-3">
-                <Button 
-                  type="submit"
-                  className="w-full hover-glow" 
-                  size="lg" 
-                  disabled={loading || !!phoneError}
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="ml-2 h-5 w-5 animate-spin" />
-                      جاري الإرسال...
-                    </>
-                  ) : (
-                    <>
-                      اشتري الآن
-                    </>
-                  )}
-                </Button>
+              {/* Coupon Section */}
+              <div className="border rounded-lg p-3 sm:p-4 bg-muted/30">
+                <Label className="text-sm flex items-center gap-2 mb-2">
+                  <Ticket className="h-4 w-4" /> كوبون الخصم
+                </Label>
+                {appliedCoupon ? (
+                  <div className="flex items-center justify-between gap-2 bg-green-50 dark:bg-green-950/30 border border-green-500 rounded-md p-2 sm:p-3">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
+                      <div className="min-w-0">
+                        <p className="font-bold text-sm truncate">{appliedCoupon.code}</p>
+                        <p className="text-xs text-green-700 dark:text-green-400">
+                          خصم {appliedCoupon.discount_amount.toFixed(2)} جنيه
+                        </p>
+                      </div>
+                    </div>
+                    <Button type="button" variant="ghost" size="icon"
+                      onClick={removeCoupon} className="h-8 w-8 flex-shrink-0">
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <Input value={couponInput}
+                      onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                      placeholder="أدخل كود الكوبون"
+                      className="flex-1" />
+                    <Button type="button" variant="outline"
+                      onClick={applyCoupon} disabled={couponLoading}
+                      className="flex-shrink-0">
+                      {couponLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "تطبيق"}
+                    </Button>
+                  </div>
+                )}
               </div>
+
+              <Button type="submit" className="w-full hover-glow" size="lg"
+                disabled={loading || !!phoneError}>
+                {loading ? (<><Loader2 className="ml-2 h-5 w-5 animate-spin" />جاري الإرسال...</>) : "اشتري الآن"}
+              </Button>
             </form>
           </Card>
         </div>
 
         {/* Order Summary */}
         <div>
-          <Card className="p-6 sticky top-24">
-            <h2 className="text-2xl font-bold mb-6 text-gradient-gold">ملخص الطلب</h2>
-            
-            <div className="space-y-3 mb-6 max-h-60 overflow-y-auto">
+          <Card className="p-4 sm:p-6 lg:sticky lg:top-24">
+            <h2 className="text-lg sm:text-2xl font-bold mb-4 sm:mb-6 text-gradient-gold">ملخص الطلب</h2>
+
+            <div className="space-y-3 mb-4 sm:mb-6 max-h-52 sm:max-h-60 overflow-y-auto">
               {items.map((item, index) => (
-                <div key={`${item.id}-${item.color}-${item.size}-${index}`} className="flex gap-3">
-                  <img
-                    src={item.image_url || "/placeholder.svg"}
-                    alt={item.name}
-                    className="w-16 h-16 object-cover rounded"
-                  />
-                  <div className="flex-1">
-                    <p className="font-semibold text-sm line-clamp-1">{item.name}</p>
+                <div key={`${item.id}-${index}`} className="flex gap-2 sm:gap-3">
+                  <img src={item.image_url || "/placeholder.svg"} alt={item.name}
+                    className="w-14 h-14 sm:w-16 sm:h-16 object-cover rounded flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-xs sm:text-sm line-clamp-1">{item.name}</p>
                     {item.notes && (
-                      <p className="text-xs text-muted-foreground">{item.notes}</p>
+                      <p className="text-[10px] sm:text-xs text-muted-foreground line-clamp-1">{item.notes}</p>
                     )}
-                    <p className="text-sm text-muted-foreground">
-                      {item.quantity} × {item.price} جنيه
+                    <p className="text-xs sm:text-sm text-muted-foreground">
+                      {item.quantity} × {item.price.toFixed(2)} ج
                     </p>
                   </div>
-                  <p className="font-semibold">{(item.price * item.quantity).toFixed(2)}</p>
+                  <p className="font-semibold text-sm">{(item.price * item.quantity).toFixed(2)}</p>
                 </div>
               ))}
             </div>
 
-            <div className="space-y-3 border-t border-border pt-4">
+            <div className="space-y-2 sm:space-y-3 border-t border-border pt-3 sm:pt-4 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">المجموع الفرعي</span>
-                <span className="font-semibold">{totalPrice.toFixed(2)} جنيه</span>
+                <span className="font-semibold">{totalPrice.toFixed(2)} ج</span>
               </div>
+              {appliedCoupon && (
+                <div className="flex justify-between text-green-600">
+                  <span>خصم الكوبون ({appliedCoupon.code})</span>
+                  <span className="font-semibold">-{discountAmount.toFixed(2)} ج</span>
+                </div>
+              )}
               {selectedGovernorate && (
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">الشحن ({selectedGovernorate.name})</span>
+                  <span className="text-muted-foreground">الشحن</span>
                   {hasFreeShipping ? (
                     <span className="font-semibold text-green-600">مجاني</span>
                   ) : (
-                    <span className="font-semibold">{selectedGovernorate.shipping_cost.toFixed(2)} جنيه</span>
+                    <span className="font-semibold">{shippingCost.toFixed(2)} ج</span>
                   )}
                 </div>
               )}
-              <div className="border-t border-border pt-3">
-                <div className="flex justify-between text-lg font-bold">
+              <div className="border-t border-border pt-2 sm:pt-3">
+                <div className="flex justify-between text-base sm:text-lg font-bold">
                   <span>الإجمالي</span>
-                  <span className="text-primary">{finalTotal.toFixed(2)} جنيه</span>
+                  <span className="text-primary">{finalTotal.toFixed(2)} ج</span>
                 </div>
               </div>
             </div>
