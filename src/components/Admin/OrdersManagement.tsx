@@ -662,14 +662,14 @@ const OrdersManagement = () => {
                   <div>
                     <Label>الاسم</Label>
                     <Input
-                      value={editingOrder.customer_name}
+                      value={editingOrder.customer_name || ""}
                       onChange={(e) => setEditingOrder({ ...editingOrder, customer_name: e.target.value })}
                     />
                   </div>
                   <div>
                     <Label>الهاتف</Label>
                     <Input
-                      value={editingOrder.customer_phone}
+                      value={editingOrder.customer_phone || ""}
                       onChange={(e) => setEditingOrder({ ...editingOrder, customer_phone: e.target.value })}
                       dir="ltr"
                     />
@@ -677,14 +677,14 @@ const OrdersManagement = () => {
                   <div>
                     <Label>المدينة</Label>
                     <Input
-                      value={editingOrder.customer_city}
+                      value={editingOrder.customer_city || ""}
                       onChange={(e) => setEditingOrder({ ...editingOrder, customer_city: e.target.value })}
                     />
                   </div>
                   <div>
                     <Label>العنوان</Label>
                     <Input
-                      value={editingOrder.customer_address}
+                      value={editingOrder.customer_address || ""}
                       onChange={(e) => setEditingOrder({ ...editingOrder, customer_address: e.target.value })}
                     />
                   </div>
@@ -807,7 +807,7 @@ const OrdersManagement = () => {
                   </div>
                   <div className="flex justify-between text-sm">
                     <span>الشحن:</span>
-                    <span className="font-semibold">{editingOrder.shipping_cost} جنيه</span>
+                    <span className="font-semibold">{Number(editingOrder.shipping_cost || 0).toFixed(2)} جنيه</span>
                   </div>
                   <div className="flex justify-between text-lg font-bold pt-2 border-t mt-2">
                     <span>الإجمالي:</span>
