@@ -132,25 +132,25 @@ const Cart = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-12 animate-fade-in">
-      <h1 className="text-4xl md:text-5xl font-display font-bold text-center mb-12 text-gradient-gold">
+    <div className="container mx-auto px-3 sm:px-4 py-5 sm:py-12 animate-fade-in overflow-x-hidden">
+      <h1 className="text-2xl sm:text-4xl md:text-5xl font-display font-bold text-center mb-5 sm:mb-12 text-gradient-gold">
         سلة المشتريات
       </h1>
 
-      <div className="max-w-6xl mx-auto grid lg:grid-cols-3 gap-8">
+      <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8">
         {/* Cart Items */}
-        <div className="lg:col-span-2 space-y-3">
+        <div className="lg:col-span-2 space-y-3 min-w-0">
           {items.map((item) => (
-            <Card key={item.cartItemId} className="p-3 bg-cart-rose">
-              <div className="flex gap-3">
+            <Card key={item.cartItemId} className="p-2.5 sm:p-3 bg-cart-rose overflow-hidden">
+              <div className="flex gap-2 sm:gap-3 min-w-0">
                 <img
                   src={item.image_url || "/placeholder.svg"}
                   alt={item.name}
-                  className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-lg flex-shrink-0"
+                  className="w-16 h-16 sm:w-24 sm:h-24 object-cover rounded-lg flex-shrink-0"
                 />
                 <div className="flex-1 min-w-0">
                   <div className="flex justify-between items-start gap-2 mb-1">
-                    <h3 className="font-semibold text-base sm:text-lg truncate flex-1">{item.name}</h3>
+                    <h3 className="font-semibold text-sm sm:text-lg leading-snug line-clamp-2 flex-1 min-w-0">{item.name}</h3>
                     <Button
                       variant="ghost"
                       size="icon"
@@ -162,9 +162,9 @@ const Cart = () => {
                   </div>
                   
                   {/* Product Details - Compact */}
-                  <div className="text-xs sm:text-sm space-y-0.5 mb-2">
+                  <div className="text-xs sm:text-sm space-y-0.5 mb-2 min-w-0">
                    {item.notes && (
-                      <p className="text-muted-foreground font-medium text-xs">
+                      <p className="text-muted-foreground font-medium text-xs line-clamp-2">
                         {item.notes}
                       </p>
                     )}
@@ -172,8 +172,8 @@ const Cart = () => {
                   </div>
                   
                   <div className="flex flex-col gap-1.5 w-full">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-1.5 bg-background border border-border rounded-lg p-0.5">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-1 bg-background border border-border rounded-lg p-0.5 flex-shrink-0">
                         <Button
                           variant="outline"
                           size="icon"
@@ -192,7 +192,7 @@ const Cart = () => {
                           <Plus className="h-3 w-3" />
                         </Button>
                       </div>
-                      <div className="text-sm sm:text-base font-bold text-primary">
+                      <div className="text-sm sm:text-base font-bold text-primary whitespace-nowrap">
                         {(item.price * item.quantity).toFixed(2)} ج
                       </div>
                     </div>
@@ -209,7 +209,7 @@ const Cart = () => {
                           تعديل الخيارات
                         </Button>
                       </DialogTrigger>
-                      <DialogContent className="sm:max-w-md">
+                      <DialogContent className="w-[calc(100vw-1.5rem)] sm:max-w-md max-h-[85vh] overflow-y-auto">
                         <DialogHeader>
                           <DialogTitle>تعديل الألوان والمقاس</DialogTitle>
                         </DialogHeader>
@@ -302,23 +302,23 @@ const Cart = () => {
         </div>
 
         {/* Order Summary */}
-        <div>
-          <Card className="p-6 sticky top-24">
-            <h2 className="text-2xl font-bold mb-6 text-gradient-gold">ملخص الطلب</h2>
+        <div className="min-w-0">
+          <Card className="p-4 sm:p-6 lg:sticky lg:top-24">
+            <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-gradient-gold">ملخص الطلب</h2>
             
-            <div className="space-y-4 mb-6">
-              <div className="flex justify-between">
+            <div className="space-y-3 sm:space-y-4 mb-5 sm:mb-6 text-sm sm:text-base">
+              <div className="flex justify-between gap-3">
                 <span className="text-muted-foreground">المجموع الفرعي</span>
-                <span className="font-semibold">{totalPrice.toFixed(2)} جنيه</span>
+                <span className="font-semibold whitespace-nowrap">{totalPrice.toFixed(2)} جنيه</span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between gap-3">
                 <span className="text-muted-foreground">عدد المنتجات</span>
                 <span className="font-semibold">{items.reduce((sum, item) => sum + item.quantity, 0)}</span>
               </div>
               <div className="border-t border-border pt-4">
-                <div className="flex justify-between text-lg font-bold">
+                <div className="flex justify-between gap-3 text-base sm:text-lg font-bold">
                   <span>الإجمالي</span>
-                  <span className="text-primary">{totalPrice.toFixed(2)} جنيه</span>
+                  <span className="text-primary whitespace-nowrap">{totalPrice.toFixed(2)} جنيه</span>
                 </div>
                 <p className="text-sm text-muted-foreground mt-2">
                   * سيتم حساب الشحن في الخطوة التالية

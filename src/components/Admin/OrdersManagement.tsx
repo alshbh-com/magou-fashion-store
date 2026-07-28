@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Trash2, Eye, Loader2, Filter, Mail, Edit, Plus, Minus, X, Save, CheckSquare } from "lucide-react";
+import { Trash2, Eye, Loader2, Filter, Mail, Edit, Plus, Minus, X, Save } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
@@ -32,19 +32,19 @@ import {
 
 interface Order {
   id: string;
-  order_number: number;
-  customer_name: string;
-  customer_phone: string;
-  customer_address: string;
-  customer_city: string;
+  order_number: number | null;
+  customer_name: string | null;
+  customer_phone: string | null;
+  customer_address: string | null;
+  customer_city: string | null;
   customer_email: string | null;
   customer_notes: string | null;
-  total: number;
-  status: string;
-  created_at: string;
-  shipping_cost: number;
-  subtotal: number;
-  discount: number;
+  total: number | null;
+  status: string | null;
+  created_at: string | null;
+  shipping_cost: number | null;
+  subtotal: number | null;
+  discount: number | null;
 }
 
 interface Product {
@@ -104,9 +104,9 @@ const OrdersManagement = () => {
     if (searchQuery.trim()) {
       const query = searchQuery.trim().toLowerCase();
       result = result.filter(o => 
-        o.order_number.toString().includes(query) ||
-        o.customer_name.toLowerCase().includes(query) ||
-        o.customer_phone.includes(query)
+        (o.order_number?.toString() || "").includes(query) ||
+        (o.customer_name || "").toLowerCase().includes(query) ||
+        (o.customer_phone || "").includes(query)
       );
     }
     
@@ -123,7 +123,8 @@ const OrdersManagement = () => {
       const { data, error } = await supabase
         .from("orders")
         .select("*")
-        .order("order_number", { ascending: false });
+        .order("created_at", { ascending: false, nullsFirst: false })
+        .order("order_number", { ascending: false, nullsFirst: false });
 
       if (error) throw error;
       setOrders(data || []);
@@ -144,15 +145,21 @@ const OrdersManagement = () => {
         .eq("order_id", orderId);
 
       if (error) throw error;
-      setOrderItems(data || []);
+      const items = data || [];
+      setOrderItems(items);
+      return items as OrderItem[];
     } catch (error) {
       console.error("Error fetching order items:", error);
       toast.error("فشل في تحميل تفاصيل الطلب");
+      setOrderItems([]);
+      return [];
     }
   };
 
   const viewOrder = async (order: Order) => {
+    if (!order.id) return toast.error("رقم الطلب غير مكتمل، برجاء تحديث الصفحة");
     setSelectedOrder(order);
+    setOrderItems([]);
     await fetchOrderItems(order.id);
     setDialogOpen(true);
   };
@@ -241,9 +248,10 @@ const OrdersManagement = () => {
 
   // فتح نافذة التعديل
   const openEditDialog = async (order: Order) => {
+    if (!order.id) return toast.error("رقم الطلب غير مكتمل، برجاء تحديث الصفحة");
     setEditingOrder({ ...order });
-    await fetchOrderItems(order.id);
-    setEditingItems([...orderItems]);
+    const items = await fetchOrderItems(order.id);
+    setEditingItems(items);
     setEditDialogOpen(true);
   };
 
@@ -359,6 +367,21 @@ const OrdersManagement = () => {
     );
   };
 
+  const formatOrderDate = (createdAt: string | null) => {
+    if (!createdAt) return "تاريخ غير متاح";
+    const date = new Date(createdAt);
+    if (Number.isNaN(date.getTime()) || date.getFullYear() <= 1970) return "تاريخ غير متاح";
+    return date.toLocaleString("ar-EG", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  const getOrderNumber = (order: Order) => order.order_number ? `#${order.order_number}` : `#${order.id.slice(0, 8)}`;
+
   const getStatusCounts = () => {
     const counts: Record<string, number> = {
       all: orders.length,
@@ -369,8 +392,8 @@ const OrdersManagement = () => {
       transferred: 0,
     };
     orders.forEach(o => {
-      if (counts[o.status] !== undefined) {
-        counts[o.status]++;
+        if (o.status && counts[o.status] !== undefined) {
+          counts[o.status]++;
       }
     });
     return counts;
@@ -472,9 +495,9 @@ const OrdersManagement = () => {
                     onCheckedChange={() => toggleSelected(order.id)}
                   />
                 </TableCell>
-                <TableCell className="font-medium">#{order.order_number}</TableCell>
-                <TableCell>{order.customer_name}</TableCell>
-                <TableCell dir="ltr">{order.customer_phone}</TableCell>
+                <TableCell className="font-medium">{getOrderNumber(order)}</TableCell>
+                <TableCell>{order.customer_name || "-"}</TableCell>
+                <TableCell dir="ltr">{order.customer_phone || "-"}</TableCell>
                 <TableCell>
                   {order.customer_email ? (
                     <span className="text-xs">{order.customer_email}</span>
@@ -482,11 +505,11 @@ const OrdersManagement = () => {
                     <span className="text-muted-foreground text-xs">-</span>
                   )}
                 </TableCell>
-                <TableCell>{order.customer_city}</TableCell>
-                <TableCell>{order.total} جنيه</TableCell>
-                <TableCell>{getStatusBadge(order.status)}</TableCell>
+                <TableCell>{order.customer_city || "-"}</TableCell>
+                <TableCell>{Number(order.total || 0).toFixed(2)} جنيه</TableCell>
+                <TableCell>{getStatusBadge(order.status || "pending")}</TableCell>
                 <TableCell>
-                  {new Date(order.created_at).toLocaleDateString("ar-EG")}
+                  {formatOrderDate(order.created_at)}
                 </TableCell>
                 <TableCell>
                   <div className="flex gap-2">
@@ -522,7 +545,7 @@ const OrdersManagement = () => {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-xl">تفاصيل الطلب #{selectedOrder?.order_number}</DialogTitle>
+            <DialogTitle className="text-xl">تفاصيل الطلب {selectedOrder ? getOrderNumber(selectedOrder) : ""}</DialogTitle>
           </DialogHeader>
           {selectedOrder && (
             <div className="grid lg:grid-cols-3 gap-4">
@@ -533,11 +556,11 @@ const OrdersManagement = () => {
                   <div className="space-y-3 text-sm">
                     <div>
                       <span className="font-medium text-muted-foreground">الاسم:</span>
-                      <p className="font-semibold mt-1">{selectedOrder.customer_name}</p>
+                        <p className="font-semibold mt-1">{selectedOrder.customer_name || "-"}</p>
                     </div>
                     <div>
                       <span className="font-medium text-muted-foreground">الهاتف:</span>
-                      <p className="font-semibold mt-1" dir="ltr">{selectedOrder.customer_phone}</p>
+                        <p className="font-semibold mt-1" dir="ltr">{selectedOrder.customer_phone || "-"}</p>
                     </div>
                     {selectedOrder.customer_email && (
                       <div>
@@ -550,28 +573,28 @@ const OrdersManagement = () => {
                     )}
                     <div>
                       <span className="font-medium text-muted-foreground">العنوان:</span>
-                      <p className="font-semibold mt-1">{selectedOrder.customer_address}, {selectedOrder.customer_city}</p>
+                        <p className="font-semibold mt-1">{selectedOrder.customer_address || "-"}, {selectedOrder.customer_city || "-"}</p>
                     </div>
                   </div>
 
                   <div className="mt-6 pt-4 border-t space-y-2">
                     <div className="flex justify-between text-sm">
                       <span>المجموع الفرعي:</span>
-                      <span className="font-semibold">{selectedOrder.subtotal} جنيه</span>
+                      <span className="font-semibold">{Number(selectedOrder.subtotal || 0).toFixed(2)} جنيه</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span>الشحن:</span>
-                      <span className="font-semibold">{selectedOrder.shipping_cost} جنيه</span>
+                      <span className="font-semibold">{Number(selectedOrder.shipping_cost || 0).toFixed(2)} جنيه</span>
                     </div>
                     <div className="flex justify-between text-lg font-bold pt-2 border-t">
                       <span>الإجمالي:</span>
-                      <span className="text-primary">{selectedOrder.total} جنيه</span>
+                      <span className="text-primary">{Number(selectedOrder.total || 0).toFixed(2)} جنيه</span>
                     </div>
                   </div>
 
                   <div className="mt-4">
                     <Select
-                      value={selectedOrder.status}
+                      value={selectedOrder.status || "pending"}
                       onValueChange={(value) => updateOrderStatus(selectedOrder.id, value)}
                     >
                       <SelectTrigger>
@@ -592,8 +615,12 @@ const OrdersManagement = () => {
               {/* Products List */}
               <Card className="p-4 lg:col-span-2">
                 <h3 className="font-semibold mb-4 text-lg">المنتجات ({orderItems.length})</h3>
-                <div className="space-y-3 max-h-[500px] overflow-y-auto">
-                  {orderItems.map((item) => (
+                  <div className="space-y-3 max-h-[500px] overflow-y-auto">
+                  {orderItems.length === 0 ? (
+                    <div className="rounded-lg border border-dashed p-6 text-center text-muted-foreground">
+                      لا توجد منتجات مسجلة لهذا الطلب
+                    </div>
+                  ) : orderItems.map((item) => (
                     <div key={item.id} className="flex gap-3 p-3 bg-muted/30 rounded-lg border">
                       <div className="flex-1">
                         <p className="font-medium text-sm mb-1">{item.product_name}</p>
@@ -608,7 +635,7 @@ const OrdersManagement = () => {
                         </div>
                       </div>
                       <div className="text-left">
-                        <p className="font-semibold text-sm">{item.price * item.quantity} جنيه</p>
+                        <p className="font-semibold text-sm">{Number(item.price || 0) * Number(item.quantity || 0)} جنيه</p>
                         <p className="text-xs text-muted-foreground">{item.price} × {item.quantity}</p>
                       </div>
                     </div>
@@ -624,7 +651,7 @@ const OrdersManagement = () => {
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-xl">تعديل الطلب #{editingOrder?.order_number}</DialogTitle>
+            <DialogTitle className="text-xl">تعديل الطلب {editingOrder ? getOrderNumber(editingOrder) : ""}</DialogTitle>
           </DialogHeader>
           {editingOrder && (
             <div className="space-y-6">
@@ -635,14 +662,14 @@ const OrdersManagement = () => {
                   <div>
                     <Label>الاسم</Label>
                     <Input
-                      value={editingOrder.customer_name}
+                      value={editingOrder.customer_name || ""}
                       onChange={(e) => setEditingOrder({ ...editingOrder, customer_name: e.target.value })}
                     />
                   </div>
                   <div>
                     <Label>الهاتف</Label>
                     <Input
-                      value={editingOrder.customer_phone}
+                      value={editingOrder.customer_phone || ""}
                       onChange={(e) => setEditingOrder({ ...editingOrder, customer_phone: e.target.value })}
                       dir="ltr"
                     />
@@ -650,14 +677,14 @@ const OrdersManagement = () => {
                   <div>
                     <Label>المدينة</Label>
                     <Input
-                      value={editingOrder.customer_city}
+                      value={editingOrder.customer_city || ""}
                       onChange={(e) => setEditingOrder({ ...editingOrder, customer_city: e.target.value })}
                     />
                   </div>
                   <div>
                     <Label>العنوان</Label>
                     <Input
-                      value={editingOrder.customer_address}
+                      value={editingOrder.customer_address || ""}
                       onChange={(e) => setEditingOrder({ ...editingOrder, customer_address: e.target.value })}
                     />
                   </div>
@@ -780,7 +807,7 @@ const OrdersManagement = () => {
                   </div>
                   <div className="flex justify-between text-sm">
                     <span>الشحن:</span>
-                    <span className="font-semibold">{editingOrder.shipping_cost} جنيه</span>
+                    <span className="font-semibold">{Number(editingOrder.shipping_cost || 0).toFixed(2)} جنيه</span>
                   </div>
                   <div className="flex justify-between text-lg font-bold pt-2 border-t mt-2">
                     <span>الإجمالي:</span>
