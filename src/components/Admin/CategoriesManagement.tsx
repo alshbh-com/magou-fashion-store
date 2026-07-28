@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Trash2, Edit, Plus, Loader2 } from "lucide-react";
+import { Trash2, Edit, Plus, Loader2, ArrowUp, ArrowDown } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -29,6 +29,7 @@ interface Category {
   slug: string;
   image_url: string | null;
   created_at: string | null;
+  display_order: number | null;
 }
 
 const CategoriesManagement = () => {
@@ -40,6 +41,7 @@ const CategoriesManagement = () => {
     name_ar: "",
     slug: "",
     image_url: "",
+    display_order: 0,
   });
   const [uploading, setUploading] = useState(false);
 
@@ -52,7 +54,8 @@ const CategoriesManagement = () => {
       const { data, error } = await supabase
         .from("categories")
         .select("*")
-        .order("name_ar");
+        .order("display_order", { ascending: true, nullsFirst: false })
+        .order("name_ar", { ascending: true });
 
       if (error) throw error;
       setCategories(data || []);
@@ -103,6 +106,7 @@ const CategoriesManagement = () => {
         name_ar: formData.name_ar,
         slug: formData.slug,
         image_url: formData.image_url || null,
+        display_order: Number(formData.display_order) || 0,
       };
 
       if (editingCategory) {
@@ -157,6 +161,7 @@ const CategoriesManagement = () => {
       name_ar: category.name_ar,
       slug: category.slug,
       image_url: category.image_url || "",
+      display_order: category.display_order || 0,
     });
     setDialogOpen(true);
   };
@@ -166,7 +171,39 @@ const CategoriesManagement = () => {
       name_ar: "",
       slug: "",
       image_url: "",
+      display_order: categories.length,
     });
+  };
+
+  const moveCategory = async (category: Category, direction: "up" | "down") => {
+    const currentIndex = categories.findIndex((c) => c.id === category.id);
+    const swapIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
+    const swapCategory = categories[swapIndex];
+    if (currentIndex < 0 || !swapCategory) return;
+
+    const currentOrder = category.display_order ?? currentIndex;
+    const swapOrder = swapCategory.display_order ?? swapIndex;
+
+    setCategories((prev) => {
+      const next = [...prev];
+      next[currentIndex] = { ...swapCategory, display_order: currentOrder };
+      next[swapIndex] = { ...category, display_order: swapOrder };
+      return next.sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0));
+    });
+
+    const { error } = await supabase.from("categories").upsert([
+      { id: category.id, display_order: swapOrder },
+      { id: swapCategory.id, display_order: currentOrder },
+    ]);
+
+    if (error) {
+      console.error("Error updating category order:", error);
+      toast.error("فشل في ترتيب الأقسام");
+      fetchCategories();
+      return;
+    }
+
+    toast.success("تم تحديث ترتيب الأقسام");
   };
 
   const openAddDialog = () => {
@@ -223,6 +260,18 @@ const CategoriesManagement = () => {
               </div>
 
               <div>
+                <Label htmlFor="display_order">ترتيب الظهور</Label>
+                <Input
+                  id="display_order"
+                  type="number"
+                  min="0"
+                  value={formData.display_order}
+                  onChange={(e) => setFormData({ ...formData, display_order: Number(e.target.value) || 0 })}
+                  placeholder="0"
+                />
+              </div>
+
+              <div>
                 <Label htmlFor="image">صورة القسم</Label>
                 <Input
                   id="image"
@@ -251,13 +300,14 @@ const CategoriesManagement = () => {
           <TableHeader>
             <TableRow>
               <TableHead className="text-right">الصورة</TableHead>
+              <TableHead className="text-right">الترتيب</TableHead>
               <TableHead className="text-right">اسم القسم</TableHead>
               <TableHead className="text-right">الرابط</TableHead>
               <TableHead className="text-right">الإجراءات</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {categories.map((category) => (
+            {categories.map((category, index) => (
               <TableRow key={category.id}>
                 <TableCell>
                   {category.image_url ? (
@@ -268,10 +318,29 @@ const CategoriesManagement = () => {
                     </div>
                   )}
                 </TableCell>
+                <TableCell className="font-semibold">{category.display_order ?? index}</TableCell>
                 <TableCell className="font-medium">{category.name_ar}</TableCell>
                 <TableCell>{category.slug}</TableCell>
                 <TableCell>
                   <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => moveCategory(category, "up")}
+                      disabled={index === 0}
+                      title="تحريك لأعلى"
+                    >
+                      <ArrowUp className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => moveCategory(category, "down")}
+                      disabled={index === categories.length - 1}
+                      title="تحريك لأسفل"
+                    >
+                      <ArrowDown className="h-4 w-4" />
+                    </Button>
                     <Button
                       size="sm"
                       variant="outline"
