@@ -30,11 +30,12 @@ interface Product {
 interface Category {
   id: string;
   name: string;
+  name_ar: string | null;
 }
 
 const Products = () => {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -75,11 +76,27 @@ const Products = () => {
     filterAndSortProducts();
   }, [products, searchQuery, sortBy, selectedCategory]);
 
+  useEffect(() => {
+    const categoryFromUrl = searchParams.get("category") || "all";
+    setSelectedCategory(categoryFromUrl);
+  }, [searchParams]);
+
+  const handleCategoryChange = (categoryId: string) => {
+    setSelectedCategory(categoryId);
+    const nextParams = new URLSearchParams(searchParams);
+    if (categoryId === "all") {
+      nextParams.delete("category");
+    } else {
+      nextParams.set("category", categoryId);
+    }
+    setSearchParams(nextParams, { replace: true });
+  };
+
   const fetchCategories = async () => {
     try {
 const { data, error } = await supabase
         .from("categories")
-        .select("id, name")
+        .select("id, name, name_ar")
         .order("display_order");
 
       if (error) throw error;
@@ -181,7 +198,7 @@ const { data, error } = await supabase
           />
         </div>
         <div className="flex gap-2 w-full md:w-auto">
-          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+          <Select value={selectedCategory} onValueChange={handleCategoryChange}>
             <SelectTrigger className="w-full md:w-[200px]">
               <SelectValue placeholder="القسم" />
             </SelectTrigger>
@@ -189,7 +206,7 @@ const { data, error } = await supabase
               <SelectItem value="all">جميع الأقسام</SelectItem>
               {categories.map((category) => (
                 <SelectItem key={category.id} value={category.id}>
-                  {category.name}
+                  {category.name_ar || category.name}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -198,7 +215,7 @@ const { data, error } = await supabase
             <Button
               variant="outline"
               size="icon"
-              onClick={() => setSelectedCategory("all")}
+              onClick={() => handleCategoryChange("all")}
               title="مسح فلتر الأقسام"
             >
               <X className="h-4 w-4" />
