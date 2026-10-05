@@ -1,0 +1,2 @@
+ALTER TABLE public.orders ALTER COLUMN subtotal TYPE numeric, ALTER COLUMN discount TYPE numeric, ALTER COLUMN total TYPE numeric, ALTER COLUMN shipping_cost TYPE numeric;
+ALTER TABLE public.order_items ALTER COLUMN price TYPE numeric;
